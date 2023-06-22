@@ -54,8 +54,6 @@ def getAIOutput(extraMsg):
         "\n"
         "Changes Made:\n"
         '- In Example File, the code was updated to replace the usage of "ObjectId" with "EntityId" in the query.\n'
-        
-
         # f"Include details about the code if possible.\n"
         #f"The following files were changed:\n"
         #"Here is the git diff output:\n"
