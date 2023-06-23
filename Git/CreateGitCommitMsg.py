@@ -5,6 +5,8 @@
 # If confirmed, the script commits the changes and gives the option to push them to the remote repository.
 
 import subprocess
+import dotenv
+dotenv.load_dotenv()
 
 # get current branch
 branch = (
@@ -48,8 +50,8 @@ def get_lines_after_commit_message(text):
         return ""
 
 def getAIOutput(extraMsg):
-    # replace API_KEY with your actual OpenAI API key
-    openai.api_key = "API_KEY"
+    # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
+    openai.api_key = os.getenv("API_KEY")
     prompt = (
         #f"Compile a professional sounding commit message based on the changes in branch {branch}:\n"
         f"Compile a professional sounding commit message based on the Example below.\n Use the Subject, Comments and Diff Output section and Expand verbage where possible.\n"

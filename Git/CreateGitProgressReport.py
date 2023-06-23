@@ -29,9 +29,11 @@ import pyperclip
 import datetime
 import sys
 from datetime import datetime
+import dotenv
+dotenv.load_dotenv()
 
-# replace API_KEY with your actual OpenAI API key
-openai.api_key = "API_KEY"
+# Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
+openai.api_key = os.getenv("API_KEY")
 
 # create GitPython repo object
 repo = git.Repo()
