@@ -4,6 +4,7 @@
 # The proposed commit message is displayed to the user and the user is asked to confirm or reject it. 
 # If confirmed, the script commits the changes and gives the option to push them to the remote repository.
 
+import os
 import subprocess
 import dotenv
 dotenv.load_dotenv()

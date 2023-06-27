@@ -22,6 +22,7 @@
 # If the user confirms, the report is copied to the clipboard using the pyperclip library. 
 # Otherwise, a message is displayed indicating that the report was not copied.
 
+import os
 import git
 import openai
 import re
@@ -65,52 +66,110 @@ commits = list(repo.iter_commits(branch, since=branch_creation_date))
 # sanitize branch name
 title = re.sub(r'[^\w\s]', ' ', branch_name).replace('-', ' ').strip()
 
+for i in range(10, 2, -1):
+    title = title.replace(' ' * i, ' ').strip()
 
 report_title = f"Progress Report for {title} on {datetime.now().strftime('%m/%d/%Y')}:\n"
 report_length = 475 - len(report_title)
 
 # compile progress report using OpenAI
 prompt = (f"You are a seasoned Full Stack Developer.\n"
-          f"Create a progress report based on the git commits below.\n"
-          # f"The Reports Title should be: {report_title}"
-          f"The Report must be less than {report_length} characters.\n"
+          f"You are high skilled at creating concise and readable progress reports.\n"
+
+          #f"Commit: <Commit Title>\n"
+          #f" - Files Updated:\n"
+          #f"   - File Updated<>\n"
+          #f"\n" 
+          #f" - Changes Made:\n"
+          #f"   - <Change Made>"
+          #f"\n" 
+          #f" - Commit Summary:\n"
+          #f"   - <Commit Summary>"
           )
+extraMsg = (f"Create a progress report based on the git Commit Logs below.\n"
+          f"Summarized the Files Changed, Commit Comment and the Changes Made.\n"
+          f"The Reports Title should be: {report_title}"
+          f"The Report must be less than {report_length} characters.\n"
+          f"Example Report:"
+          f"<Report Title>:\n"
+          f"<Summary of commit details less that {report_length} characters long.>")
           
 for commit in commits:
     if "asdf" not in commit.summary:
-        #prompt += "<Begin Commit Log>\n"
-        commit_string = f"{commit.hexsha} - {commit.summary}\n"
+        commit_string = f"<Begin Commit Log {commit.hexsha}>\n"
+        commit_string += "Commit Message:\n"
+        commit_string += f"{commit.message}\n"
+        commit_string += "Commit Summary:\n"
+        commit_string += f"{commit.summary}\n"
+        #commit_string += "Commit Diffs:\n"
+        # Get the diff object for the commit
+        #diff = commit.diff()
+        
+        #print(diff)
+
+        # Loop through the diff items and print the diff
+        #for diff_item in diff:
+            #changed_lines = diff_item.diff.split('\n')
+
+            # Loop through the lines and print the changed lines
+            #print(f"Diff for file: {diff_item.a_path}")
+            #print("Changed lines:")
+            #commit_string += f"Diff for file: {diff_item.a_path}\n"
+            #commit_string += "Changed lines:\n"
+            
+            #for line in changed_lines:
+                # Check if the line starts with "+" (added) or "-" (deleted)
+                #if line.startswith('+') or line.startswith('-'):
+                    #print(line)
+                #commit_string += f'{line}\n'
+                    #print("\n")
+
+        commit_string += f"<End Commit Log {commit.hexsha}>\n"
         test = len(prompt) + len(commit_string)
-        if test < 1023:
+        if test < 15999:
             prompt += commit_string
         else:
             break
-        #prompt += "<End Commit Log>\n"
+        
 
 
 #prompt += f"Report Title: {report_title}"
 
 
+def getAIOutput(prompt, extraMsg):
+    # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
+    openai.api_key = os.getenv("API_KEY")
+        
+    max_prompt = 15999
 
-prompt = prompt[:1023]
+    # print(prompt)
+    prompt = prompt[:max_prompt]
+
+    response = openai.ChatCompletion.create(
+        # model="text-davinci-003",
+        model="gpt-3.5-turbo-16k",
+        #prompt=prompt,
+        messages=[{"role": "system", "content": prompt}, {"role": "user", "content": extraMsg}],
+        temperature=.2,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        timeout=30,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+
+    return response['choices'][0]['message']['content'].strip()
 
 # print(prompt)
 
-response = openai.Completion.create(
-    engine="text-davinci-003",
-    prompt=prompt,
-    temperature=.7,
-    max_tokens=1024,
-    n=1,
-    stop=None,
-    timeout=30,
-)
-
-progress_report = response.choices[0].text.strip()
+progress_report = getAIOutput(prompt, extraMsg)
 
 # output = f"Progress report for branch {branch}:\n\n{progress_report}"
 # output = progress_report
-output = report_title + progress_report
+#output = report_title + progress_report
+output = progress_report
 
 print("Git Progress Report:\n")
 print(output)
