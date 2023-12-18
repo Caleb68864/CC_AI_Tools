@@ -5,6 +5,7 @@
 # If confirmed, the script commits the changes and gives the option to push them to the remote repository.
 
 import os
+import datetime
 import subprocess
 import dotenv
 dotenv.load_dotenv()
@@ -56,7 +57,12 @@ def getAIOutput(extraMsg):
     prompt = (
         #f"Compile a professional sounding commit message based on the changes in branch {branch}:\n"
         f"Compile a professional sounding commit message based on the Example below.\n Use the Subject, Comments and Diff Output section and Expand verbage where possible.\n"
+        f"Fix any typos in the User Comments.\n"
+        f"Make User Comments grammatically correct .\n"
+        f"Create a title based on the users comment.\n"
+        f"Always put the title on the first line of the commit message.\n"
         f"Example Commit Message:\n"
+        f"This is the title of the commit message\n"
         f"Files Updated: Example Files\n"
         "\n"
         f"Comments: User Comments\n"
@@ -83,6 +89,7 @@ def getAIOutput(extraMsg):
 
     # print(prompt)
     prompt = prompt[:max_prompt]
+    
 
     response = openai.ChatCompletion.create(
         # model="text-davinci-003",
@@ -90,7 +97,7 @@ def getAIOutput(extraMsg):
         #prompt=prompt,
         messages=[{"role": "system", "content": prompt}, {"role": "user", "content": extraMsg}],
         temperature=.2,
-        max_tokens=1024,
+        max_tokens=4096,
         n=1,
         stop=None,
         timeout=30,
@@ -99,7 +106,12 @@ def getAIOutput(extraMsg):
         presence_penalty=0,
     )
 
-    return response['choices'][0]['message']['content'].strip()
+    resp = response['choices'][0]['message']['content'].strip()
+    # Prepend the file name with the current date
+    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    file_name = clean_file_name(f"{date_string}_ {extraMsg}")
+    write_to_file(f"C:/Users/Caleb/Documents/GitHub/CC_AI_Tools/Git/Commit_Logs/{file_name}", "txt", prompt)
+    return resp
 
 def commitMsg(userMsg):
     commit_message = getAIOutput(userMsg)
@@ -132,6 +144,27 @@ def commitMsg(userMsg):
     else:
         print("Aborted.")
         return False
+
+def clean_file_name(file_name):
+    # Remove forbidden characters
+    forbidden_chars = '<>"\\|?*,'
+    cleaned_file_name = ''.join(char for char in file_name if char not in forbidden_chars)
+
+    # Limit file name length to maximum for Windows
+    max_length = 245
+    cleaned_file_name = cleaned_file_name[:max_length]
+
+    return cleaned_file_name
+
+def write_to_file(file_name, ext, content):
+    
+    file_name = f"{file_name}.{ext}"
+
+    # Write content to the file
+    file = open(file_name, 'w', encoding='utf-8')
+    file.write(content)
+    file.close()
+   
 
 value = False
 while value != True:

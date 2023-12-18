@@ -1,5 +1,10 @@
+# Ignore Script specfic files
+last_run.txt
+
 # Ignore .env file containing credentials, API keys, and other secrets
 .env
+Commit_logs/
+Git/Commit_Logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
