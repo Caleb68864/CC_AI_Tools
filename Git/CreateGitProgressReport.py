@@ -5,6 +5,7 @@ import re
 import pyperclip
 from datetime import datetime, timedelta
 import dotenv
+import yaml
 dotenv.load_dotenv()
 
 # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
@@ -17,28 +18,35 @@ repo = git.Repo()
 branch = repo.active_branch
 branch_name = branch.name
 
-# Determine the start time to list commits from
-# Determine the path to the last_run.txt file in the same directory as the script
+# Retrieve the path to the 'last_run.yaml' file in the same directory as the script
 script_dir = os.path.dirname(os.path.abspath(__file__))
-date_file = os.path.join(script_dir, 'last_run.txt')
+yaml_file_path = os.path.join(script_dir, 'last_run.yaml')
 
-# Try to open the file and read the timestamp
+# Read data from the YAML file
 try:
-    with open(date_file, 'r') as file:
-        last_datetime_str = file.read().strip()
-        # Parse the datetime string from the file
+    with open(yaml_file_path, 'r') as file:
+        data = yaml.safe_load(file) or {}
+        repo_name = data.get('repo', repo.working_dir.split(os.sep)[-1])
+        last_branch_name = data.get('branch', branch_name)
+        last_datetime_str = data.get('last_run', '')
         last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
 except (FileNotFoundError, ValueError):
+    repo_name = repo.working_dir.split(os.sep)[-1]
+    last_branch_name = branch_name
     # If the file does not exist, is blank, or the date is not in the right format,
     # Set the date to today with a time of 3 AM
     last_datetime = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
 
+# Check if we're operating on the same repo and branch as the last run
+if (repo_name == repo.working_dir.split(os.sep)[-1] and last_branch_name == branch_name):
+    # Subtract 5 minutes from the stored date and time
+    start_datetime = last_datetime - timedelta(minutes=5)
+else:
+    # If different repo or branch, use fallback datetime
+    start_datetime = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
+
 # Subtract 5 minutes from the stored date and time
 start_datetime = last_datetime - timedelta(minutes=5)
-
-# Store the current date and time in the text file
-with open(date_file, 'w') as file:
-    file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 # get list of new commits after the start_datetime
 new_commits = list(repo.iter_commits(branch_name, since=start_datetime.isoformat()))
@@ -109,8 +117,14 @@ copy_to_clipboard = input("Do you want to copy the progress report to clipboard?
 if copy_to_clipboard.lower() == 'y':
     pyperclip.copy(output)
     print("Progress report copied to clipboard!")
-     # Save the current date and time to the text file again after copying to clipboard
-    with open(date_file, 'w') as file:
-        file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    # Save the current date and time, repo name, and branch name to the YAML file again after copying to clipboard
+    current_datetime_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(yaml_file_path, 'w') as file:
+        yaml.dump({
+            'last_run': current_datetime_str,
+            'repo': repo.working_dir.split(os.sep)[-1],
+            'branch': branch_name,
+        }, file)
+    print("YAML file updated.")
 else:
     print("Progress report not copied to clipboard.")
