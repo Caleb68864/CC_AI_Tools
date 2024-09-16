@@ -54,28 +54,19 @@ def get_lines_after_commit_message(text):
 def getAIOutput(extraMsg):
     # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
     openai.api_key = os.getenv("API_KEY")
+
     prompt = (
-        #f"Compile a professional sounding commit message based on the changes in branch {branch}:\n"
-        f"Compile a professional sounding commit message based on the Example below.\n Use the Subject, Comments and Diff Output section and Expand verbage where possible.\n"
-        f"Fix any typos in the User Comments.\n"
-        f"Make User Comments grammatically correct .\n"
-        f"Create a title based on the users comment.\n"
-        f"Always put the title on the first line of the commit message.\n"
-        f"Example Commit Message:\n"
-        f"This is the title of the commit message\n"
-        f"Files Updated: Example Files\n"
-        "\n"
-        f"Comments: User Comments\n"
-        "\n"
-        "Changes Made:\n"
-        '- In Example File, the code was updated to replace the usage of "ObjectId" with "EntityId" in the query.\n'
-        # f"Include details about the code if possible.\n"
-        #f"The following files were changed:\n"
-        #"Here is the git diff output:\n"
-        f"<Subject Start>\nFiles Updated: {diff_files}\n<Subject End>\n"
+        f"Generate a professional commit message in the following format:\n\n"
+        f"The first line should be a concise title describing the commit (under 50 characters).\n"
+        f"The title should not include the word 'Title:'—just the title text.\n"
+        f"The next section should be a 'Summary:' followed by a brief summary of the changes made in this commit, based on the user comments and diff output.\n"
+        f"Follow that with a 'Details:' section providing a detailed breakdown of the files updated and what was changed in them.\n\n"
+        f"Ensure to fix any typos in the User Comments and make them grammatically correct.\n\n"
+        f"Files Updated: {diff_files}\n\n"
     )
     
-    max_prompt = 15999
+    max_tokens = 16000
+    max_prompt = max_tokens * 3
     
     if extraMsg != "":
         prompt += f"<Comments Start>\n{extraMsg}\n<Comments End>\n"
@@ -91,13 +82,13 @@ def getAIOutput(extraMsg):
     prompt = prompt[:max_prompt]
     
 
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         # model="text-davinci-003",
-        model="gpt-3.5-turbo-16k",
+        model="gpt-4o-mini",
         #prompt=prompt,
         messages=[{"role": "system", "content": prompt}, {"role": "user", "content": extraMsg}],
         temperature=.2,
-        max_tokens=4096,
+        max_tokens=max_tokens,
         n=1,
         stop=None,
         timeout=30,
@@ -106,11 +97,13 @@ def getAIOutput(extraMsg):
         presence_penalty=0,
     )
 
-    resp = response['choices'][0]['message']['content'].strip()
+    # print(response)
+    resp = response.choices[0].message.content.strip()
+    
     # Prepend the file name with the current date
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     file_name = clean_file_name(f"{date_string}_ {extraMsg}")
-    write_to_file(f"C:/Users/Caleb/Documents/GitHub/CC_AI_Tools/Git/Commit_Logs/{file_name}", "txt", prompt)
+    write_to_file(f"C:/Users/CalebBennett/Documents/GitHub/CC_AI_Tools/Git/Commit_Logs/{file_name}", "txt", prompt)
     return resp
 
 def commitMsg(userMsg):

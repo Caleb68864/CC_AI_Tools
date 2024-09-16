@@ -9,7 +9,7 @@ import yaml
 dotenv.load_dotenv()
 
 # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
-openai.api_key = os.getenv("API_KEY")
+api_key = os.getenv("API_KEY")
 
 # create GitPython repo object
 repo = git.Repo()
@@ -25,28 +25,25 @@ yaml_file_path = os.path.join(script_dir, 'last_run.yaml')
 # Read data from the YAML file
 try:
     with open(yaml_file_path, 'r') as file:
-        data = yaml.safe_load(file) or {}
-        repo_name = data.get('repo', repo.working_dir.split(os.sep)[-1])
-        last_branch_name = data.get('branch', branch_name)
-        last_datetime_str = data.get('last_run', '')
-        last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
-except (FileNotFoundError, ValueError):
-    repo_name = repo.working_dir.split(os.sep)[-1]
-    last_branch_name = branch_name
-    # If the file does not exist, is blank, or the date is not in the right format,
-    # Set the date to today with a time of 3 AM
+        all_data = yaml.safe_load(file) or {}
+except FileNotFoundError:
+    all_data = {}
+
+runs = all_data.get("Runs", {})
+
+repo_name = repo.working_dir.split(os.sep)[-1]
+key = f"{repo_name}_{branch_name}"
+
+last_run_info = runs.get(key, {})
+last_datetime_str = last_run_info.get('last_run', '')
+try:
+    last_datetime = datetime.strptime(last_datetime_str, "%Y-%m-%d %H:%M:%S")
+except ValueError:
+    # If the date is not in the right format, set the date to today with a time of 3 AM
     last_datetime = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
 
-# Check if we're operating on the same repo and branch as the last run
-if (repo_name == repo.working_dir.split(os.sep)[-1] and last_branch_name == branch_name):
-    # Subtract 5 minutes from the stored date and time
-    start_datetime = last_datetime - timedelta(minutes=5)
-else:
-    # If different repo or branch, use fallback datetime
-    start_datetime = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
-
-# Subtract 5 minutes from the stored date and time
-start_datetime = last_datetime - timedelta(minutes=5)
+# Calculate start_datetime based on the last run
+start_datetime = (last_datetime + timedelta(minutes=2)) if last_datetime_str else datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
 
 # get list of new commits after the start_datetime
 new_commits = list(repo.iter_commits(branch_name, since=start_datetime.isoformat()))
@@ -71,39 +68,68 @@ report_length = 475 - len(report_title)
 # compile progress report using OpenAI
 prompt = "Changes Made:\n"
 
-extraMsg = (f"Create a list of changes made based on the git Commit Logs below.\n"
-            f"Each change should be formatted as a bullet point.\n"
-            f"The Reports Title should be: {report_title}"
-            f"The Report must be less than {report_length} characters.\n"
-            f"Combine comments about the same file and summarize where possible.\n"
-            f"Example Report:"
-            f"{report_title}"
-            f" - Summary Comment.\n"
-            f" - Summary Comment.\n"
-            )
+#extraMsg = (f"Create a list of changes made based on the git Commit Logs below.\n"
+#            f"Each change should be formatted as a bullet point.\n"
+#            f"The Reports Title should be: {report_title}"
+#            f"The Report must be less than {report_length} characters.\n"
+#           f"Combine comments about the same file and summarize where possible.\n"
+#            f"Example Report:"
+#            f"{report_title}"
+#            f" - Summary Comment.\n"
+#            f" - Summary Comment.\n"
+#            )
+max_tokens = 16000
+max_length = max_tokens * 3
+            
+extraMsg = (
+    f"Generate a concise and clear progress report based on the git commit logs provided below.\n"
+    f"Format each change as a bullet point.\n"
+    f"The report should have a title: '{report_title}'.\n"
+    f"The entire report must be less than {report_length} characters.\n"
+    f"Combine comments related to the same file or feature and summarize them where possible to avoid repetition.\n"
+    f"The format of the report should be as follows:\n\n"
+    f"{report_title}\n"
+    f"- Summary of change 1.\n"
+    f"- Summary of change 2.\n"
+    f"- Further summaries as needed...\n\n"
+    f"Here are the git commit logs to use for generating the report:\n"
+)
+
 
 for commit_comment in commit_comments:
     commit_string = f"- {commit_comment}\n"
-    if len(prompt) + len(commit_string) + len(extraMsg) < 4096:
-        prompt += commit_string
+    #print(commit_string)
+    charactersToGet = max_length - len(extraMsg) 
+    
+    # Check if there is enough space to add the entire commit_string
+    if charactersToGet >= len(commit_string):
+        extraMsg += commit_string
     else:
+        # If not enough space, add as much of the commit_string as possible
+        if charactersToGet > 0:
+            extraMsg += commit_string[:charactersToGet]
         break
+        
+print(extraMsg)
 
 def get_ai_output(prompt, extra_msg):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-16k",
-        messages=[{"role": "system", "content": prompt}, {"role": "user", "content": extra_msg}],
-        temperature=.2,
-        max_tokens=4096,
+    client = openai.OpenAI(api_key=api_key)
+    response = client.chat.completions.create(
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": extra_msg}
+        ],
+        model="gpt-4o-mini",  # or "gpt-4" depending on your specific model access
+        temperature=0.2,
+        max_tokens=max_tokens,
         n=1,
         stop=None,
-        timeout=30,
         top_p=1,
         frequency_penalty=0,
         presence_penalty=0,
     )
 
-    return response.choices[0].message['content'].strip()
+    return response.choices[0].message.content.strip()
 
 progress_report = get_ai_output(prompt, extraMsg)
 
@@ -117,14 +143,19 @@ copy_to_clipboard = input("Do you want to copy the progress report to clipboard?
 if copy_to_clipboard.lower() == 'y':
     pyperclip.copy(output)
     print("Progress report copied to clipboard!")
-    # Save the current date and time, repo name, and branch name to the YAML file again after copying to clipboard
+    # Save the current date and time, repo name, and branch name to the YAML file
     current_datetime_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Update the information for the current run
+    runs[key] = {
+        'last_run': current_datetime_str,
+        'repo': repo_name,
+        'branch': branch_name,
+    }
+
+    # Write the updated runs data back to the YAML file
     with open(yaml_file_path, 'w') as file:
-        yaml.dump({
-            'last_run': current_datetime_str,
-            'repo': repo.working_dir.split(os.sep)[-1],
-            'branch': branch_name,
-        }, file)
+        yaml.dump({'Runs': runs}, file)
     print("YAML file updated.")
 else:
     print("Progress report not copied to clipboard.")
