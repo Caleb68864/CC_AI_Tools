@@ -110,7 +110,7 @@ for commit_comment in commit_comments:
             extraMsg += commit_string[:charactersToGet]
         break
         
-print(extraMsg)
+#print(extraMsg)
 
 def get_ai_output(prompt, extra_msg):
     client = openai.OpenAI(api_key=api_key)
@@ -119,7 +119,7 @@ def get_ai_output(prompt, extra_msg):
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": extra_msg}
         ],
-        model="gpt-4o-mini",  # or "gpt-4" depending on your specific model access
+        model="gpt-4o",  # or "gpt-4" depending on your specific model access
         temperature=0.2,
         max_tokens=max_tokens,
         n=1,

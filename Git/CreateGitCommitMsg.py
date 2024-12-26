@@ -4,6 +4,7 @@
 # The proposed commit message is displayed to the user and the user is asked to confirm or reject it. 
 # If confirmed, the script commits the changes and gives the option to push them to the remote repository.
 
+import anthropic
 import os
 import datetime
 import subprocess
@@ -52,8 +53,10 @@ def get_lines_after_commit_message(text):
         return ""
 
 def getAIOutput(extraMsg):
-    # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
-    openai.api_key = os.getenv("API_KEY")
+    # Replace OpenAI client with Anthropic
+    client = anthropic.Anthropic(
+        api_key=os.getenv("ANTHROPIC_API_KEY")
+    )
 
     prompt = (
         f"Generate a professional commit message in the following format:\n\n"
@@ -65,7 +68,7 @@ def getAIOutput(extraMsg):
         f"Files Updated: {diff_files}\n\n"
     )
     
-    max_tokens = 16000
+    max_tokens = 8000
     max_prompt = max_tokens * 3
     
     if extraMsg != "":
@@ -75,30 +78,21 @@ def getAIOutput(extraMsg):
     diff_length = max_prompt-len(prompt) - 25
     prompt += f"{diff_output[:diff_length]}\n"
     prompt += f"<Diff Output End>\n"
-    # prompt += "Commit Message:"
 
-
-    # print(prompt)
     prompt = prompt[:max_prompt]
-    
 
-    response = openai.chat.completions.create(
-        # model="text-davinci-003",
-        model="gpt-4o-mini",
-        #prompt=prompt,
-        messages=[{"role": "system", "content": prompt}, {"role": "user", "content": extraMsg}],
-        temperature=.2,
+    # Updated API call with correct system parameter
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
         max_tokens=max_tokens,
-        n=1,
-        stop=None,
-        timeout=30,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
+        temperature=0.2,
+        system=prompt,  # Move prompt to system parameter
+        messages=[
+            {"role": "user", "content": extraMsg}
+        ]
     )
 
-    # print(response)
-    resp = response.choices[0].message.content.strip()
+    resp = response.content[0].text.strip()
     
     # Prepend the file name with the current date
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
