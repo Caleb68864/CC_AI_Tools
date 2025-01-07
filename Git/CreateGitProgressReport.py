@@ -1,15 +1,15 @@
 import os
 import git
-import openai
 import re
 import pyperclip
 from datetime import datetime, timedelta
 import dotenv
 import yaml
+import anthropic
 dotenv.load_dotenv()
 
 # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("ANTHROPIC_API_KEY")
 
 # create GitPython repo object
 repo = git.Repo()
@@ -78,7 +78,7 @@ prompt = "Changes Made:\n"
 #            f" - Summary Comment.\n"
 #            f" - Summary Comment.\n"
 #            )
-max_tokens = 16000
+max_tokens = 8000
 max_length = max_tokens * 3
             
 extraMsg = (
@@ -113,23 +113,18 @@ for commit_comment in commit_comments:
 #print(extraMsg)
 
 def get_ai_output(prompt, extra_msg):
-    client = openai.OpenAI(api_key=api_key)
-    response = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": extra_msg}
-        ],
-        model="gpt-4o",  # or "gpt-4" depending on your specific model access
-        temperature=0.2,
+    client = anthropic.Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model="claude-3-5-sonnet-20241022",
         max_tokens=max_tokens,
-        n=1,
-        stop=None,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
+        temperature=0.2,
+        system=prompt,
+        messages=[
+            {"role": "user", "content": extra_msg}
+        ]
     )
 
-    return response.choices[0].message.content.strip()
+    return response.content[0].text.strip()
 
 progress_report = get_ai_output(prompt, extraMsg)
 

@@ -59,25 +59,57 @@ def getAIOutput(extraMsg):
     )
 
     prompt = (
-        f"Generate a professional commit message in the following format:\n\n"
-        f"The first line should be a concise title describing the commit (under 50 characters).\n"
-        f"The title should not include the word 'Title:'—just the title text.\n"
-        f"The next section should be a 'Summary:' followed by a brief summary of the changes made in this commit, based on the user comments and diff output.\n"
-        f"Follow that with a 'Details:' section providing a detailed breakdown of the files updated and what was changed in them.\n\n"
-        f"Ensure to fix any typos in the User Comments and make them grammatically correct.\n\n"
-        f"Files Updated: {diff_files}\n\n"
+        f"You are a Git commit message expert. Generate a professional, structured commit message following these exact rules:\n\n"
+        f"1. First Line (Title):\n"
+        f"   - Must be under 50 characters\n"
+        f"   - Start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.)\n"
+        f"   - No period at the end\n"
+        f"   - Must be immediately actionable and specific\n\n"
+        f"2. Summary Section:\n"
+        f"   - Start with 'Summary:'\n"
+        f"   - 2-3 sentences explaining the WHY of the changes\n"
+        f"   - Focus on business value and impact\n\n"
+        f"3. Details Section:\n"
+        f"   - Start with 'Details:'\n"
+        f"   - Bullet points for each significant change\n"
+        f"   - Include technical details and implementation notes\n"
+        f"   - Reference any related issue numbers if mentioned\n\n"
+        f"4. Files Changed:\n"
+        f"   - Group related files together\n"
+        f"   - Explain the purpose of each file change\n"
+        f"Files Modified: {diff_files}\n\n"
+        f"Important:\n"
+        f"- Fix any typos or grammar issues in the user's comments\n"
+        f"- Be concise but comprehensive\n"
+        f"- Focus on the WHAT and WHY, not just the HOW\n"
+        f"- Use technical terms appropriately\n"
     )
     
     max_tokens = 8000
     max_prompt = max_tokens * 3
     
     if extraMsg != "":
-        prompt += f"<Comments Start>\n{extraMsg}\n<Comments End>\n"
-    prompt += f"\n\n\n"
-    prompt += f"<Diff Output Start>\n"
-    diff_length = max_prompt-len(prompt) - 25
-    prompt += f"{diff_output[:diff_length]}\n"
-    prompt += f"<Diff Output End>\n"
+        prompt += (
+            f"\n<user_comments>\n"
+            f"{extraMsg.strip()}\n"
+            f"</user_comments>\n"
+        )
+
+    # Split diff output into files for better context
+    files_list = diff_files.split('\n')
+    prompt += (
+        f"\n<modified_files>\n"
+        f"{', '.join(files_list)}\n"
+        f"</modified_files>\n"
+    )
+
+    # Add diff output with clear markers and limited length
+    diff_length = max_prompt - len(prompt) - 25
+    prompt += (
+        f"\n<diff_output>\n"
+        f"{diff_output[:diff_length].strip()}\n"
+        f"</diff_output>\n"
+    )
 
     prompt = prompt[:max_prompt]
 
