@@ -9,19 +9,24 @@ import os
 import datetime
 import subprocess
 import dotenv
+import json
 dotenv.load_dotenv()
 
 # get current branch
+print("🔍 Getting current branch information...")
 branch = (
     subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
     .strip()
     .decode("utf-8")
 )
+print(f"📁 Working on branch: {branch}")
 
 # add any new files
+print("📝 Adding any new files to git...")
 subprocess.run(["git", "add", "."])
 
 # get diff output
+print("🔄 Analyzing git differences...")
 diff_files = (
     subprocess.check_output(["git", "diff", "--name-only", branch])
     .strip()
@@ -52,7 +57,109 @@ def get_lines_after_commit_message(text):
     else:
         return ""
 
+def parse_diff_to_structured(diff_output, diff_files):
+    print("🤖 Parsing git diff with Claude Haiku...")
+    client = anthropic.Anthropic(
+        api_key=os.getenv("ANTHROPIC_API_KEY")
+    )
+    
+    parse_prompt = (
+        "Parse the following git diff into detailed structured JSON. Analyze each file and provide:\n\n"
+        "1. Basic Information:\n"
+        "   - File name\n"
+        "   - Change type (add/modify/delete)\n"
+        "   - Brief summary of changes\n\n"
+        "2. Detailed Analysis:\n"
+        "   - Count of additions and deletions\n"
+        "   - Modified functions or methods\n"
+        "   - Key changes with technical details\n"
+        "   - Modified sections or components\n\n"
+        "3. Overall Statistics:\n"
+        "   - Total number of files changed\n"
+        "   - Total additions and deletions\n"
+        "   - Breakdown of change types\n\n"
+        "Output format:\n"
+        "{\n"
+        '  "files": [{\n'
+        '    "name": "filename",\n'
+        '    "change_type": "add|modify|delete",\n'
+        '    "summary": "brief technical description",\n'
+        '    "modified_sections": ["section1", "section2"],\n'
+        '    "changes": {\n'
+        '      "additions": <number>,\n'
+        '      "deletions": <number>,\n'
+        '      "functions_modified": ["function1", "function2"],\n'
+        '      "key_changes": [\n'
+        '        "Detailed change description 1",\n'
+        '        "Detailed change description 2"\n'
+        '      ]\n'
+        '    }\n'
+        '  }],\n'
+        '  "overall_stats": {\n'
+        '    "total_files": <number>,\n'
+        '    "total_additions": <number>,\n'
+        '    "total_deletions": <number>,\n'
+        '    "change_types": {\n'
+        '      "modify": <number>,\n'
+        '      "add": <number>,\n'
+        '      "delete": <number>\n'
+        '    }\n'
+        '  }\n'
+        "}\n\n"
+        "Important:\n"
+        "- Be specific and technical in descriptions\n"
+        "- Include actual function names from the code\n"
+        "- Count real additions and deletions\n"
+        "- Identify meaningful code changes, not just formatting\n"
+        "- Group related changes together\n"
+    )
+
+    response = client.messages.create(
+        model="claude-3-5-haiku-20241022",
+        max_tokens=1000,
+        temperature=0,
+        system=parse_prompt,
+        messages=[
+            {"role": "user", "content": diff_output}
+        ]
+    )
+
+    try:
+        structured_diff = json.loads(response.content[0].text)
+        print(f"📊 Found changes in {structured_diff['overall_stats']['total_files']} files")
+        print(f"   Added: {structured_diff['overall_stats']['total_additions']} lines")
+        print(f"   Deleted: {structured_diff['overall_stats']['total_deletions']} lines")
+        
+        # Validate and clean up the response
+        if "files" not in structured_diff:
+            structured_diff["files"] = []
+        if "overall_stats" not in structured_diff:
+            structured_diff["overall_stats"] = {
+                "total_files": len(structured_diff["files"]),
+                "total_additions": sum(f["changes"]["additions"] for f in structured_diff["files"]),
+                "total_deletions": sum(f["changes"]["deletions"] for f in structured_diff["files"]),
+                "change_types": {
+                    "modify": sum(1 for f in structured_diff["files"] if f["change_type"] == "modify"),
+                    "add": sum(1 for f in structured_diff["files"] if f["change_type"] == "add"),
+                    "delete": sum(1 for f in structured_diff["files"] if f["change_type"] == "delete")
+                }
+            }
+        
+        return structured_diff
+    except json.JSONDecodeError:
+        print("⚠️ Error parsing diff structure")
+        return None
+
 def getAIOutput(extraMsg):
+    print("\n🔍 Analyzing changes...")
+    structured_diff = parse_diff_to_structured(diff_output, diff_files)
+    
+    if structured_diff:
+        print("✨ Generated structured analysis")
+    else:
+        print("⚠️ Using basic diff analysis")
+    
+    print("🤖 Generating commit message with Claude...")
     # Replace OpenAI client with Anthropic
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
@@ -130,38 +237,32 @@ def getAIOutput(extraMsg):
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     file_name = clean_file_name(f"{date_string}_ {extraMsg}")
     write_to_file(f"C:/Users/CalebBennett/Documents/GitHub/CC_AI_Tools/Git/Commit_Logs/{file_name}", "txt", prompt)
+    print("✅ Commit message generated")
     return resp
 
 def commitMsg(userMsg):
     commit_message = getAIOutput(userMsg)
     
-    #print("AI Msg", commit_message)
-    
-    #commit_message = get_lines_after_commit_message(commit_message)
+    print("\n📝 Proposed commit message:")
+    print("=" * 50)
+    print(f"{commit_message}")
+    print("=" * 50 + "\n")
 
-    #commit_message += f"\n\n"
-    #commit_message += f"Files changed:\n{diff_files}\n"
-    
-   
-    # show proposed commit message and changed files
-    print(f"Proposed commit message:\n\n{commit_message}\n")
-
-
-    # ask user to confirm commit message
-    choice = input("Do you want to commit with this message? (y/n): ")
+    choice = input("✋ Do you want to commit with this message? (y/n): ")
     if choice.lower() == "y":
-        # commit changes
+        print("📦 Committing changes...")
         subprocess.run(["git", "commit", "-m", commit_message])
-        print("Changes committed.")
+        print("✅ Changes committed")
         
-        choice = input("Do you want to push these changes? (y/n): ")
+        choice = input("🚀 Do you want to push these changes? (y/n): ")
         if choice.lower() == "y":
+            print("📤 Pushing to remote...")
             subprocess.run(["git", "push"])
-            print("Changes pushed.")
+            print("✅ Changes pushed")
         
         return True
     else:
-        print("Aborted.")
+        print("❌ Commit aborted")
         return False
 
 def clean_file_name(file_name):
