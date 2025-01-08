@@ -80,13 +80,16 @@ prompt = (
 def parse_commit(commit_message, commit):
     client = anthropic.Anthropic(api_key=api_key)
     parse_prompt = (
-        "You are a commit message analyzer. Analyze the git commit message and return a JSON object with the following properties:\n"
-        "- summary: A clear, concise technical description of the changes (max 100 chars)\n"
-        "- type: The type of change (feat, fix, refactor, docs, style, test, chore)\n"
-        "- scope: The main component or area affected\n"
-        "- files_changed: List of primary files or areas modified\n"
-        "- impact: LOW, MEDIUM, or HIGH based on the significance of the change\n"
-        "Return only valid JSON, no other text."
+        "You are a commit message analyzer. Analyze the git commit message and return information in this exact format:\n"
+        "COMMIT ANALYSIS\n"
+        "Summary: <clear, concise technical description of changes (max 100 chars)>\n"
+        "Type: <feat/fix/refactor/docs/style/test/chore>\n"
+        "Scope: <main component or area affected>\n"
+        "Files Changed:\n"
+        "- <file1>\n"
+        "- <file2>\n"
+        "Impact: <LOW/MEDIUM/HIGH>\n\n"
+        "Be specific and technical. Return only the structured format above, no other text."
     )
     
     response = client.messages.create(
@@ -105,17 +108,35 @@ def parse_commit(commit_message, commit):
         }]
     )
     
-    try:
-        return json.loads(response.content[0].text.strip())
-    except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
-        return {
-            "summary": commit_message[:100],
-            "type": "unknown",
-            "scope": "unknown",
-            "files_changed": list(commit.stats.files.keys()),
-            "impact": "LOW"
-        }
+    return parse_yaml_response(response.content[0].text.strip(), commit)
+
+def parse_yaml_response(text, commit):
+    """Parse the YAML-style response into a structured format"""
+    result = {
+        "summary": "",
+        "type": "unknown",
+        "scope": "unknown",
+        "files_changed": list(commit.stats.files.keys()),
+        "impact": "LOW"
+    }
+    
+    lines = text.split('\n')
+    for line in lines:
+        line = line.strip()
+        if line.startswith('Summary:'):
+            result["summary"] = line.split(':', 1)[1].strip()[:100]
+        elif line.startswith('Type:'):
+            result["type"] = line.split(':', 1)[1].strip().lower()
+        elif line.startswith('Scope:'):
+            result["scope"] = line.split(':', 1)[1].strip()
+        elif line.startswith('Impact:'):
+            result["impact"] = line.split(':', 1)[1].strip().upper()
+        elif line.startswith('- '):  # File entries
+            if 'files_changed' not in result:
+                result['files_changed'] = []
+            result['files_changed'].append(line[2:].strip())
+    
+    return result
 
 # Update the commit processing section
 parsed_commits = []
