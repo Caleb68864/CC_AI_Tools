@@ -64,48 +64,25 @@ def parse_diff_to_structured(diff_output, diff_files):
     )
     
     parse_prompt = (
-        "Parse the following git diff into detailed structured JSON. Analyze each file and provide:\n\n"
-        "1. Basic Information:\n"
-        "   - File name\n"
-        "   - Change type (add/modify/delete)\n"
-        "   - Brief summary of changes\n\n"
-        "2. Detailed Analysis:\n"
-        "   - Count of additions and deletions\n"
-        "   - Modified functions or methods\n"
-        "   - Key changes with technical details\n"
-        "   - Modified sections or components\n\n"
-        "3. Overall Statistics:\n"
-        "   - Total number of files changed\n"
-        "   - Total additions and deletions\n"
-        "   - Breakdown of change types\n\n"
-        "Output format:\n"
-        "{\n"
-        '  "files": [{\n'
-        '    "name": "filename",\n'
-        '    "change_type": "add|modify|delete",\n'
-        '    "summary": "brief technical description",\n'
-        '    "modified_sections": ["section1", "section2"],\n'
-        '    "changes": {\n'
-        '      "additions": <number>,\n'
-        '      "deletions": <number>,\n'
-        '      "functions_modified": ["function1", "function2"],\n'
-        '      "key_changes": [\n'
-        '        "Detailed change description 1",\n'
-        '        "Detailed change description 2"\n'
-        '      ]\n'
-        '    }\n'
-        '  }],\n'
-        '  "overall_stats": {\n'
-        '    "total_files": <number>,\n'
-        '    "total_additions": <number>,\n'
-        '    "total_deletions": <number>,\n'
-        '    "change_types": {\n'
-        '      "modify": <number>,\n'
-        '      "add": <number>,\n'
-        '      "delete": <number>\n'
-        '    }\n'
-        '  }\n'
-        "}\n\n"
+        "Parse the following git diff into a structured format. For each file, provide:\n\n"
+        "FILE SUMMARY\n"
+        "- Name: <filename>\n"
+        "- Type: <add/modify/delete>\n"
+        "- Summary: Brief description of changes\n"
+        "- Lines Added: <number>\n"
+        "- Lines Deleted: <number>\n"
+        "- Modified Functions: List of changed functions\n"
+        "- Key Changes:\n"
+        "  * Change 1\n"
+        "  * Change 2\n\n"
+        "OVERALL STATISTICS\n"
+        "- Total Files Changed: <number>\n"
+        "- Total Additions: <number>\n"
+        "- Total Deletions: <number>\n"
+        "- Changes By Type:\n"
+        "  * Modified: <number>\n"
+        "  * Added: <number>\n"
+        "  * Deleted: <number>\n\n"
         "Important:\n"
         "- Be specific and technical in descriptions\n"
         "- Include actual function names from the code\n"
@@ -125,48 +102,98 @@ def parse_diff_to_structured(diff_output, diff_files):
             ]
         )
 
-        try:
-            # Add debug output to see what we're trying to parse
-            print("DEBUG: Attempting to parse response:", response.content[0].text[:200] + "...")
-            structured_diff = json.loads(response.content[0].text)
-            
-            print(f"�� Found changes in {structured_diff['overall_stats']['total_files']} files")
-            print(f"   Added: {structured_diff['overall_stats']['total_additions']} lines")
-            print(f"   Deleted: {structured_diff['overall_stats']['total_deletions']} lines")
-            
-            # Validate and clean up the response
-            if "files" not in structured_diff:
-                structured_diff["files"] = []
-            if "overall_stats" not in structured_diff:
-                structured_diff["overall_stats"] = {
-                    "total_files": len(structured_diff["files"]),
-                    "total_additions": sum(f["changes"]["additions"] for f in structured_diff["files"]),
-                    "total_deletions": sum(f["changes"]["deletions"] for f in structured_diff["files"]),
-                    "change_types": {
-                        "modify": sum(1 for f in structured_diff["files"] if f["change_type"] == "modify"),
-                        "add": sum(1 for f in structured_diff["files"] if f["change_type"] == "add"),
-                        "delete": sum(1 for f in structured_diff["files"] if f["change_type"] == "delete")
-                    }
-                }
-            
-            return structured_diff
-        except json.JSONDecodeError as e:
-            print(f"⚠️ Error parsing JSON response: {str(e)}")
-            # Fallback to a basic structure
-            return {
-                "files": [{"name": f, "change_type": "modify", "summary": "File modified", 
-                          "modified_sections": [], "changes": {"additions": 0, "deletions": 0, 
-                          "functions_modified": [], "key_changes": []}} for f in diff_files.split('\n') if f],
-                "overall_stats": {
-                    "total_files": len(diff_files.split('\n')),
-                    "total_additions": 0,
-                    "total_deletions": 0,
-                    "change_types": {"modify": 1, "add": 0, "delete": 0}
-                }
-            }
+        # Parse the text response into a dictionary structure
+        structured_diff = parse_text_response(response.content[0].text)
+        return structured_diff
+
     except Exception as e:
         print(f"⚠️ Error communicating with Claude: {str(e)}")
-        return None
+        return create_fallback_structure(diff_files)
+
+def parse_text_response(text):
+    """Parse the text response into a structured format"""
+    result = {
+        "files": [],
+        "overall_stats": {
+            "total_files": 0,
+            "total_additions": 0,
+            "total_deletions": 0,
+            "change_types": {"modify": 0, "add": 0, "delete": 0}
+        }
+    }
+    
+    current_file = None
+    lines = text.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        if line.startswith('FILE SUMMARY'):
+            if current_file:
+                result["files"].append(current_file)
+            current_file = {
+                "name": "",
+                "change_type": "",
+                "summary": "",
+                "changes": {
+                    "additions": 0,
+                    "deletions": 0,
+                    "functions_modified": [],
+                    "key_changes": []
+                }
+            }
+        elif line.startswith('OVERALL STATISTICS'):
+            if current_file:
+                result["files"].append(current_file)
+            current_file = None
+        elif current_file is not None:
+            if line.startswith('- Name:'):
+                current_file["name"] = line.split(':', 1)[1].strip()
+            elif line.startswith('- Type:'):
+                current_file["change_type"] = line.split(':', 1)[1].strip()
+            elif line.startswith('- Summary:'):
+                current_file["summary"] = line.split(':', 1)[1].strip()
+            elif line.startswith('- Lines Added:'):
+                current_file["changes"]["additions"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('- Lines Deleted:'):
+                current_file["changes"]["deletions"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('- Modified Functions:'):
+                functions = line.split(':', 1)[1].strip()
+                current_file["changes"]["functions_modified"] = [f.strip() for f in functions.split(',')]
+            elif line.startswith('  *'):
+                current_file["changes"]["key_changes"].append(line[3:].strip())
+        else:
+            # Parse overall statistics
+            if line.startswith('- Total Files Changed:'):
+                result["overall_stats"]["total_files"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('- Total Additions:'):
+                result["overall_stats"]["total_additions"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('- Total Deletions:'):
+                result["overall_stats"]["total_deletions"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('  * Modified:'):
+                result["overall_stats"]["change_types"]["modify"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('  * Added:'):
+                result["overall_stats"]["change_types"]["add"] = int(line.split(':', 1)[1].strip())
+            elif line.startswith('  * Deleted:'):
+                result["overall_stats"]["change_types"]["delete"] = int(line.split(':', 1)[1].strip())
+    
+    return result
+
+def create_fallback_structure(diff_files):
+    """Create a basic structure when parsing fails"""
+    return {
+        "files": [{"name": f, "change_type": "modify", "summary": "File modified", 
+                  "changes": {"additions": 0, "deletions": 0, 
+                  "functions_modified": [], "key_changes": []}} for f in diff_files.split('\n') if f],
+        "overall_stats": {
+            "total_files": len(diff_files.split('\n')),
+            "total_additions": 0,
+            "total_deletions": 0,
+            "change_types": {"modify": 1, "add": 0, "delete": 0}
+        }
+    }
 
 def getAIOutput(extraMsg):
     print("\n🔍 Analyzing changes...")
