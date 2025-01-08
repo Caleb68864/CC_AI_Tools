@@ -122,6 +122,15 @@ def parse_text_response(text):
         }
     }
     
+    def safe_int_convert(value):
+        """Safely convert various number formats to int"""
+        try:
+            # Remove any non-numeric characters except minus sign
+            cleaned = ''.join(c for c in value if c.isdigit() or c == '-')
+            return int(cleaned) if cleaned else 0
+        except ValueError:
+            return 0
+    
     current_file = None
     lines = text.split('\n')
     
@@ -156,9 +165,9 @@ def parse_text_response(text):
             elif line.startswith('- Summary:'):
                 current_file["summary"] = line.split(':', 1)[1].strip()
             elif line.startswith('- Lines Added:'):
-                current_file["changes"]["additions"] = int(line.split(':', 1)[1].strip())
+                current_file["changes"]["additions"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('- Lines Deleted:'):
-                current_file["changes"]["deletions"] = int(line.split(':', 1)[1].strip())
+                current_file["changes"]["deletions"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('- Modified Functions:'):
                 functions = line.split(':', 1)[1].strip()
                 current_file["changes"]["functions_modified"] = [f.strip() for f in functions.split(',')]
@@ -167,17 +176,17 @@ def parse_text_response(text):
         else:
             # Parse overall statistics
             if line.startswith('- Total Files Changed:'):
-                result["overall_stats"]["total_files"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["total_files"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('- Total Additions:'):
-                result["overall_stats"]["total_additions"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["total_additions"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('- Total Deletions:'):
-                result["overall_stats"]["total_deletions"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["total_deletions"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('  * Modified:'):
-                result["overall_stats"]["change_types"]["modify"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["change_types"]["modify"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('  * Added:'):
-                result["overall_stats"]["change_types"]["add"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["change_types"]["add"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('  * Deleted:'):
-                result["overall_stats"]["change_types"]["delete"] = int(line.split(':', 1)[1].strip())
+                result["overall_stats"]["change_types"]["delete"] = safe_int_convert(line.split(':', 1)[1].strip())
     
     return result
 
