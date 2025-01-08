@@ -114,40 +114,58 @@ def parse_diff_to_structured(diff_output, diff_files):
         "- Group related changes together\n"
     )
 
-    response = client.messages.create(
-        model="claude-3-5-haiku-20241022",
-        max_tokens=1000,
-        temperature=0,
-        system=parse_prompt,
-        messages=[
-            {"role": "user", "content": diff_output}
-        ]
-    )
-
     try:
-        structured_diff = json.loads(response.content[0].text)
-        print(f"📊 Found changes in {structured_diff['overall_stats']['total_files']} files")
-        print(f"   Added: {structured_diff['overall_stats']['total_additions']} lines")
-        print(f"   Deleted: {structured_diff['overall_stats']['total_deletions']} lines")
-        
-        # Validate and clean up the response
-        if "files" not in structured_diff:
-            structured_diff["files"] = []
-        if "overall_stats" not in structured_diff:
-            structured_diff["overall_stats"] = {
-                "total_files": len(structured_diff["files"]),
-                "total_additions": sum(f["changes"]["additions"] for f in structured_diff["files"]),
-                "total_deletions": sum(f["changes"]["deletions"] for f in structured_diff["files"]),
-                "change_types": {
-                    "modify": sum(1 for f in structured_diff["files"] if f["change_type"] == "modify"),
-                    "add": sum(1 for f in structured_diff["files"] if f["change_type"] == "add"),
-                    "delete": sum(1 for f in structured_diff["files"] if f["change_type"] == "delete")
+        response = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=1000,
+            temperature=0,
+            system=parse_prompt,
+            messages=[
+                {"role": "user", "content": diff_output}
+            ]
+        )
+
+        try:
+            # Add debug output to see what we're trying to parse
+            print("DEBUG: Attempting to parse response:", response.content[0].text[:200] + "...")
+            structured_diff = json.loads(response.content[0].text)
+            
+            print(f"�� Found changes in {structured_diff['overall_stats']['total_files']} files")
+            print(f"   Added: {structured_diff['overall_stats']['total_additions']} lines")
+            print(f"   Deleted: {structured_diff['overall_stats']['total_deletions']} lines")
+            
+            # Validate and clean up the response
+            if "files" not in structured_diff:
+                structured_diff["files"] = []
+            if "overall_stats" not in structured_diff:
+                structured_diff["overall_stats"] = {
+                    "total_files": len(structured_diff["files"]),
+                    "total_additions": sum(f["changes"]["additions"] for f in structured_diff["files"]),
+                    "total_deletions": sum(f["changes"]["deletions"] for f in structured_diff["files"]),
+                    "change_types": {
+                        "modify": sum(1 for f in structured_diff["files"] if f["change_type"] == "modify"),
+                        "add": sum(1 for f in structured_diff["files"] if f["change_type"] == "add"),
+                        "delete": sum(1 for f in structured_diff["files"] if f["change_type"] == "delete")
+                    }
+                }
+            
+            return structured_diff
+        except json.JSONDecodeError as e:
+            print(f"⚠️ Error parsing JSON response: {str(e)}")
+            # Fallback to a basic structure
+            return {
+                "files": [{"name": f, "change_type": "modify", "summary": "File modified", 
+                          "modified_sections": [], "changes": {"additions": 0, "deletions": 0, 
+                          "functions_modified": [], "key_changes": []}} for f in diff_files.split('\n') if f],
+                "overall_stats": {
+                    "total_files": len(diff_files.split('\n')),
+                    "total_additions": 0,
+                    "total_deletions": 0,
+                    "change_types": {"modify": 1, "add": 0, "delete": 0}
                 }
             }
-        
-        return structured_diff
-    except json.JSONDecodeError:
-        print("⚠️ Error parsing diff structure")
+    except Exception as e:
+        print(f"⚠️ Error communicating with Claude: {str(e)}")
         return None
 
 def getAIOutput(extraMsg):
