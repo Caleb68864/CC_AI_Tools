@@ -5,8 +5,8 @@ Productivity Tools Using AI
 ## Git
 ### Setup
 Create a .env in the same folder as the script with following line containing your openai api key.
-API_KEY=your_api_key_here
-ANTHROPIC_API_KEY=your_claude_api_key_here
+- API_KEY=your_api_key_here
+- ANTHROPIC_API_KEY=your_claude_api_key_here
 
 ### Git Tools
 #### CreateGitCommitMsg.py
