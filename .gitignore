@@ -2,6 +2,7 @@
 .env
 Commit_logs/
 Git/Commit_Logs/
+Git/.env
 last_run.txt
 last_run.yaml
 Git/*.yaml

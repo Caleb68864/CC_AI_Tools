@@ -1,8 +1,28 @@
-# This script is designed to automate the process of creating a professional commit message based on the changes in a Git branch. 
-# It retrieves the current branch, adds any new files, and generates the diff output. 
-# The commit message is then compiled using the OpenAI API, using the branch name, user comments, and diff output as input. 
-# The proposed commit message is displayed to the user and the user is asked to confirm or reject it. 
-# If confirmed, the script commits the changes and gives the option to push them to the remote repository.
+"""
+Git Commit Message Generator
+---------------------------
+A tool that leverages AI to generate professional and structured Git commit messages.
+
+Features:
+- Automatically detects current branch and staged changes
+- Analyzes git diff output using Claude AI
+- Generates structured commit messages with title, summary, and detailed changes
+- Provides interactive commit and push workflow
+- Saves commit message history with timestamps
+
+The generated commit messages follow best practices:
+- Clear, action-oriented titles under 50 characters
+- Detailed summaries explaining the why behind changes
+- Structured details section with technical implementation notes
+- Organized listing of modified files and their purposes
+
+Usage:
+1. Stage your changes (git add)
+2. Run the script
+3. Provide any additional context when prompted
+4. Review and approve/reject the generated message
+5. Optionally push changes to remote
+"""
 
 import anthropic
 import os

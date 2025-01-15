@@ -1,12 +1,34 @@
 # CC AI Tools
 Productivity Tools Using AI
 
-## Setup
-Create a .env in the same folder as the script with following line containing your openai api key.
-API_KEY=your_api_key_here
 
 ## Git
+### Setup
+Create a .env in the same folder as the script with following line containing your openai api key.
+API_KEY=your_api_key_here
+ANTHROPIC_API_KEY=your_claude_api_key_here
+
+### Git Tools
 * CreateGitCommitMsg.py
-    * Takes a user comment and then looks at git diff to generate Git commit message.
-*  CreateGitProgressReport.py
-    * Looks at git commits from specified date forward and generates a progress report. 
+    * AI-powered tool that analyzes staged changes and generates professional commit messages
+    * Automatically detects current branch and git diff content
+    * Creates structured messages with title, summary, and detailed changes
+    * Provides interactive commit and push workflow
+    * Maintains commit message history with timestamps
+
+* CreateGitProgressReport.py
+    * Generates structured progress reports from git commit history
+    * Tracks last run time per repository and branch
+    * Uses AI to categorize and group related changes
+    * Organizes changes by type (feat/fix/refactor) and scope
+    * Outputs concise, bullet-pointed summaries
+    * Includes clipboard copy functionality
+
+* CreateGitBranchName.py
+    * AI-powered tool for generating standardized git branch names
+    * Follows git branch naming best practices and conventions
+    * Automatically adds date prefix (YYYYMMDD/)
+    * Generates 5 unique suggestions based on your description
+    * Uses kebab-case with proper type prefixes (feat/fix/refactor/etc.)
+    * Ensures names are clear, concise, and under 50 characters
+    * Includes one-click clipboard copy functionality 

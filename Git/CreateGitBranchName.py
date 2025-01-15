@@ -1,3 +1,33 @@
+"""
+Git Branch Name Generator
+------------------------
+A tool that uses AI to generate standardized, descriptive git branch names.
+
+Features:
+- Generates 5 branch name suggestions based on your description
+- Uses Claude AI to ensure naming convention compliance
+- Automatically adds date prefix (YYYYMMDD/)
+- Follows git branch naming best practices
+- Provides one-click clipboard copy
+
+Branch naming rules:
+- Uses kebab-case (lowercase with hyphens)
+- Starts with type (feat/fix/refactor/docs/style/test/hotfix)
+- Includes brief but clear description
+- Keeps total length under 50 characters
+- No special characters except hyphens
+
+Requirements:
+- Anthropic API key in .env file (ANTHROPIC_API_KEY)
+- Python packages: pyperclip, python-dotenv, pyyaml, anthropic
+
+Usage:
+1. Run the script
+2. Enter a description of your planned changes
+3. Select from generated branch name suggestions
+4. Selected name is copied to clipboard with date prefix
+"""
+
 import anthropic
 import os
 import pyperclip
@@ -23,7 +53,7 @@ def get_branch_suggestions(description):
         "    description: Another brief explanation\n\n"
         "Rules for branch names:\n"
         "1. Use kebab-case (lowercase with hyphens)\n"
-        "2. Start with type (feat/fix/refactor/docs/style/test)\n"
+        "2. Start with type (feat/fix/refactor/docs/style/test/hotfix)\n"
         "3. Include a brief but clear description\n"
         "4. Keep total length under 50 characters\n"
         "5. No special characters except hyphens\n"

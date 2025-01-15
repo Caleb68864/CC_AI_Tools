@@ -1,3 +1,26 @@
+"""
+Git Progress Report Generator
+----------------------------
+This script analyzes git commits since the last run and generates a structured progress report.
+
+Features:
+- Tracks last run time per repository and branch using a YAML file
+- Analyzes commit messages using Claude AI to categorize changes
+- Groups related changes by type (feat/fix/refactor etc.) and scope
+- Generates a concise, bullet-pointed progress report
+- Offers clipboard copy of the final report
+
+Requirements:
+- Anthropic API key in .env file (ANTHROPIC_API_KEY)
+- Python packages: gitpython, pyperclip, python-dotenv, pyyaml, anthropic
+
+Usage:
+1. Run from within a git repository
+2. Script will analyze commits since last run (or 3 AM if first run)
+3. Progress report will be generated and displayed
+4. Option to copy report to clipboard
+"""
+
 import os
 import git
 import re
