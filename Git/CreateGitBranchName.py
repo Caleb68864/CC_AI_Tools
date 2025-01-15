@@ -78,7 +78,7 @@ def main():
                     branch_name = branch_names[choice-1]
                     
                     # Add date prefix
-                    date_prefix = datetime.now().strftime('%Y%m%d-')
+                    date_prefix = datetime.now().strftime('%Y%m%d/')
                     branch_name = f"{date_prefix}{branch_name}"
                     
                     pyperclip.copy(branch_name)
