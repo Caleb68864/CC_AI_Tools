@@ -309,8 +309,10 @@ def getAIOutput(extraMsg):
     
     # Prepend the file name with the current date
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    # Get the directory where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = clean_file_name(f"{date_string}_ {extraMsg}")
-    write_to_file(f"C:/Users/CalebBennett/Documents/GitHub/CC_AI_Tools/Git/Commit_Logs/{file_name}", "txt", prompt)
+    write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", prompt)
     print("✅ Commit message generated")
     return resp
 
@@ -341,23 +343,36 @@ def commitMsg(userMsg):
 
 def clean_file_name(file_name):
     # Remove forbidden characters
-    forbidden_chars = '<>"\\|?*,'
+    forbidden_chars = '<>"\\|?*:,'
     cleaned_file_name = ''.join(char for char in file_name if char not in forbidden_chars)
-
-    # Limit file name length to maximum for Windows
-    max_length = 245
+    
+    # Replace spaces with underscores
+    cleaned_file_name = cleaned_file_name.replace(' ', '_')
+    
+    # Take only first 50 characters of the message part
+    if '_' in cleaned_file_name:
+        date_part, message_part = cleaned_file_name.split('_', 1)
+        message_part = message_part[:50]  # Limit message length
+        cleaned_file_name = f"{date_part}_{message_part}"
+    
+    # Limit total length
+    max_length = 245  # Windows max path is 260, leaving room for extension
     cleaned_file_name = cleaned_file_name[:max_length]
-
+    
     return cleaned_file_name
 
 def write_to_file(file_name, ext, content):
+    # Create directory if it doesn't exist
+    directory = os.path.dirname(file_name)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
     
-    file_name = f"{file_name}.{ext}"
+    # Add extension to the file name
+    full_file_name = f"{file_name}.{ext}"
 
     # Write content to the file
-    file = open(file_name, 'w', encoding='utf-8')
-    file.write(content)
-    file.close()
+    with open(full_file_name, 'w', encoding='utf-8') as file:
+        file.write(content)
    
 
 value = False
