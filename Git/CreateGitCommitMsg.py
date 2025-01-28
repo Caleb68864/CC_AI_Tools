@@ -240,30 +240,21 @@ def getAIOutput(extraMsg):
     )
 
     prompt = (
-        f"You are a Git commit message expert. Generate a professional, structured commit message following these exact rules:\n\n"
-        f"1. First Line (Title):\n"
-        f"   - Must be under 50 characters\n"
-        f"   - Start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.)\n"
-        f"   - No period at the end\n"
-        f"   - Must be immediately actionable and specific\n\n"
-        f"2. Summary Section:\n"
-        f"   - Start with 'Summary:'\n"
-        f"   - 2-3 sentences explaining the WHY of the changes\n"
-        f"   - Focus on business value and impact\n\n"
-        f"3. Details Section:\n"
-        f"   - Start with 'Details:'\n"
-        f"   - Bullet points for each significant change\n"
-        f"   - Include technical details and implementation notes\n"
-        f"   - Reference any related issue numbers if mentioned\n\n"
-        f"4. Files Changed:\n"
-        f"   - Group related files together\n"
-        f"   - Explain the purpose of each file change\n"
+        f"You are a Git commit message expert. Generate a professional, structured commit message in YAML format following these exact rules:\n\n"
+        f"1. Title: Must be under 50 characters, start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.), and no period at the end.\n"
+        f"2. Summary: 2-3 sentences explaining the WHY of the changes.\n"
+        f"3. Details: Bullet points for each significant change.\n"
+        f"4. Files Changed: Group related files together and explain the purpose of each file change.\n"
         f"Files Modified: {diff_files}\n\n"
-        f"Important:\n"
-        f"- Fix any typos or grammar issues in the user's comments\n"
-        f"- Be concise but comprehensive\n"
-        f"- Focus on the WHAT and WHY, not just the HOW\n"
-        f"- Use technical terms appropriately\n"
+        f"Return the output in the following YAML format:\n"
+        f"title: <commit title>\n"
+        f"summary: <commit summary>\n"
+        f"details:\n"
+        f"  - <detail 1>\n"
+        f"  - <detail 2>\n"
+        f"files_changed:\n"
+        f"  - <file 1>\n"
+        f"  - <file 2>\n"
     )
     
     max_tokens = 8000
@@ -307,6 +298,18 @@ def getAIOutput(extraMsg):
 
     resp = response.content[0].text.strip()
     
+    # Parse the YAML response
+    import yaml
+    commit_message_data = yaml.safe_load(resp)
+    
+    # Construct the final commit message
+    commit_message = f"{commit_message_data['title']}\n\nSummary:\n{commit_message_data['summary']}\n\nDetails:\n"
+    for detail in commit_message_data['details']:
+        commit_message += f"- {detail}\n"
+    commit_message += "Files Changed:\n"
+    for file in commit_message_data['files_changed']:
+        commit_message += f"- {file}\n"
+    
     # Prepend the file name with the current date
     date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     # Get the directory where the script is located
@@ -314,7 +317,7 @@ def getAIOutput(extraMsg):
     file_name = clean_file_name(f"{date_string}_ {extraMsg}")
     write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", prompt)
     print("✅ Commit message generated")
-    return resp
+    return commit_message
 
 def commitMsg(userMsg):
     commit_message = getAIOutput(userMsg)
