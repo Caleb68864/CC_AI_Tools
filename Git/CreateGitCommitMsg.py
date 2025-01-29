@@ -224,6 +224,17 @@ def create_fallback_structure(diff_files):
         }
     }
 
+def clean_yaml_response(resp):
+    """Clean the response text to ensure valid YAML format"""
+    # Remove markdown code block markers if present
+    lines = resp.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        if line.strip().startswith('```') or line.strip().endswith('```'):
+            continue
+        cleaned_lines.append(line)
+    return '\n'.join(cleaned_lines)
+
 def getAIOutput(extraMsg):
     print("\n🔍 Analyzing changes...")
     structured_diff = parse_diff_to_structured(diff_output, diff_files)
@@ -234,7 +245,6 @@ def getAIOutput(extraMsg):
         print("⚠️ Using basic diff analysis")
     
     print("🤖 Generating commit message with Claude...")
-    # Replace OpenAI client with Anthropic
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
@@ -285,12 +295,11 @@ def getAIOutput(extraMsg):
 
     prompt = prompt[:max_prompt]
 
-    # Updated API call with correct system parameter
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=max_tokens,
         temperature=0.2,
-        system=prompt,  # Move prompt to system parameter
+        system=prompt,
         messages=[
             {"role": "user", "content": extraMsg}
         ]
@@ -298,10 +307,24 @@ def getAIOutput(extraMsg):
 
     resp = response.content[0].text.strip()
     
+    # Clean the response before parsing
+    cleaned_resp = clean_yaml_response(resp)
+    
     # Parse the YAML response
     import yaml
-    commit_message_data = yaml.safe_load(resp)
-    
+    try:
+        commit_message_data = yaml.safe_load(cleaned_resp)
+    except yaml.YAMLError as e:
+        print(f"⚠️ Error parsing YAML: {str(e)}")
+        print("Using fallback format...")
+        # Create a basic structure if YAML parsing fails
+        commit_message_data = {
+            'title': 'Update files',
+            'summary': 'Changes made to repository files.',
+            'details': ['Files were modified'],
+            'files_changed': diff_files.split('\n')
+        }
+
     # Construct the final commit message
     commit_message = f"{commit_message_data['title']}\n\nSummary:\n{commit_message_data['summary']}\n\nDetails:\n"
     for detail in commit_message_data['details']:
