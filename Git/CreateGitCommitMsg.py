@@ -113,7 +113,7 @@ def parse_diff_to_structured(diff_output, diff_files):
 
     try:
         response = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
             max_tokens=1000,
             temperature=0,
             system=parse_prompt,
@@ -296,7 +296,7 @@ def getAIOutput(extraMsg):
     prompt = prompt[:max_prompt]
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
         max_tokens=max_tokens,
         temperature=0.2,
         system=prompt,

@@ -8,6 +8,7 @@ last_run.txt
 last_run.yaml
 Git/*.yaml
 Git/last_run.yaml
+bin/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
