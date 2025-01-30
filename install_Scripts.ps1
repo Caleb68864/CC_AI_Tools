@@ -23,19 +23,6 @@ foreach ($dir in $scriptDirs) {
             Write-Host "ℹ️ .env file already exists in $($dir.Description)"
         }
     }
-
-    # Get current Path environment variable
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    
-    # Check if the path is already in the environment variable
-    if ($currentPath -notlike "*$dirPath*") {
-        # Add the scripts directory to Path
-        $newPath = $currentPath + ";" + $dirPath
-        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-        Write-Host "✅ Added $($dir.Description) directory to Path environment variable"
-    } else {
-        Write-Host "ℹ️ $($dir.Description) directory is already in Path"
-    }
     
     # Create aliases for the Python scripts
     # Get all Python files in the directory
@@ -58,3 +45,5 @@ function global:$aliasName {
         }
     }
 }
+
+Write-Host "`n🎉 Installation complete! You can now run scripts directly from any location."
