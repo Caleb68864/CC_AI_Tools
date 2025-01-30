@@ -1,6 +1,24 @@
 # CC AI Tools
 Productivity Tools Using AI
 
+## Installation
+Install required Python packages using the requirements.txt file:
+
+```
+pip install -r requirements.txt
+```
+
+### PowerShell Setup (Windows)
+Run the included PowerShell installation script to set up command-line aliases and environment files:
+
+```powershell
+.\install_Scripts.ps1
+```
+
+This script will:
+- Create global PowerShell functions for all Python scripts, allowing them to run from any location
+- Automatically set up `.env` files from `.env.example` templates if they don't exist
+- Enable you to run scripts by their name without the `.py` extension (e.g., `CreateGitCommitMsg` instead of `python CreateGitCommitMsg.py`)
 
 ## Git
 ### Setup

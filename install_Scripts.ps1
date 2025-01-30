@@ -1,3 +1,26 @@
+
+<#
+.SYNOPSIS
+    Sets up Python script aliases and environment files for easy command-line access.
+
+.DESCRIPTION
+    This installation script performs two main tasks:
+    1. Creates global PowerShell functions for all Python scripts in specified directories,
+       allowing them to be run from anywhere like regular commands.
+    2. Sets up environment files by copying .env.example to .env if needed.
+
+.EXAMPLE
+    To add a new script directory, add an entry to the $scriptDirs array:
+    $scriptDirs = @(
+        @{Path = "Git"; Description = "Git scripts"},
+        @{Path = "Utils"; Description = "Utility scripts"}
+    )
+
+.NOTES
+    After running this script, you can execute any Python script by its filename
+    (without the .py extension) from any location in PowerShell.
+#>
+
 # Get the current directory where the script is located
 $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 

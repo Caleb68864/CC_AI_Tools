@@ -19,7 +19,7 @@ Branch naming rules:
 
 Requirements:
 - Anthropic API key in .env file (ANTHROPIC_API_KEY)
-- Python packages: pyperclip, python-dotenv, pyyaml, anthropic
+- Python packages: pyperclip, python-dotenv, pyyaml, anthropic, git
 
 Usage:
 1. Run the script
@@ -30,10 +30,10 @@ Usage:
 
 import anthropic
 import os
-import pyperclip
 import dotenv
 from datetime import datetime
 import yaml
+import git
 dotenv.load_dotenv()
 
 def get_branch_suggestions(description):
@@ -77,6 +77,13 @@ def main():
     print("🌿 Git Branch Name Generator")
     print("=" * 50)
     
+    # Initialize git repo
+    try:
+        repo = git.Repo(os.getcwd(), search_parent_directories=True)
+    except git.InvalidGitRepositoryError:
+        print("❌ Current directory is not a git repository!")
+        return
+    
     description = input("\n📝 Describe the changes you'll make in this branch: ")
     
     print("\n🤖 Generating branch name suggestions...")
@@ -96,7 +103,7 @@ def main():
         
         while True:
             try:
-                choice = input("\n📋 Enter the number of the branch name to copy (or 'q' to quit): ")
+                choice = input("\n📋 Enter the number of the branch name you would like to create (or 'q' to quit): ")
                 
                 if choice.lower() == 'q':
                     break
@@ -107,12 +114,35 @@ def main():
                     # Get branch name from our parsed list
                     branch_name = branch_names[choice-1]
                     
-                    # Add date prefix
-                    date_prefix = datetime.now().strftime('%Y%m%d/')
-                    branch_name = f"{date_prefix}{branch_name}"
+                    # Split the branch name into type and description
+                    type_desc = branch_name.split('/', 1)
+                    if len(type_desc) == 2:
+                        branch_type = type_desc[0]
+                        description = type_desc[1]
+                    else:
+                        branch_type = "feat"  # default type if not found
+                        description = branch_name
                     
-                    pyperclip.copy(branch_name)
-                    print(f"\n✅ Copied to clipboard: {branch_name}")
+                    # Format date and branch name
+                    now = datetime.now()
+                    branch_name = f"{now.year}/{now.month:02d}/{now.day:02d}-{branch_type}-{description}"
+                    
+                    # Ask for confirmation
+                    confirm = input(f"\n🤔 Create new branch '{branch_name}'? (y/n): ")
+                    
+                    if confirm.lower() == 'y':
+                        try:
+                            # Check if branch already exists
+                            if branch_name in repo.heads:
+                                print(f"\n❌ Branch '{branch_name}' already exists!")
+                            else:
+                                # Create and checkout new branch
+                                current = repo.create_head(branch_name)
+                                current.checkout()
+                                print(f"\n✅ Created and switched to new branch: {branch_name}")
+                        except git.GitCommandError as e:
+                            print(f"\n❌ Git error: {e}")
+                    break
                 else:
                     print("❌ Invalid number. Please try again.")
                     
