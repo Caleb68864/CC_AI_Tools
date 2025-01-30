@@ -19,6 +19,12 @@ Usage:
 2. Script will analyze commits since last run (or 3 AM if first run)
 3. Progress report will be generated and displayed
 4. Option to copy report to clipboard
+
+Arguments:
+- --recent-commits, -rc: List titles of last N commits (default: 5) and select one
+- --since, -s: Start date/time (e.g. "2024-03-20" or "2024-03-20 14:30:00")
+- --until, -u: End date/time (defaults to now)
+- --date, -d: Start date (shorthand for --since)
 """
 
 import os
