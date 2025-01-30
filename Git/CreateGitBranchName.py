@@ -6,7 +6,7 @@ A tool that uses AI to generate standardized, descriptive git branch names.
 Features:
 - Generates 5 branch name suggestions based on your description
 - Uses Claude AI to ensure naming convention compliance
-- Automatically adds date prefix (YYYY/MM/DD/)
+- Automatically adds date prefix (YYYY/MM/DD-type-description)
 - Follows git branch naming best practices
 - Provides one-click clipboard copy
 

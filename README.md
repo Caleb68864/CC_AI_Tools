@@ -22,8 +22,6 @@ This script will:
 - Automatically set up `.env` files from `.env.example` templates if they don't exist.
 - Enable you to run scripts by their name without the `.py` extension (e.g., `CreateGitCommitMsg` instead of `python CreateGitCommitMsg.py`).
 
-## Git Tools
-
 ### Setup
 
 The PowerShell installation script (`install_Scripts.ps1`) will automatically create a `.env` file from `.env.example` if it doesn't exist. You can then edit the `.env` file with your settings:
@@ -39,6 +37,8 @@ The PowerShell installation script (`install_Scripts.ps1`) will automatically cr
 
 The AI model settings allow you to specify which Claude models to use for different tasks. If not set, the scripts will use default values.
 
+
+## Git Tools
 
 ### CreateGitCommitMsg.py
 

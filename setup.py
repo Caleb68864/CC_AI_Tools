@@ -1,5 +1,8 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r", encoding="utf-8") as f:
+    long_description = f.read()
+
 setup(
     name='cc-ai-tools',
     version='0.1.0',
@@ -20,7 +23,7 @@ setup(
     },
     author='CC AI Tools',
     description='Productivity Tools Using AI',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/Caleb68864/CC_AI_Tools',
     classifiers=[

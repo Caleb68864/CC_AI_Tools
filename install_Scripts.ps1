@@ -1,4 +1,3 @@
-
 <#
 .SYNOPSIS
     Installs Python packages into a local bin directory for easy command-line access.
@@ -24,4 +23,5 @@ $binDir = Join-Path $currentDir "bin"
 $env:Path = "$binDir;$env:Path"
 
 # Run pip install with the target set to the bin directory
-pip install . --target=$binDir
+pip install . --target=$binDir --upgrade
+
