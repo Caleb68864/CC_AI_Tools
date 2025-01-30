@@ -1,5 +1,6 @@
 # Ignore .env file containing credentials, API keys, and other secrets
 .env
+.env.bak
 Commit_logs/
 Git/Commit_Logs/
 Git/.env
