@@ -22,9 +22,18 @@ This script will:
 
 ## Git
 ### Setup
-Create a .env in the same folder as the script with following line containing your ai api keys.
-- API_KEY=your_api_key_here
+The PowerShell installation script (`install_Scripts.ps1`) will automatically create a `.env` file from `.env.example` if it doesn't exist. You can then edit the `.env` file with your settings:
+
+Required API Keys:
+- API_KEY=your_api_key_here (deprecated)
 - ANTHROPIC_API_KEY=your_claude_api_key_here
+
+Optional AI Model Settings:
+- CLAUDE_SMALL_MODEL=claude-3-haiku-20240307
+- CLAUDE_MEDIUM_MODEL=claude-3-5-sonnet-20240620
+- CLAUDE_LARGE_MODEL=claude-3-5-sonnet-20240620
+
+The AI model settings allow you to specify which Claude models to use for different tasks. If not set, the scripts will use default values.
 
 ### Git Tools
 #### CreateGitCommitMsg.py

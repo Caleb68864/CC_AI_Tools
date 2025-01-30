@@ -30,6 +30,8 @@ import dotenv
 import yaml
 import anthropic
 import json
+import argparse
+
 dotenv.load_dotenv()
 
 # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
@@ -66,13 +68,97 @@ except ValueError:
     # If the date is not in the right format, set the date to today with a time of 3 AM
     last_datetime = datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
 
-# Calculate start_datetime based on the last run
-start_datetime = (last_datetime + timedelta(minutes=2)) if last_datetime_str else datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
+def parse_datetime(datetime_str):
+    """Parse datetime string in various formats"""
+    formats = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+        "%m/%d/%Y %H:%M:%S",
+        "%m/%d/%Y %H:%M",
+        "%m/%d/%Y"
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(datetime_str, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Time data '{datetime_str}' does not match any supported formats")
+
+def setup_argument_parser():
+    parser = argparse.ArgumentParser(description='Generate Git Progress Report')
+    parser.add_argument('--recent-commits', '-rc', nargs='?', const=5, type=int, metavar='N', 
+                        help='List titles of last N commits (default: 5) and select one')
+    parser.add_argument('--since', '-s', help='Start date/time (e.g. "2024-03-20" or "2024-03-20 14:30:00")', type=str)
+    parser.add_argument('--until', '-u', help='End date/time (defaults to now)', type=str)
+    parser.add_argument('--date', '-d', help='Start date (shorthand for --since)', type=str)
+    return parser
+
+def list_recent_commits(n):
+    """List the last N commits and let user select one"""
+    print(f"\nProcessing: Listing last {n} commits...")  # Processing print
+    commits = list(repo.iter_commits(branch_name, max_count=n))
+    if not commits:
+        print("No commits found")
+        return None
+    
+    print("\nRecent commits:")
+    for i, commit in enumerate(commits, 1):
+        commit_date = datetime.fromtimestamp(commit.committed_date)
+        print(f"{i}. {commit_date.strftime('%Y-%m-%d %H:%M:%S')} - {commit.message.splitlines()[0][:60]}")
+    
+    while True:
+        try:
+            choice = input("\nSelect a number to use as starting commit (or press Enter to cancel): ")
+            if not choice:
+                return None
+            choice = int(choice)
+            if 1 <= choice <= len(commits):
+                selected_commit = commits[choice-1]
+                print(f"\nProcessing: Selected commit - {selected_commit.message.splitlines()[0]}")  # Processing print
+                # Get the date of the selected commit
+                return datetime.fromtimestamp(selected_commit.committed_date)  # Return the date
+            print(f"Please enter a number between 1 and {len(commits)}")
+        except ValueError:
+            print("Please enter a valid number")
+
+# Parse arguments first
+args = setup_argument_parser().parse_args()
+
+# Processing print to show parsed arguments
+print(f"\nProcessing: Arguments received - {vars(args)}")
+
+# Handle --recent-commits before any other processing
+if args.recent_commits is not None:
+    print(f"\nProcessing: --recent-commits argument with value: {args.recent_commits}")  # Processing print
+    selected_date = list_recent_commits(args.recent_commits)
+    if selected_date:
+        start_datetime = selected_date  # Ensure start_datetime is set
+    else:
+        print("No date selected. Exiting.")
+        exit()
+elif args.date:
+    print(f"\nProcessing: Using date argument - {args.date}")  # Processing print
+    start_datetime = parse_datetime(args.date)
+elif args.since:
+    print(f"\nProcessing: Using since argument - {args.since}")  # Processing print
+    start_datetime = parse_datetime(args.since)
+else:
+    print("\nProcessing: No date arguments provided, using default.")  # Processing print
+    start_datetime = (last_datetime + timedelta(minutes=2)) if last_datetime_str else datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
+
+end_datetime = parse_datetime(args.until) if args.until else datetime.now()
 
 print(f"\nAnalyzing commits on branch: {branch_name}")
 print(f"Starting from: {start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"Until: {end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
 
-new_commits = list(repo.iter_commits(branch_name, since=start_datetime.isoformat()))
+new_commits = list(repo.iter_commits(
+    branch_name,
+    since=start_datetime.isoformat(),
+    until=end_datetime.isoformat()
+))
 
 if not new_commits:
     print("No new commits since last run.")

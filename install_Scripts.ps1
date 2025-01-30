@@ -53,6 +53,12 @@ foreach ($dir in $scriptDirs) {
     if ($pythonFiles) {
         foreach ($file in $pythonFiles) {
             $aliasName = $file.BaseName
+            
+            # Inform about the removal of the existing alias
+            Write-Host "🔄 Removing existing alias for $aliasName if it exists..."
+            # Remove existing alias if it exists
+            Remove-Item "function:\$aliasName" -ErrorAction SilentlyContinue
+            
             $fullScriptPath = $file.FullName
             
             # Create the function if it doesn't exist
