@@ -116,7 +116,7 @@ def parse_commit(commit_message, commit):
     )
     
     response = client.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
         max_tokens=150,
         temperature=0.1,
         system=parse_prompt,
@@ -204,7 +204,7 @@ max_length = max_tokens * 3
 def get_ai_output(prompt, extra_msg):
     client = anthropic.Anthropic(api_key=api_key)
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
         max_tokens=max_tokens,
         temperature=0.2,
         system=prompt,

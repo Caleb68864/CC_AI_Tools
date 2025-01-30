@@ -6,7 +6,7 @@ A tool that uses AI to generate standardized, descriptive git branch names.
 Features:
 - Generates 5 branch name suggestions based on your description
 - Uses Claude AI to ensure naming convention compliance
-- Automatically adds date prefix (YYYYMMDD/)
+- Automatically adds date prefix (YYYY/MM/DD/)
 - Follows git branch naming best practices
 - Provides one-click clipboard copy
 
@@ -19,13 +19,13 @@ Branch naming rules:
 
 Requirements:
 - Anthropic API key in .env file (ANTHROPIC_API_KEY)
-- Python packages: pyperclip, python-dotenv, pyyaml, anthropic, git
+- Python packages: python-dotenv, pyyaml, anthropic, git
 
 Usage:
 1. Run the script
 2. Enter a description of your planned changes
 3. Select from generated branch name suggestions
-4. Selected name is copied to clipboard with date prefix
+4. Selected name is used to create a new branch
 """
 
 import anthropic
@@ -53,7 +53,7 @@ def get_branch_suggestions(description):
         "    description: Another brief explanation\n\n"
         "Rules for branch names:\n"
         "1. Use kebab-case (lowercase with hyphens)\n"
-        "2. Start with type (feat/fix/refactor/docs/style/test/hotfix)\n"
+        "2. Start with type (feat/fix/refactor/docs/style/test/hotfix) only use these types\n"
         "3. Include a brief but clear description\n"
         "4. Keep total length under 50 characters\n"
         "5. No special characters except hyphens\n"
@@ -62,7 +62,7 @@ def get_branch_suggestions(description):
     )
 
     response = client.messages.create(
-        model="claude-3-5-haiku-20241022",
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
         max_tokens=300,
         temperature=0.7,
         system=prompt,
