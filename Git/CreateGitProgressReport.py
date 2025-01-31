@@ -28,7 +28,7 @@ Arguments:
 """
 
 def create_git_progress_report():
-    print("RUNNING: Git Progress Report Generator")
+    print("🚀 STARTING: Git Progress Report Generator")
     
     import os
     import git
@@ -41,11 +41,13 @@ def create_git_progress_report():
     import json
     import argparse
 
+    print("📁 Loading environment variables and configuration...")
     dotenv.load_dotenv()
 
     # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
     api_key = os.getenv("ANTHROPIC_API_KEY")
 
+    print("🔍 Initializing Git repository...")
     # create GitPython repo object
     repo = git.Repo()
 
@@ -106,13 +108,13 @@ def create_git_progress_report():
 
     def list_recent_commits(n):
         """List the last N commits and let user select one"""
-        print(f"\nProcessing: Listing last {n} commits...")  # Processing print
+        print(f"\n📜 Retrieving last {n} commits...")
         commits = list(repo.iter_commits(branch_name, max_count=n))
         if not commits:
-            print("No commits found")
+            print("❌ No commits found")
             return None
         
-        print("\nRecent commits:")
+        print("\n📋 Recent commits:")
         for i, commit in enumerate(commits, 1):
             commit_date = datetime.fromtimestamp(commit.committed_date)
             print(f"{i}. {commit_date.strftime('%Y-%m-%d %H:%M:%S')} - {commit.message.splitlines()[0][:60]}")
@@ -125,7 +127,7 @@ def create_git_progress_report():
                 choice = int(choice)
                 if 1 <= choice <= len(commits):
                     selected_commit = commits[choice-1]
-                    print(f"\nProcessing: Selected commit - {selected_commit.message.splitlines()[0]}")  # Processing print
+                    print(f"\n📜 Processing: Selected commit - {selected_commit.message.splitlines()[0]}")
                     # Get the date of the selected commit
                     return datetime.fromtimestamp(selected_commit.committed_date)  # Return the date
                 print(f"Please enter a number between 1 and {len(commits)}")
@@ -136,11 +138,11 @@ def create_git_progress_report():
     args = setup_argument_parser().parse_args()
 
     # Processing print to show parsed arguments
-    print(f"\nProcessing: Arguments received - {vars(args)}")
+    print(f"\n⚙️ Processing arguments: {vars(args)}")
 
     # Handle --recent-commits before any other processing
     if args.recent_commits is not None:
-        print(f"\nProcessing: --recent-commits argument with value: {args.recent_commits}")  # Processing print
+        print(f"\n🔄 Processing recent commits: {args.recent_commits}")
         selected_date = list_recent_commits(args.recent_commits)
         if selected_date:
             start_datetime = selected_date  # Ensure start_datetime is set
@@ -148,20 +150,21 @@ def create_git_progress_report():
             print("No date selected. Exiting.")
             exit()
     elif args.date:
-        print(f"\nProcessing: Using date argument - {args.date}")  # Processing print
+        print(f"\n📅 Using specified date: {args.date}")
         start_datetime = parse_datetime(args.date)
     elif args.since:
-        print(f"\nProcessing: Using since argument - {args.since}")  # Processing print
+        print(f"\n📅 Using since argument - {args.since}")
         start_datetime = parse_datetime(args.since)
     else:
-        print("\nProcessing: No date arguments provided, using default.")  # Processing print
+        print("\n📅 No date arguments provided, using default.")
         start_datetime = (last_datetime + timedelta(minutes=2)) if last_datetime_str else datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)
 
     end_datetime = parse_datetime(args.until) if args.until else datetime.now()
 
-    print(f"\nAnalyzing commits on branch: {branch_name}")
-    print(f"Starting from: {start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Until: {end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"\n📊 Analysis Configuration:")
+    print(f"🔀 Branch: {branch_name}")
+    print(f"⏰ Start: {start_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"🏁 End: {end_datetime.strftime('%Y-%m-%d %H:%M:%S')}")
 
     new_commits = list(repo.iter_commits(
         branch_name,
@@ -170,10 +173,10 @@ def create_git_progress_report():
     ))
 
     if not new_commits:
-        print("No new commits since last run.")
+        print("❌ No new commits since last run.")
         exit()
 
-    print(f"\nFound {len(new_commits)} new commits to analyze...")
+    print(f"\n🔍 Found {len(new_commits)} new commits to analyze...")
 
     # retrieve all commit comments for new commits
     commit_comments = [commit.message for commit in new_commits]
@@ -259,12 +262,12 @@ def create_git_progress_report():
     # Update the commit processing section
     parsed_commits = []
     for i, commit in enumerate(new_commits, 1):
-        print(f"\nProcessing commit {i}/{len(new_commits)}: {commit.hexsha[:7]}")
+        print(f"\n🔄 Processing commit {i}/{len(new_commits)}: {commit.hexsha[:7]}")
         parsed_data = parse_commit(commit.message, commit)
         parsed_commits.append(parsed_data)
-        print(f"→ {parsed_data['type']}/{parsed_data['scope']}: {parsed_data['summary'][:60]}...")
+        print(f"  ↳ {parsed_data['type']}/{parsed_data['scope']}: {parsed_data['summary'][:60]}...")
 
-    print("\nGrouping commits by type and scope...")
+    print("\n📊 Grouping commits by type and scope...")
     grouped_commits = {}
     for commit in parsed_commits:
         key = f"{commit['type']}/{commit['scope']}"
@@ -272,11 +275,11 @@ def create_git_progress_report():
             grouped_commits[key] = []
         grouped_commits[key].append(commit)
 
-    print(f"\nFound {len(grouped_commits)} categories of changes:")
+    print(f"\n📑 Found {len(grouped_commits)} categories of changes:")
     for group in grouped_commits.keys():
-        print(f"- {group} ({len(grouped_commits[group])} commits)")
+        print(f"  ↳ {group} ({len(grouped_commits[group])} commits)")
 
-    print("\nGenerating final report...")
+    print("\n✍️ Generating final report...")
 
     # Build the extraMsg with grouped commits
     extraMsg = (
@@ -314,17 +317,16 @@ def create_git_progress_report():
 
     output = progress_report
 
-    print("Git Progress Report:\n")
+    print("📝 Git Progress Report:\n")
     print(output)
 
-    # After generating report
-    print(f"\nReport generated! ({len(output)} characters)")
+    print(f"\n✅ Report generated! ({len(output)} characters)")
 
     # prompt user to copy progress report to clipboard
-    copy_to_clipboard = input("\nDo you want to copy the progress report to clipboard? (y/n): ")
+    copy_to_clipboard = input("\n📋 Copy progress report to clipboard? (y/n): ")
     if copy_to_clipboard.lower() == 'y':
         pyperclip.copy(output)
-        print("Progress report copied to clipboard!")
+        print("✅ Progress report copied to clipboard!")
         # Save the current date and time, repo name, and branch name to the YAML file
         current_datetime_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -338,9 +340,9 @@ def create_git_progress_report():
         # Write the updated runs data back to the YAML file
         with open(yaml_file_path, 'w') as file:
             yaml.dump({'Runs': runs}, file)
-        print("YAML file updated.")
+        print("💾 YAML file updated.")
     else:
-        print("Progress report not copied to clipboard.")
+        print("ℹ️ Progress report not copied to clipboard.")
 
 if __name__ == "__main__":
     create_git_progress_report()
