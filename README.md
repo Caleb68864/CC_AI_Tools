@@ -98,10 +98,6 @@ A Python script that leverages **Anthropic's Claude AI** to generate **professio
 
 Stage your changes as usual:
 
-```bash
-git add .
-```
-
 Run the script:
 
 ```bash
