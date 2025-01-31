@@ -6,7 +6,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 setup(
     name='cc-ai-tools',
     version='0.1.0',
-    packages=find_packages(),
+    packages=['Git'],
+    package_dir={'': '.'},
     install_requires=[
         'anthropic',
         'python-dotenv',
@@ -18,7 +19,7 @@ setup(
         'console_scripts': [
             'CreateGitProgressReport=Git.CreateGitProgressReport:main',
             'CreateGitCommitMsg=Git.CreateGitCommitMsg:main',
-            'CreateGitBranchName=Git.CreateGitBranchName:main'
+            'CreateGitBranchName=Git.CreateGitBranchName:create_branch_name'
         ],
     },
     author='CC AI Tools',

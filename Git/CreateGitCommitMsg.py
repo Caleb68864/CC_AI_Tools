@@ -30,40 +30,10 @@ import datetime
 import subprocess
 import dotenv
 import json
-dotenv.load_dotenv()
-
-# get current branch
-print("🔍 Getting current branch information...")
-branch = (
-    subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-    .strip()
-    .decode("utf-8")
-)
-print(f"📁 Working on branch: {branch}")
-
-# add any new files
-print("📝 Adding any new files to git...")
-subprocess.run(["git", "add", "."])
-
-# get diff output
-print("🔄 Analyzing git differences...")
-diff_files = (
-    subprocess.check_output(["git", "diff", "--name-only", branch])
-    .strip()
-    .decode("utf-8")
-)
-diff_output = (
-    # subprocess.check_output(["git", "diff", "--name-only", branch])
-    subprocess.check_output(["git", "diff", branch])
-    .strip()
-    .decode("utf-8")
-)
-
-# compile commit message using OpenAI
-
-import openai
+import yaml
 
 def get_lines_after_commit_message(text):
+    """Extract lines after the commit message."""
     lines = text.split("\n")
     commit_message_index = None
 
@@ -78,7 +48,9 @@ def get_lines_after_commit_message(text):
         return ""
 
 def parse_diff_to_structured(diff_output, diff_files):
+    """Parse git diff into a structured format using Claude."""
     print("🤖 Parsing git diff with Claude Haiku...")
+    dotenv.load_dotenv()
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
@@ -122,7 +94,6 @@ def parse_diff_to_structured(diff_output, diff_files):
             ]
         )
 
-        # Parse the text response into a dictionary structure
         structured_diff = parse_text_response(response.content[0].text)
         return structured_diff
 
@@ -145,7 +116,6 @@ def parse_text_response(text):
     def safe_int_convert(value):
         """Safely convert various number formats to int"""
         try:
-            # Remove any non-numeric characters except minus sign
             cleaned = ''.join(c for c in value if c.isdigit() or c == '-')
             return int(cleaned) if cleaned else 0
         except ValueError:
@@ -194,7 +164,6 @@ def parse_text_response(text):
             elif line.startswith('  *'):
                 current_file["changes"]["key_changes"].append(line[3:].strip())
         else:
-            # Parse overall statistics
             if line.startswith('- Total Files Changed:'):
                 result["overall_stats"]["total_files"] = safe_int_convert(line.split(':', 1)[1].strip())
             elif line.startswith('- Total Additions:'):
@@ -226,7 +195,6 @@ def create_fallback_structure(diff_files):
 
 def clean_yaml_response(resp):
     """Clean the response text to ensure valid YAML format"""
-    # Remove markdown code block markers if present
     lines = resp.split('\n')
     cleaned_lines = []
     for line in lines:
@@ -235,8 +203,36 @@ def clean_yaml_response(resp):
         cleaned_lines.append(line)
     return '\n'.join(cleaned_lines)
 
-def getAIOutput(extraMsg):
+def get_ai_output(extra_msg):
+    """Generate commit message using AI"""
     print("\n🔍 Analyzing changes...")
+    
+    # get current branch
+    print("🔍 Getting current branch information...")
+    branch = (
+        subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+        .strip()
+        .decode("utf-8")
+    )
+    print(f"📁 Working on branch: {branch}")
+
+    # add any new files
+    print("📝 Adding any new files to git...")
+    subprocess.run(["git", "add", "."])
+
+    # get diff output
+    print("🔄 Analyzing git differences...")
+    diff_files = (
+        subprocess.check_output(["git", "diff", "--name-only", branch])
+        .strip()
+        .decode("utf-8")
+    )
+    diff_output = (
+        subprocess.check_output(["git", "diff", branch])
+        .strip()
+        .decode("utf-8")
+    )
+    
     structured_diff = parse_diff_to_structured(diff_output, diff_files)
     
     if structured_diff:
@@ -245,6 +241,7 @@ def getAIOutput(extraMsg):
         print("⚠️ Using basic diff analysis")
     
     print("🤖 Generating commit message with Claude...")
+    dotenv.load_dotenv()
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
@@ -270,10 +267,10 @@ def getAIOutput(extraMsg):
     max_tokens = 8000
     max_prompt = max_tokens * 3
     
-    if extraMsg != "":
+    if extra_msg != "":
         prompt += (
             f"\n<user_comments>\n"
-            f"{extraMsg.strip()}\n"
+            f"{extra_msg.strip()}\n"
             f"</user_comments>\n"
         )
 
@@ -301,7 +298,7 @@ def getAIOutput(extraMsg):
         temperature=0.2,
         system=prompt,
         messages=[
-            {"role": "user", "content": extraMsg}
+            {"role": "user", "content": extra_msg}
         ]
     )
 
@@ -311,7 +308,6 @@ def getAIOutput(extraMsg):
     cleaned_resp = clean_yaml_response(resp)
     
     # Parse the YAML response
-    import yaml
     try:
         commit_message_data = yaml.safe_load(cleaned_resp)
     except yaml.YAMLError as e:
@@ -333,17 +329,43 @@ def getAIOutput(extraMsg):
     for file in commit_message_data['files_changed']:
         commit_message += f"- {file}\n"
     
-    # Prepend the file name with the current date
-    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-    # Get the directory where the script is located
+    # Save commit message to file
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = clean_file_name(f"{date_string}_ {extraMsg}")
+    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    file_name = clean_file_name(f"{date_string}_{extra_msg}")
     write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", prompt)
     print("✅ Commit message generated")
     return commit_message
 
-def commitMsg(userMsg):
-    commit_message = getAIOutput(userMsg)
+def clean_file_name(file_name):
+    """Clean the file name to ensure it's valid"""
+    forbidden_chars = '<>"\\|?*:,'
+    cleaned_file_name = ''.join(char for char in file_name if char not in forbidden_chars)
+    cleaned_file_name = cleaned_file_name.replace(' ', '_')
+    
+    if '_' in cleaned_file_name:
+        date_part, message_part = cleaned_file_name.split('_', 1)
+        message_part = message_part[:50]
+        cleaned_file_name = f"{date_part}_{message_part}"
+    
+    max_length = 245
+    cleaned_file_name = cleaned_file_name[:max_length]
+    
+    return cleaned_file_name
+
+def write_to_file(file_name, ext, content):
+    """Write content to a file"""
+    directory = os.path.dirname(file_name)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    full_file_name = f"{file_name}.{ext}"
+    with open(full_file_name, 'w', encoding='utf-8') as file:
+        file.write(content)
+
+def commit_msg(user_msg):
+    """Handle the commit message workflow"""
+    commit_message = get_ai_output(user_msg)
     
     print("\n📝 Proposed commit message:")
     print("=" * 50)
@@ -367,42 +389,14 @@ def commitMsg(userMsg):
         print("❌ Commit aborted")
         return False
 
-def clean_file_name(file_name):
-    # Remove forbidden characters
-    forbidden_chars = '<>"\\|?*:,'
-    cleaned_file_name = ''.join(char for char in file_name if char not in forbidden_chars)
-    
-    # Replace spaces with underscores
-    cleaned_file_name = cleaned_file_name.replace(' ', '_')
-    
-    # Take only first 50 characters of the message part
-    if '_' in cleaned_file_name:
-        date_part, message_part = cleaned_file_name.split('_', 1)
-        message_part = message_part[:50]  # Limit message length
-        cleaned_file_name = f"{date_part}_{message_part}"
-    
-    # Limit total length
-    max_length = 245  # Windows max path is 260, leaving room for extension
-    cleaned_file_name = cleaned_file_name[:max_length]
-    
-    return cleaned_file_name
+def main():
+    """Main function to create a commit message"""
+    print("RUNNING: Git Commit Message Generator")
+    value = False
+    while value != True:
+        extra_msg = input("Enter Your Commit Message: ")
+        value = commit_msg(extra_msg)
 
-def write_to_file(file_name, ext, content):
-    # Create directory if it doesn't exist
-    directory = os.path.dirname(file_name)
-    if directory and not os.path.exists(directory):
-        os.makedirs(directory)
-    
-    # Add extension to the file name
-    full_file_name = f"{file_name}.{ext}"
-
-    # Write content to the file
-    with open(full_file_name, 'w', encoding='utf-8') as file:
-        file.write(content)
-   
-
-value = False
-while value != True:
-    extraMsg = input("Enter Your Commit Message: ")
-    value = commitMsg(extraMsg)
+if __name__ == "__main__":
+    main()
     

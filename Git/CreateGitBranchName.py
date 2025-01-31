@@ -34,10 +34,10 @@ import dotenv
 from datetime import datetime
 import yaml
 import git
-dotenv.load_dotenv()
 
 def get_branch_suggestions(description):
     """Get branch name suggestions from Claude"""
+    dotenv.load_dotenv()
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
@@ -73,7 +73,9 @@ def get_branch_suggestions(description):
     
     return response.content[0].text.strip()
 
-def main():
+def create_branch_name():
+    """Main function to create a git branch name"""
+    print("RUNNING: Git Branch Name Generator")
     print("🌿 Git Branch Name Generator")
     print("=" * 50)
     
@@ -154,4 +156,4 @@ def main():
         print("Raw response:", yaml_response)
 
 if __name__ == "__main__":
-    main()
+    create_branch_name()

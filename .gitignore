@@ -9,6 +9,7 @@ last_run.yaml
 Git/*.yaml
 Git/last_run.yaml
 bin/
+Release/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

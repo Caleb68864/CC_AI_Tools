@@ -16,12 +16,34 @@
 # Get the current directory
 $currentDir = Get-Location
 
-# Define the bin directory path
-$binDir = Join-Path $currentDir "bin"
+# Define the bin directory
+$installBinDir = Join-Path $currentDir "Release"
+$binDir = Join-Path $installBinDir "bin"
 
-# Add the bin directory to the PATH environment variable for the current session
-$env:Path = "$binDir;$env:Path"
+Write-Host "Installing Python packages into $binDir"
+
+
+# Check if the bin directory is already in the PATH
+if (-not ($env:Path -like "*$binDir*")) {
+    # Add the bin directory to the PATH environment variable permanently for the user
+    [System.Environment]::SetEnvironmentVariable("Path", $binDir + ";" + [System.Environment]::GetEnvironmentVariable("Path"), [System.EnvironmentVariableTarget]::User)
+    Write-Host "Added $binDir to the PATH environment variable."
+} else {
+    Write-Host "$binDir is already in the PATH environment variable."
+}
 
 # Run pip install with the target set to the bin directory
-pip install . --target=$binDir --upgrade
+try {
+    pip uninstall cc-ai-tools -y
+    # Remove the Release directory
+    Remove-Item -Path "Release" -Recurse -Force -ErrorAction SilentlyContinue
+    # Install in editable mode first
+    pip install -e .
+    # Then install executables to the Release directory
+    pip install . --target=$installBinDir --upgrade
+    Write-Host "Installation completed successfully."
+} catch {
+    Write-Host "An error occurred during installation: $_"
+}
 
+Write-Host "Installation complete. You can now use the installed scripts from the command line."
