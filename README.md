@@ -3,10 +3,23 @@ Productivity Tools Using AI
 
 ## Installation
 
-Install required Python packages using the `requirements.txt` file:
+First, clone the repository and navigate to the project directory:
 
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/CasperCBroeren/CC-AI-Tools.git
+cd CC-AI-Tools
+```
+
+Install the package and its dependencies using pip:
+
+```bash
+pip install .
+```
+
+For development installation with editable mode:
+
+```bash
+pip install -e .
 ```
 
 ### PowerShell Setup (Windows)
