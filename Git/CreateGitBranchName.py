@@ -73,7 +73,7 @@ def get_branch_suggestions(description):
     
     return response.content[0].text.strip()
 
-def create_branch_name():
+def create_git_branch_name():
     """Main function to create a git branch name"""
     print("RUNNING: Git Branch Name Generator")
     print("🌿 Git Branch Name Generator")
@@ -156,4 +156,4 @@ def create_branch_name():
         print("Raw response:", yaml_response)
 
 if __name__ == "__main__":
-    create_branch_name()
+    create_git_branch_name()
