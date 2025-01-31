@@ -401,10 +401,12 @@ def commit_msg(user_msg):
 def create_commit_msg():
     """Main function to create a commit message"""
     print("RUNNING: Git Commit Message Generator")
-    value = False
-    while value != True:
-        extra_msg = input("Enter Your Commit Message: ")
-        value = commit_msg(extra_msg)
+    extra_msg = input("Enter Your Commit Message: ")
+    value = commit_msg(extra_msg)
+    
+    if not value:
+        print("Exiting script...")
+        exit(0)
 
 if __name__ == "__main__":
     create_commit_msg()
