@@ -32,6 +32,9 @@ if (-not ($env:Path -like "*$binDir*")) {
     Write-Host "$binDir is already in the PATH environment variable."
 }
 
+# Update current environment variable so the scripts are available without restarting the terminal
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Process) + ";" + $binDir
+
 # Run pip install with the target set to the bin directory
 try {
     pip uninstall cc-ai-tools -y
