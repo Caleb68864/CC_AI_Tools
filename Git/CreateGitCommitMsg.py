@@ -233,6 +233,11 @@ def get_ai_output(extra_msg):
         .decode("utf-8")
     )
     
+    # Check if there are any changes to commit
+    if not diff_files and not diff_output:
+        print("❌ No changes to commit")
+        return None
+    
     structured_diff = parse_diff_to_structured(diff_output, diff_files)
     
     if structured_diff:
@@ -367,6 +372,10 @@ def commit_msg(user_msg):
     """Handle the commit message workflow"""
     commit_message = get_ai_output(user_msg)
     
+    # Check if there's a commit message
+    if commit_message is None:
+        return False
+        
     print("\n📝 Proposed commit message:")
     print("=" * 50)
     print(f"{commit_message}")
@@ -389,7 +398,7 @@ def commit_msg(user_msg):
         print("❌ Commit aborted")
         return False
 
-def main():
+def create_commit_msg():
     """Main function to create a commit message"""
     print("RUNNING: Git Commit Message Generator")
     value = False
@@ -398,5 +407,5 @@ def main():
         value = commit_msg(extra_msg)
 
 if __name__ == "__main__":
-    main()
+    create_commit_msg()
     
