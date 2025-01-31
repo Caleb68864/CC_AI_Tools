@@ -398,7 +398,7 @@ def commit_msg(user_msg):
         print("❌ Commit aborted")
         return False
 
-def create_commit_msg():
+def create_git_commit_msg():
     """Main function to create a commit message"""
     print("RUNNING: Git Commit Message Generator")
     extra_msg = input("Enter Your Commit Message: ")
@@ -409,5 +409,5 @@ def create_commit_msg():
         exit(0)
 
 if __name__ == "__main__":
-    create_commit_msg()
+    create_git_commit_msg()
     

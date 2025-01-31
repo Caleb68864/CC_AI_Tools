@@ -17,8 +17,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'CreateGitProgressReport=Git.CreateGitProgressReport:main',
-            'CreateGitCommitMsg=Git.CreateGitCommitMsg:main',
+            'CreateGitProgressReport=Git.CreateGitProgressReport:create_git_progress_report',
+            'CreateGitCommitMsg=Git.CreateGitCommitMsg:create_git_commit_msg',
             'CreateGitBranchName=Git.CreateGitBranchName:create_branch_name'
         ],
     },

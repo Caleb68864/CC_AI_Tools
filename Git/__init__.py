@@ -1,5 +1,5 @@
-from .CreateGitProgressReport import main as create_git_progress_report
-from .CreateGitCommitMsg import main as create_git_commit_msg
+from .CreateGitProgressReport import create_git_progress_report
+from .CreateGitCommitMsg import create_git_commit_msg
 from .CreateGitBranchName import create_branch_name
 
 __all__ = [

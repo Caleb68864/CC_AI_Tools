@@ -27,7 +27,7 @@ Arguments:
 - --date, -d: Start date (shorthand for --since)
 """
 
-def main():
+def create_git_progress_report():
     print("RUNNING: Git Progress Report Generator")
     
     import os
@@ -343,4 +343,4 @@ def main():
         print("Progress report not copied to clipboard.")
 
 if __name__ == "__main__":
-    main()
+    create_git_progress_report()
