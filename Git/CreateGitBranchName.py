@@ -34,14 +34,10 @@ import dotenv
 from datetime import datetime
 import yaml
 import git
+from ai_client import AIClient  # Importing the reusable AI client
 
 def get_branch_suggestions(description):
-    """Get branch name suggestions from Claude"""
-    dotenv.load_dotenv()
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_API_KEY")
-    )
-    
+    """Get branch name suggestions from Claude using AIClient."""
     prompt = (
         "Generate 5 git branch names based on the provided description. Return the response in YAML format like this:\n"
         "suggestions:\n"
@@ -60,18 +56,15 @@ def get_branch_suggestions(description):
         "6. Make each unique and specific\n\n"
         "Return ONLY the YAML, no other text."
     )
-
-    response = client.messages.create(
+    
+    ai_client = AIClient(
         model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
         max_tokens=300,
-        temperature=0.7,
-        system=prompt,
-        messages=[
-            {"role": "user", "content": description}
-        ]
+        temperature=0.7
     )
     
-    return response.content[0].text.strip()
+    response_text = ai_client.get_response(system_prompt=prompt, user_message=description)
+    return response_text
 
 def create_git_branch_name():
     """Main function to create a git branch name"""

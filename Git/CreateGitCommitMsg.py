@@ -31,6 +31,7 @@ import subprocess
 import dotenv
 import json
 import yaml
+from ai_client import AIClient
 
 def get_lines_after_commit_message(text):
     """Extract lines after the commit message."""
@@ -50,9 +51,10 @@ def get_lines_after_commit_message(text):
 def parse_diff_to_structured(diff_output, diff_files):
     """Parse git diff into a structured format using Claude."""
     print("🤖 Parsing git diff with Claude Haiku...")
-    dotenv.load_dotenv()
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_API_KEY")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=1000,
+        temperature=0
     )
     
     parse_prompt = (
@@ -82,19 +84,10 @@ def parse_diff_to_structured(diff_output, diff_files):
         "- Identify meaningful code changes, not just formatting\n"
         "- Group related changes together\n"
     )
-
+    
     try:
-        response = client.messages.create(
-            model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
-            max_tokens=1000,
-            temperature=0,
-            system=parse_prompt,
-            messages=[
-                {"role": "user", "content": diff_output}
-            ]
-        )
-
-        structured_diff = parse_text_response(response.content[0].text)
+        response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=diff_output)
+        structured_diff = parse_text_response(response_text)
         return structured_diff
 
     except Exception as e:

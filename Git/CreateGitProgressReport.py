@@ -40,6 +40,7 @@ def create_git_progress_report():
     import anthropic
     import json
     import argparse
+    from ai_client import AIClient  # Import the reusable AI client
 
     print("📁 Loading environment variables and configuration...")
     dotenv.load_dotenv()
@@ -199,7 +200,6 @@ def create_git_progress_report():
     )
 
     def parse_commit(commit_message, commit):
-        client = anthropic.Anthropic(api_key=api_key)
         parse_prompt = (
             "You are a commit message analyzer. Analyze the git commit message and return information in this exact format:\n"
             "COMMIT ANALYSIS\n"
@@ -213,23 +213,23 @@ def create_git_progress_report():
             "Be specific and technical. Return only the structured format above, no other text."
         )
         
-        response = client.messages.create(
+        # Create an AI client instance with the small model configuration
+        ai_client = AIClient(
             model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
             max_tokens=150,
-            temperature=0.1,
-            system=parse_prompt,
-            messages=[{
-                "role": "user", 
-                "content": f"""Analyze this commit:
-                Message: {commit_message}
-                Files Changed: {', '.join(commit.stats.files.keys())}
-                Insertions: {commit.stats.total['insertions']}
-                Deletions: {commit.stats.total['deletions']}
-                """
-            }]
+            temperature=0.1
         )
         
-        return parse_yaml_response(response.content[0].text.strip(), commit)
+        message = (
+            f"Analyze this commit:\n"
+            f"Message: {commit_message}\n"
+            f"Files Changed: {', '.join(commit.stats.files.keys())}\n"
+            f"Insertions: {commit.stats.total['insertions']}\n"
+            f"Deletions: {commit.stats.total['deletions']}\n"
+        )
+        
+        response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=message)
+        return parse_yaml_response(response_text, commit)
 
     def parse_yaml_response(text, commit):
         """Parse the YAML-style response into a structured format"""
@@ -300,18 +300,16 @@ def create_git_progress_report():
     max_length = max_tokens * 3
             
     def get_ai_output(prompt, extra_msg):
-        client = anthropic.Anthropic(api_key=api_key)
-        response = client.messages.create(
-            model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
-            max_tokens=max_tokens,
-            temperature=0.2,
-            system=prompt,
-            messages=[
-                {"role": "user", "content": extra_msg}
-            ]
-        )
+        from ai_client import AIClient  # Import the reusable AI client
 
-        return response.content[0].text.strip()
+        # Create an AI client instance with the large model configuration
+        ai_client = AIClient(
+            model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
+            max_tokens=8000,
+            temperature=0.2
+        )
+        response_text = ai_client.get_response(system_prompt=prompt, user_message=extra_msg)
+        return response_text
 
     progress_report = get_ai_output(prompt, extraMsg)
 
