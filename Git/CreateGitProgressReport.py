@@ -39,6 +39,8 @@ import argparse
 from AI.ai_client import AIClient  # Import the reusable AI client
 # Import consolidated git functions
 from Git.git_utils import get_repo, get_current_branch, list_recent_commits
+# Import YAML utils
+from YAML.yaml_utils import load_yaml, save_yaml, parse_yaml_response
 
 print("📁 Loading environment variables and configuration...")
 dotenv.load_dotenv()
@@ -59,8 +61,7 @@ def create_git_progress_report():
 
     # Read data from the YAML file
     try:
-        with open(yaml_file_path, 'r') as file:
-            all_data = yaml.safe_load(file) or {}
+        all_data = load_yaml(yaml_file_path)
     except FileNotFoundError:
         all_data = {}
 
@@ -220,34 +221,6 @@ def create_git_progress_report():
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=message)
         return parse_yaml_response(response_text, commit)
 
-    def parse_yaml_response(text, commit):
-        """Parse the YAML-style response into a structured format"""
-        result = {
-            "summary": "",
-            "type": "unknown",
-            "scope": "unknown",
-            "files_changed": list(commit.stats.files.keys()),
-            "impact": "LOW"
-        }
-        
-        lines = text.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith('Summary:'):
-                result["summary"] = line.split(':', 1)[1].strip()[:100]
-            elif line.startswith('Type:'):
-                result["type"] = line.split(':', 1)[1].strip().lower()
-            elif line.startswith('Scope:'):
-                result["scope"] = line.split(':', 1)[1].strip()
-            elif line.startswith('Impact:'):
-                result["impact"] = line.split(':', 1)[1].strip().upper()
-            elif line.startswith('- '):  # File entries
-                if 'files_changed' not in result:
-                    result['files_changed'] = []
-                result['files_changed'].append(line[2:].strip())
-        
-        return result
-
     parsed_commits = []
     for i, commit in enumerate(new_commits, 1):
         print(f"\n🔄 Processing commit {i}/{len(new_commits)}: {commit.hexsha[:7]}")
@@ -317,8 +290,7 @@ def create_git_progress_report():
             'branch': branch_name,
         }
 
-        with open(yaml_file_path, 'w') as file:
-            yaml.dump({'Runs': runs}, file)
+        save_yaml({'Runs': runs}, yaml_file_path)
         print("💾 YAML file updated.")
     else:
         print("ℹ️ Progress report not copied to clipboard.")

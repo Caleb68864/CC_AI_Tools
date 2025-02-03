@@ -40,6 +40,7 @@ from git_utils import (
     commit_changes,
     push_changes
 )
+from YAML.yaml_utils import parse_yaml_response
 
 def get_lines_after_commit_message(text):
     """Extract lines after the commit message."""
@@ -385,23 +386,23 @@ files_changed:
     
     # Parse the YAML response
     try:
-        commit_message_data = yaml.safe_load(cleaned_resp)
-    except yaml.YAMLError as e:
+        commit_message_data = parse_yaml_response(cleaned_resp)
+    except Exception as e:
         print(f"⚠️ Error parsing YAML: {str(e)}")
         print("Using fallback format...")
         commit_message_data = {
-            'title': 'Update files',
+            'title': 'Update files',  # Default title
             'summary': 'Changes made to repository files.',
             'details': ['Files were modified'],
             'files_changed': diff_files.split('\n')
         }
 
     # Construct the final commit message
-    commit_message = f"{commit_message_data['title']}\n\nSummary:\n{commit_message_data['summary']}\n\nDetails:\n"
-    for detail in commit_message_data['details']:
+    commit_message = f"{commit_message_data.get('title', 'No Title')}\n\nSummary:\n{commit_message_data.get('summary', 'No Summary')}\n\nDetails:\n"
+    for detail in commit_message_data.get('details', []):
         commit_message += f"- {detail}\n"
     commit_message += "Files Changed:\n"
-    for file in commit_message_data['files_changed']:
+    for file in commit_message_data.get('files_changed', []):
         commit_message += f"- {file}\n"
     
     # Save commit message to file
