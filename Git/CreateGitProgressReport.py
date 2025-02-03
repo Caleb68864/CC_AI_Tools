@@ -36,9 +36,9 @@ import yaml
 import anthropic
 import json
 import argparse
-from ai_client import AIClient  # Import the reusable AI client
+from AI.ai_client import AIClient  # Import the reusable AI client
 # Import consolidated git functions
-from git_utils import get_repo, get_current_branch, list_recent_commits
+from Git.git_utils import get_repo, get_current_branch, list_recent_commits
 
 print("📁 Loading environment variables and configuration...")
 dotenv.load_dotenv()
@@ -287,7 +287,7 @@ def create_git_progress_report():
     max_length = max_tokens * 3
 
     def get_ai_output(prompt, extra_msg):
-        from ai_client import AIClient
+        from AI.ai_client import AIClient
 
         ai_client = AIClient(
             model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),

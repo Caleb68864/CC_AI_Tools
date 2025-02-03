@@ -31,7 +31,7 @@ import subprocess
 import dotenv
 import json
 import yaml
-from ai_client import AIClient
+from AI.ai_client import AIClient
 from git_utils import (
     get_current_branch,
     stage_all_changes,
@@ -95,6 +95,13 @@ def parse_diff_to_structured(diff_output, diff_files):
     
     try:
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=diff_output)
+        
+        # DEBUG: Print the entire raw AI response to help with troubleshooting.
+        print("DEBUG: Raw AI Response from Claude:")
+        print("-" * 50)
+        print(response_text)
+        print("-" * 50)
+        
         structured_diff = parse_text_response(response_text)
         return structured_diff
 
@@ -121,62 +128,125 @@ def parse_text_response(text):
             return int(cleaned) if cleaned else 0
         except ValueError:
             return 0
-    
+
     current_file = None
-    lines = text.split('\n')
-    
-    for line in lines:
+
+    for line in text.split('\n'):
+        original_line = line
         line = line.strip()
         if not line:
             continue
-            
-        if line.startswith('FILE SUMMARY'):
+
+        # Normalize by stripping any leading "- " and extra whitespace
+        normalized = line.lstrip('- ').strip()
+
+        # Check for the overall statistics section start
+        if normalized.startswith("OVERALL STATISTICS"):
             if current_file:
                 result["files"].append(current_file)
-            current_file = {
-                "name": "",
-                "change_type": "",
-                "summary": "",
-                "changes": {
-                    "additions": 0,
-                    "deletions": 0,
-                    "functions_modified": [],
-                    "key_changes": []
+                current_file = None
+            continue
+
+        # Detect the file summary header (typically appears once)
+        if normalized.startswith("FILE SUMMARY"):
+            if not current_file:
+                current_file = {
+                    "name": "",
+                    "change_type": "",
+                    "summary": "",
+                    "changes": {
+                        "additions": 0,
+                        "deletions": 0,
+                        "functions_modified": [],
+                        "key_changes": []
+                    }
                 }
-            }
-        elif line.startswith('OVERALL STATISTICS'):
-            if current_file:
+            continue
+
+        # Detect a new file block by a "Name:" line.
+        if normalized.startswith("Name:"):
+            # If we already have a file with a name in progress, push it and start anew.
+            if current_file and current_file["name"]:
                 result["files"].append(current_file)
-            current_file = None
-        elif current_file is not None:
-            if line.startswith('- Name:'):
-                current_file["name"] = line.split(':', 1)[1].strip()
-            elif line.startswith('- Type:'):
-                current_file["change_type"] = line.split(':', 1)[1].strip()
-            elif line.startswith('- Summary:'):
-                current_file["summary"] = line.split(':', 1)[1].strip()
-            elif line.startswith('- Lines Added:'):
-                current_file["changes"]["additions"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('- Lines Deleted:'):
-                current_file["changes"]["deletions"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('- Modified Functions:'):
-                functions = line.split(':', 1)[1].strip()
-                current_file["changes"]["functions_modified"] = [f.strip() for f in functions.split(',')]
-            elif line.startswith('  *'):
-                current_file["changes"]["key_changes"].append(line[3:].strip())
-        else:
-            if line.startswith('- Total Files Changed:'):
-                result["overall_stats"]["total_files"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('- Total Additions:'):
-                result["overall_stats"]["total_additions"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('- Total Deletions:'):
-                result["overall_stats"]["total_deletions"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('  * Modified:'):
-                result["overall_stats"]["change_types"]["modify"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('  * Added:'):
-                result["overall_stats"]["change_types"]["add"] = safe_int_convert(line.split(':', 1)[1].strip())
-            elif line.startswith('  * Deleted:'):
-                result["overall_stats"]["change_types"]["delete"] = safe_int_convert(line.split(':', 1)[1].strip())
+                current_file = {
+                    "name": "",
+                    "change_type": "",
+                    "summary": "",
+                    "changes": {
+                        "additions": 0,
+                        "deletions": 0,
+                        "functions_modified": [],
+                        "key_changes": []
+                    }
+                }
+            if current_file is None:
+                current_file = {
+                    "name": "",
+                    "change_type": "",
+                    "summary": "",
+                    "changes": {
+                        "additions": 0,
+                        "deletions": 0,
+                        "functions_modified": [],
+                        "key_changes": []
+                    }
+                }
+            current_file["name"] = normalized.split("Name:", 1)[1].strip()
+            continue
+
+        if normalized.startswith("Type:"):
+            if current_file is not None:
+                current_file["change_type"] = normalized.split("Type:", 1)[1].strip()
+            continue
+
+        if normalized.startswith("Summary:"):
+            if current_file is not None:
+                current_file["summary"] = normalized.split("Summary:", 1)[1].strip()
+            continue
+
+        if normalized.startswith("Lines Added:"):
+            if current_file is not None:
+                current_file["changes"]["additions"] = safe_int_convert(normalized.split("Lines Added:", 1)[1].strip())
+            continue
+
+        if normalized.startswith("Lines Deleted:"):
+            if current_file is not None:
+                current_file["changes"]["deletions"] = safe_int_convert(normalized.split("Lines Deleted:", 1)[1].strip())
+            continue
+
+        if normalized.startswith("Modified Functions:"):
+            if current_file is not None:
+                funcs = normalized.split("Modified Functions:", 1)[1].strip()
+                if funcs.lower() != "none":
+                    current_file["changes"]["functions_modified"] = [f.strip() for f in funcs.split(',') if f.strip()]
+            continue
+
+        if normalized.startswith("Key Changes:"):
+            # Skip the header, as key changes will be captured in subsequent lines that start with "*"
+            continue
+
+        if normalized.startswith("*"):
+            if current_file is not None:
+                current_file["changes"]["key_changes"].append(normalized.lstrip("*").strip())
+            continue
+
+        # Process overall statistics lines
+        if normalized.startswith("Total Files Changed:"):
+            result["overall_stats"]["total_files"] = safe_int_convert(normalized.split("Total Files Changed:", 1)[1].strip())
+        elif normalized.startswith("Total Additions:"):
+            result["overall_stats"]["total_additions"] = safe_int_convert(normalized.split("Total Additions:", 1)[1].strip())
+        elif normalized.startswith("Total Deletions:"):
+            result["overall_stats"]["total_deletions"] = safe_int_convert(normalized.split("Total Deletions:", 1)[1].strip())
+        elif normalized.startswith("Modified:"):
+            result["overall_stats"]["change_types"]["modify"] = safe_int_convert(normalized.split("Modified:", 1)[1].strip())
+        elif normalized.startswith("Added:"):
+            result["overall_stats"]["change_types"]["add"] = safe_int_convert(normalized.split("Added:", 1)[1].strip())
+        elif normalized.startswith("Deleted:"):
+            result["overall_stats"]["change_types"]["delete"] = safe_int_convert(normalized.split("Deleted:", 1)[1].strip())
+    
+    # Append any remaining file being processed
+    if current_file:
+        result["files"].append(current_file)
     
     return result
 

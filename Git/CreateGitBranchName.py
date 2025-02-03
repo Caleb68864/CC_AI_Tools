@@ -34,7 +34,7 @@ from datetime import datetime
 import yaml
 # Use git_utils for all Git-related operations instead of using git directly
 from git_utils import get_repo, create_new_branch
-from ai_client import AIClient  # Importing the reusable AI client
+from AI.ai_client import AIClient  # Importing the reusable AI client
 
 def get_branch_suggestions(description):
     """Get branch name suggestions from Claude using AIClient."""
