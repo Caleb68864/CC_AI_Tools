@@ -96,12 +96,6 @@ def parse_diff_to_structured(diff_output, diff_files):
     try:
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=diff_output)
         
-        # DEBUG: Print the entire raw AI response to help with troubleshooting.
-        print("DEBUG: Raw AI Response from Claude:")
-        print("-" * 50)
-        print(response_text)
-        print("-" * 50)
-        
         structured_diff = parse_text_response(response_text)
         return structured_diff
 
