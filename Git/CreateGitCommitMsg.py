@@ -197,11 +197,39 @@ def clean_yaml_response(resp):
     """Clean the response text to ensure valid YAML format"""
     lines = resp.split('\n')
     cleaned_lines = []
+    yaml_started = False
+    
+    # Only keep lines that are part of the YAML structure
     for line in lines:
-        if line.strip().startswith('```') or line.strip().endswith('```'):
+        # Skip code block markers and empty lines
+        if line.strip().startswith('```') or not line.strip():
             continue
-        cleaned_lines.append(line)
-    return '\n'.join(cleaned_lines)
+            
+        # Start collecting lines when we see the first YAML key
+        if line.startswith('title:') or line.startswith('summary:') or line.startswith('details:') or line.startswith('files_changed:'):
+            yaml_started = True
+            
+        if yaml_started:
+            # Ensure proper indentation for list items
+            if line.strip().startswith('-'):
+                cleaned_lines.append('  ' + line.strip())
+            else:
+                cleaned_lines.append(line.strip())
+    
+    cleaned_text = '\n'.join(cleaned_lines)
+    
+    # Validate basic YAML structure
+    try:
+        yaml.safe_load(cleaned_text)
+        return cleaned_text
+    except yaml.YAMLError:
+        # Create fallback YAML if structure is invalid
+        return """title: Update repository files
+summary: Changes made to multiple files in the repository
+details:
+  - Multiple files were modified
+files_changed:
+  - Various files updated"""
 
 def get_ai_output(extra_msg):
     """Generate commit message using AI"""
@@ -237,65 +265,65 @@ def get_ai_output(extra_msg):
     if not diff_files and not diff_output:
         print("❌ No changes to commit")
         return None
+
+    # Calculate max tokens and prompt length first
+    max_tokens = 8000
+    max_prompt = max_tokens * 3
+    
+    # Define base prompt structure
+    base_prompt = """# Git Commit Message Guidelines
+1. Title: Must be under 50 characters, start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.), and no period at the end.
+2. Summary: 2-3 sentences explaining the WHY of the changes.
+3. Details: Bullet points for each significant change.
+4. Files Changed: Group related files together and explain the purpose of each file change.
+
+# Required YAML Format
+title: <commit title>
+summary: <commit summary>
+details:
+  - <detail 1>
+  - <detail 2>
+files_changed:
+  - <file 1>
+  - <file 2>
+
+# Modified Files
+"""
+
+    # Calculate available length for diff
+    diff_length = max_prompt - len(base_prompt) - 1000  # Buffer for structured diff and other content
     
     structured_diff = parse_diff_to_structured(diff_output, diff_files)
     
-    if structured_diff:
-        print("✨ Generated structured analysis")
-    else:
+    if not structured_diff:
         print("⚠️ Using basic diff analysis")
+        structured_section = f"\n# Git Diff\n{diff_output[:diff_length].strip()}"
+    else:
+        print("✨ Generated structured analysis")
+        structured_section = "\n# Structured Changes\n"
+        structured_section += f"Total Files: {structured_diff['overall_stats']['total_files']}\n"
+        structured_section += f"Additions: {structured_diff['overall_stats']['total_additions']}\n"
+        structured_section += f"Deletions: {structured_diff['overall_stats']['total_deletions']}\n\n"
+        
+        for file in structured_diff['files']:
+            structured_section += f"File: {file['name']}\n"
+            structured_section += f"Type: {file['change_type']}\n"
+            structured_section += f"Summary: {file['summary']}\n"
+            if file['changes']['functions_modified']:
+                structured_section += f"Modified Functions: {', '.join(file['changes']['functions_modified'])}\n"
+            structured_section += "Key Changes:\n"
+            for change in file['changes']['key_changes']:
+                structured_section += f"  - {change}\n"
+            structured_section += "\n"
     
+    # Construct final prompt
+    prompt = f"{base_prompt}{diff_files}\n\n{f'# User Comments\n{extra_msg.strip()}\n' if extra_msg else ''}{structured_section}"
+
     print("🤖 Generating commit message with Claude...")
     dotenv.load_dotenv()
     client = anthropic.Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY")
     )
-
-    prompt = (
-        f"You are a Git commit message expert. Generate a professional, structured commit message in YAML format following these exact rules:\n\n"
-        f"1. Title: Must be under 50 characters, start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.), and no period at the end.\n"
-        f"2. Summary: 2-3 sentences explaining the WHY of the changes.\n"
-        f"3. Details: Bullet points for each significant change.\n"
-        f"4. Files Changed: Group related files together and explain the purpose of each file change.\n"
-        f"Files Modified: {diff_files}\n\n"
-        f"Return the output in the following YAML format:\n"
-        f"title: <commit title>\n"
-        f"summary: <commit summary>\n"
-        f"details:\n"
-        f"  - <detail 1>\n"
-        f"  - <detail 2>\n"
-        f"files_changed:\n"
-        f"  - <file 1>\n"
-        f"  - <file 2>\n"
-    )
-    
-    max_tokens = 8000
-    max_prompt = max_tokens * 3
-    
-    if extra_msg != "":
-        prompt += (
-            f"\n<user_comments>\n"
-            f"{extra_msg.strip()}\n"
-            f"</user_comments>\n"
-        )
-
-    # Split diff output into files for better context
-    files_list = diff_files.split('\n')
-    prompt += (
-        f"\n<modified_files>\n"
-        f"{', '.join(files_list)}\n"
-        f"</modified_files>\n"
-    )
-
-    # Add diff output with clear markers and limited length
-    diff_length = max_prompt - len(prompt) - 25
-    prompt += (
-        f"\n<diff_output>\n"
-        f"{diff_output[:diff_length].strip()}\n"
-        f"</diff_output>\n"
-    )
-
-    prompt = prompt[:max_prompt]
 
     response = client.messages.create(
         model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
