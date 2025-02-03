@@ -33,7 +33,7 @@ import dotenv
 from datetime import datetime
 import yaml
 # Use git_utils for all Git-related operations instead of using git directly
-from git_utils import get_repo, create_new_branch
+from Git.git_utils import get_repo, create_new_branch, get_current_branch
 from AI.ai_client import AIClient  # Importing the reusable AI client
 
 def get_branch_suggestions(description):
@@ -75,6 +75,7 @@ def create_git_branch_name():
     # Initialize git repo using git_utils
     try:
         repo = get_repo()
+        current_branch = get_current_branch()  # Get the current branch name
     except Exception as e:
         print("❌", e)
         return
@@ -122,8 +123,8 @@ def create_git_branch_name():
                     now = datetime.now()
                     branch_name_formatted = f"{now.year}/{now.month:02d}/{now.day:02d}-{branch_type}-{description_part}"
                     
-                    # Ask for confirmation
-                    confirm = input(f"\n🤔 Create new branch '{branch_name_formatted}'? (y/n): ")
+                    # Ask for confirmation with current branch information
+                    confirm = input(f"\n🤔 Create new branch '{branch_name_formatted}' from '{current_branch}'? (y/n): ")
                     
                     if confirm.lower() == 'y':
                         try:

@@ -32,13 +32,14 @@ import dotenv
 import json
 import yaml
 from AI.ai_client import AIClient
-from git_utils import (
+from Git.git_utils import (
     get_current_branch,
     stage_all_changes,
     get_diff_files,
     get_diff_output,
     commit_changes,
     push_changes
+
 )
 from YAML.yaml_utils import parse_yaml_response
 
