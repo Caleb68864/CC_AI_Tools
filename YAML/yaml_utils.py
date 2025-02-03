@@ -17,7 +17,9 @@ def parse_yaml_response(text):
         "summary": "",
         "details": [],
         "files_changed": [],
-        "impact": "LOW"
+        "impact": "LOW",
+        "type": "unknown",  # Add default value for 'type'
+        "scope": "unknown"  # Add default value for 'scope'
     }
     
     lines = text.split('\n')
@@ -31,6 +33,10 @@ def parse_yaml_response(text):
             result["details"].append(line.split(':', 1)[1].strip())
         elif line.startswith('Impact:'):
             result["impact"] = line.split(':', 1)[1].strip().upper()
+        elif line.startswith('Type:'):
+            result["type"] = line.split(':', 1)[1].strip()  # Ensure 'type' is set
+        elif line.startswith('Scope:'):
+            result["scope"] = line.split(':', 1)[1].strip()  # Ensure 'scope' is set
         elif line.startswith('- '):  # File entries
             result['files_changed'].append(line[2:].strip())
     

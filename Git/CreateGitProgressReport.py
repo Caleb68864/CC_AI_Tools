@@ -32,8 +32,6 @@ import re
 import pyperclip
 from datetime import datetime, timedelta
 import dotenv
-import yaml
-import anthropic
 import json
 import argparse
 from AI.ai_client import AIClient  # Import the reusable AI client
@@ -41,6 +39,8 @@ from AI.ai_client import AIClient  # Import the reusable AI client
 from Git.git_utils import get_repo, get_current_branch, list_recent_commits
 # Import YAML utils
 from YAML.yaml_utils import load_yaml, save_yaml, parse_yaml_response
+import yaml
+import anthropic
 
 print("📁 Loading environment variables and configuration...")
 dotenv.load_dotenv()
@@ -204,6 +204,9 @@ def create_git_progress_report():
             "Be specific and technical. Return only the structured format above, no other text."
         )
         
+        # Debugging print to show the commit message being analyzed
+        print(f"🔍 Analyzing commit message: {commit_message}")
+
         ai_client = AIClient(
             model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
             max_tokens=150,
@@ -219,14 +222,52 @@ def create_git_progress_report():
         )
         
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=message)
-        return parse_yaml_response(response_text, commit)
+
+        # Debugging print to show the raw response from the AI
+        print(f"🔍 Raw AI response: {response_text}")
+
+        # Instead of parsing the response as YAML, directly construct the parsed data
+        parsed_data = {
+            "summary": "",  # Default value
+            "type": "unknown",  # Default value
+            "scope": "unknown",  # Default value
+            "files_changed": [],  # Default value
+            "impact": "LOW"  # Default value
+        }
+
+        # Extract the relevant information from the response_text
+        lines = response_text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Summary:"):
+                parsed_data["summary"] = line.split(':', 1)[1].strip()
+            elif line.startswith("Type:"):
+                parsed_data["type"] = line.split(':', 1)[1].strip()
+            elif line.startswith("Scope:"):
+                parsed_data["scope"] = line.split(':', 1)[1].strip()
+            elif line.startswith("Files Changed:"):
+                # Assuming the next lines contain the files
+                continue  # Skip to the next line
+            elif line.startswith("- "):
+                parsed_data["files_changed"].append(line[2:].strip())
+            elif line.startswith("Impact:"):
+                parsed_data["impact"] = line.split(':', 1)[1].strip()
+
+        return parsed_data
 
     parsed_commits = []
     for i, commit in enumerate(new_commits, 1):
         print(f"\n🔄 Processing commit {i}/{len(new_commits)}: {commit.hexsha[:7]}")
         parsed_data = parse_commit(commit.message, commit)
+        
+        # Debugging print to show the parsed data for each commit
+        print(f"🔍 Parsed data for commit {commit.hexsha[:7]}: {parsed_data}")
+
         parsed_commits.append(parsed_data)
-        print(f"  ↳ {parsed_data['type']}/{parsed_data['scope']}: {parsed_data['summary'][:60]}...")
+        branch_type = parsed_data.get('type', 'unknown')
+        branch_scope = parsed_data.get('scope', 'unknown')
+        branch_summary = parsed_data.get('summary', 'No summary available')[:60]
+        print(f"  ↳ {branch_type}/{branch_scope}: {branch_summary}...")
 
     print("\n📊 Grouping commits by type and scope...")
     grouped_commits = {}
@@ -254,10 +295,14 @@ def create_git_progress_report():
     for group, commits in grouped_commits.items():
         extraMsg += f"\n{group}:\n"
         for commit in commits:
-            extraMsg += f"- {commit['summary']} (Impact: {commit['impact']})\n"
+            # Ensure the summary is included
+            summary = commit.get('summary', 'No summary available')
+            impact = commit.get('impact', 'No impact specified')
+            extraMsg += f"- {summary} (Impact: {impact})\n"
 
-    max_tokens = 8000
-    max_length = max_tokens * 3
+    # Debugging print to show the final prompt before sending it to the AI
+    print("🔍 Final prompt being sent to AI:")
+    print(f"Prompt: {prompt}\nExtra Message: {extraMsg}")
 
     def get_ai_output(prompt, extra_msg):
         from AI.ai_client import AIClient

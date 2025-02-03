@@ -99,6 +99,8 @@ def parse_diff_to_structured(diff_output, diff_files):
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=diff_output)
         
         structured_diff = parse_text_response(response_text)
+
+        print(f"🔍 Parsed structured diff: {structured_diff}")
         return structured_diff
 
     except Exception as e:
@@ -453,22 +455,50 @@ def commit_msg(user_msg):
     print(f"{commit_message}")
     print("=" * 50 + "\n")
 
-    choice = input("✋ Do you want to commit with this message? (y/n): ")
-    if choice.lower() == "y":
-        print("📦 Committing changes...")
-        commit_changes(commit_message)
-        print("✅ Changes committed")
-        
-        choice = input("🚀 Do you want to push these changes? (y/n): ")
-        if choice.lower() == "y":
-            print("📤 Pushing to remote...")
-            push_changes()
-            print("✅ Changes pushed")
-        
-        return True
+    # Parse the commit message to extract details
+    try:
+        commit_message_data = parse_yaml_response(commit_message)
+    except Exception as e:
+        print(f"⚠️ Error parsing YAML: {str(e)}")
+        print("Using raw response as commit message...")
+        commit_message_data = {
+            'title': 'Raw Commit Message',
+            'summary': commit_message,  # Use the raw response as summary
+            'details': ['No detailed information available.'],
+            'files_changed': []  # Ensure this is initialized
+        }
+
+    # Construct the final commit message
+    final_commit_message = f"{commit_message_data.get('title', 'No Title')}\n\nSummary:\n{commit_message_data.get('summary', 'No Summary')}\n\nDetails:\n"
+    for detail in commit_message_data.get('details', []):
+        final_commit_message += f"- {detail}\n"
+    final_commit_message += "Files Changed:\n"
+    for file in commit_message_data.get('files_changed', []):
+        final_commit_message += f"- {file}\n"
+    
+    # Ask the user if they want to commit the changes
+    confirm_commit = input("Do you want to commit these changes? (y/n): ")
+    if confirm_commit.lower() == 'y':
+        commit_changes(final_commit_message)  # Call the commit function
+        print("✅ Changes committed.")
+
+        # Ask the user if they want to push the changes
+        confirm_push = input("Do you want to push the changes to the remote repository? (y/n): ")
+        if confirm_push.lower() == 'y':
+            push_changes()  # Call the push function
+            print("✅ Changes pushed to the remote repository.")
+        else:
+            print("ℹ️ Changes not pushed to the remote repository.")
     else:
-        print("❌ Commit aborted")
-        return False
+        print("ℹ️ Changes not committed.")
+
+    # Save commit message to file
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    file_name = clean_file_name(f"{date_string}_{user_msg}")
+    write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", final_commit_message)
+    print("✅ Commit message generated")
+    return final_commit_message
 
 def create_git_commit_msg():
     """Main function to create a commit message"""
