@@ -28,12 +28,12 @@ Usage:
 4. Selected name is used to create a new branch
 """
 
-import anthropic
 import os
 import dotenv
 from datetime import datetime
 import yaml
-import git
+# Use git_utils for all Git-related operations instead of using git directly
+from git_utils import get_repo, create_new_branch
 from ai_client import AIClient  # Importing the reusable AI client
 
 def get_branch_suggestions(description):
@@ -72,13 +72,13 @@ def create_git_branch_name():
     print("🌿 Git Branch Name Generator")
     print("=" * 50)
     
-    # Initialize git repo
+    # Initialize git repo using git_utils
     try:
-        repo = git.Repo(os.getcwd(), search_parent_directories=True)
-    except git.InvalidGitRepositoryError:
-        print("❌ Current directory is not a git repository!")
+        repo = get_repo()
+    except Exception as e:
+        print("❌", e)
         return
-    
+
     description = input("\n📝 Describe the changes you'll make in this branch: ")
     
     print("\n🤖 Generating branch name suggestions...")
@@ -107,41 +107,36 @@ def create_git_branch_name():
                 
                 if 1 <= choice <= len(branch_names):
                     # Get branch name from our parsed list
-                    branch_name = branch_names[choice-1]
+                    branch_name = branch_names[choice - 1]
                     
                     # Split the branch name into type and description
                     type_desc = branch_name.split('/', 1)
                     if len(type_desc) == 2:
                         branch_type = type_desc[0]
-                        description = type_desc[1]
+                        description_part = type_desc[1]
                     else:
                         branch_type = "feat"  # default type if not found
-                        description = branch_name
+                        description_part = branch_name
                     
                     # Format date and branch name
                     now = datetime.now()
-                    branch_name = f"{now.year}/{now.month:02d}/{now.day:02d}-{branch_type}-{description}"
+                    branch_name_formatted = f"{now.year}/{now.month:02d}/{now.day:02d}-{branch_type}-{description_part}"
                     
                     # Ask for confirmation
-                    confirm = input(f"\n🤔 Create new branch '{branch_name}'? (y/n): ")
+                    confirm = input(f"\n🤔 Create new branch '{branch_name_formatted}'? (y/n): ")
                     
                     if confirm.lower() == 'y':
                         try:
-                            # Check if branch already exists
-                            if branch_name in repo.heads:
-                                print(f"\n❌ Branch '{branch_name}' already exists!")
-                            else:
-                                # Create and checkout new branch
-                                current = repo.create_head(branch_name)
-                                current.checkout()
-                                print(f"\n✅ Created and switched to new branch: {branch_name}")
-                        except git.GitCommandError as e:
-                            print(f"\n❌ Git error: {e}")
+                            # Create and checkout branch using git_utils
+                            created_branch = create_new_branch(branch_name_formatted)
+                            print(f"\n✅ Created and switched to new branch: {created_branch}")
+                        except Exception as e:
+                            print(f"\n❌ {e}")
                     break
                 else:
                     print("❌ Invalid number. Please try again.")
                     
-            except (ValueError, IndexError) as e:
+            except (ValueError, IndexError):
                 print("❌ Please enter a valid number or 'q' to quit.")
                 
     except yaml.YAMLError as e:

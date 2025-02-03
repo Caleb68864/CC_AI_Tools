@@ -27,35 +27,32 @@ Arguments:
 - --date, -d: Start date (shorthand for --since)
 """
 
+import os
+import re
+import pyperclip
+from datetime import datetime, timedelta
+import dotenv
+import yaml
+import anthropic
+import json
+import argparse
+from ai_client import AIClient  # Import the reusable AI client
+# Import consolidated git functions
+from git_utils import get_repo, get_current_branch, list_recent_commits
+
+print("📁 Loading environment variables and configuration...")
+dotenv.load_dotenv()
+
+# Setup API_KEY with your actual Anthropics API key in .env file
+api_key = os.getenv("ANTHROPIC_API_KEY")
+
 def create_git_progress_report():
     print("🚀 STARTING: Git Progress Report Generator")
     
-    import os
-    import git
-    import re
-    import pyperclip
-    from datetime import datetime, timedelta
-    import dotenv
-    import yaml
-    import anthropic
-    import json
-    import argparse
-    from ai_client import AIClient  # Import the reusable AI client
-
-    print("📁 Loading environment variables and configuration...")
-    dotenv.load_dotenv()
-
-    # Setup API_KEY with your actual OpenAI API key in .env file in the same directory.
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-
-    print("🔍 Initializing Git repository...")
-    # create GitPython repo object
-    repo = git.Repo()
-
-    # get current branch
-    branch = repo.active_branch
-    branch_name = branch.name
-
+    print("🔍 Initializing Git repository using git_utils...")
+    repo = get_repo()
+    branch_name = get_current_branch()
+    
     # Retrieve the path to the 'last_run.yaml' file in the same directory as the script
     script_dir = os.path.dirname(os.path.abspath(__file__))
     yaml_file_path = os.path.join(script_dir, 'last_run.yaml')
@@ -69,7 +66,7 @@ def create_git_progress_report():
 
     runs = all_data.get("Runs", {})
 
-    repo_name = repo.working_dir.split(os.sep)[-1]
+    repo_name = os.path.basename(repo.working_dir)
     key = f"{repo_name}_{branch_name}"
 
     last_run_info = runs.get(key, {})
@@ -90,7 +87,6 @@ def create_git_progress_report():
             "%m/%d/%Y %H:%M",
             "%m/%d/%Y"
         ]
-        
         for fmt in formats:
             try:
                 return datetime.strptime(datetime_str, fmt)
@@ -101,16 +97,16 @@ def create_git_progress_report():
     def setup_argument_parser():
         parser = argparse.ArgumentParser(description='Generate Git Progress Report')
         parser.add_argument('--recent-commits', '-rc', nargs='?', const=5, type=int, metavar='N', 
-                            help='List titles of last N commits (default: 5) and select one')
+                              help='List titles of last N commits (default: 5) and select one')
         parser.add_argument('--since', '-s', help='Start date/time (e.g. "2024-03-20" or "2024-03-20 14:30:00")', type=str)
         parser.add_argument('--until', '-u', help='End date/time (defaults to now)', type=str)
         parser.add_argument('--date', '-d', help='Start date (shorthand for --since)', type=str)
         return parser
 
-    def list_recent_commits(n):
-        """List the last N commits and let user select one"""
-        print(f"\n📜 Retrieving last {n} commits...")
-        commits = list(repo.iter_commits(branch_name, max_count=n))
+    def interactive_select_commit(n, branch):
+        """List the last N commits on a branch and let the user select one"""
+        print(f"\n📜 Retrieving last {n} commits on branch '{branch}'...")
+        commits = list_recent_commits(branch, n)
         if not commits:
             print("❌ No commits found")
             return None
@@ -129,24 +125,21 @@ def create_git_progress_report():
                 if 1 <= choice <= len(commits):
                     selected_commit = commits[choice-1]
                     print(f"\n📜 Processing: Selected commit - {selected_commit.message.splitlines()[0]}")
-                    # Get the date of the selected commit
-                    return datetime.fromtimestamp(selected_commit.committed_date)  # Return the date
+                    return datetime.fromtimestamp(selected_commit.committed_date)
                 print(f"Please enter a number between 1 and {len(commits)}")
             except ValueError:
                 print("Please enter a valid number")
 
-    # Parse arguments first
+    # Parse command-line arguments
     args = setup_argument_parser().parse_args()
-
-    # Processing print to show parsed arguments
     print(f"\n⚙️ Processing arguments: {vars(args)}")
 
     # Handle --recent-commits before any other processing
     if args.recent_commits is not None:
         print(f"\n🔄 Processing recent commits: {args.recent_commits}")
-        selected_date = list_recent_commits(args.recent_commits)
+        selected_date = interactive_select_commit(args.recent_commits, branch_name)
         if selected_date:
-            start_datetime = selected_date  # Ensure start_datetime is set
+            start_datetime = selected_date  # Use the date of the selected commit
         else:
             print("No date selected. Exiting.")
             exit()
@@ -179,19 +172,16 @@ def create_git_progress_report():
 
     print(f"\n🔍 Found {len(new_commits)} new commits to analyze...")
 
-    # retrieve all commit comments for new commits
     commit_comments = [commit.message for commit in new_commits]
 
-    # sanitize branch name for report title
+    # Sanitize branch name for report title
     title = re.sub(r'[^\w\s]', ' ', branch_name).replace('-', ' ').strip()
     for i in range(10, 2, -1):
         title = title.replace(' ' * i, ' ').strip()
 
-    # generate report title with current date
     report_title = f"Progress Report for {title} on {datetime.now().strftime('%m/%d/%Y')}\n"
     report_length = 475 - len(report_title)
 
-    # compile progress report using OpenAI
     prompt = (
         "You are a technical writer tasked with creating progress reports from git commit logs. "
         "You analyze commit messages to create clear, organized summaries that group related changes "
@@ -213,7 +203,6 @@ def create_git_progress_report():
             "Be specific and technical. Return only the structured format above, no other text."
         )
         
-        # Create an AI client instance with the small model configuration
         ai_client = AIClient(
             model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
             max_tokens=150,
@@ -259,7 +248,6 @@ def create_git_progress_report():
         
         return result
 
-    # Update the commit processing section
     parsed_commits = []
     for i, commit in enumerate(new_commits, 1):
         print(f"\n🔄 Processing commit {i}/{len(new_commits)}: {commit.hexsha[:7]}")
@@ -270,10 +258,10 @@ def create_git_progress_report():
     print("\n📊 Grouping commits by type and scope...")
     grouped_commits = {}
     for commit in parsed_commits:
-        key = f"{commit['type']}/{commit['scope']}"
-        if key not in grouped_commits:
-            grouped_commits[key] = []
-        grouped_commits[key].append(commit)
+        key_group = f"{commit['type']}/{commit['scope']}"
+        if key_group not in grouped_commits:
+            grouped_commits[key_group] = []
+        grouped_commits[key_group].append(commit)
 
     print(f"\n📑 Found {len(grouped_commits)} categories of changes:")
     for group in grouped_commits.keys():
@@ -281,7 +269,6 @@ def create_git_progress_report():
 
     print("\n✍️ Generating final report...")
 
-    # Build the extraMsg with grouped commits
     extraMsg = (
         f"Please create a progress report from the following analyzed git commits that:\n"
         f"1. Uses exactly this title: '{report_title}'\n"
@@ -298,11 +285,10 @@ def create_git_progress_report():
 
     max_tokens = 8000
     max_length = max_tokens * 3
-            
-    def get_ai_output(prompt, extra_msg):
-        from ai_client import AIClient  # Import the reusable AI client
 
-        # Create an AI client instance with the large model configuration
+    def get_ai_output(prompt, extra_msg):
+        from ai_client import AIClient
+
         ai_client = AIClient(
             model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
             max_tokens=8000,
@@ -312,7 +298,6 @@ def create_git_progress_report():
         return response_text
 
     progress_report = get_ai_output(prompt, extraMsg)
-
     output = progress_report
 
     print("📝 Git Progress Report:\n")
@@ -320,22 +305,18 @@ def create_git_progress_report():
 
     print(f"\n✅ Report generated! ({len(output)} characters)")
 
-    # prompt user to copy progress report to clipboard
     copy_to_clipboard = input("\n📋 Copy progress report to clipboard? (y/n): ")
     if copy_to_clipboard.lower() == 'y':
         pyperclip.copy(output)
         print("✅ Progress report copied to clipboard!")
-        # Save the current date and time, repo name, and branch name to the YAML file
         current_datetime_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Update the information for the current run
         runs[key] = {
             'last_run': current_datetime_str,
             'repo': repo_name,
             'branch': branch_name,
         }
 
-        # Write the updated runs data back to the YAML file
         with open(yaml_file_path, 'w') as file:
             yaml.dump({'Runs': runs}, file)
         print("💾 YAML file updated.")

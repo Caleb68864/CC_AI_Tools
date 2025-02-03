@@ -32,6 +32,14 @@ import dotenv
 import json
 import yaml
 from ai_client import AIClient
+from git_utils import (
+    get_current_branch,
+    stage_all_changes,
+    get_diff_files,
+    get_diff_output,
+    commit_changes,
+    push_changes
+)
 
 def get_lines_after_commit_message(text):
     """Extract lines after the commit message."""
@@ -228,38 +236,25 @@ def get_ai_output(extra_msg):
     """Generate commit message using AI"""
     print("\n🔍 Analyzing changes...")
     
-    # get current branch
-    print("🔍 Getting current branch information...")
-    branch = (
-        subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-        .strip()
-        .decode("utf-8")
-    )
+    # Get current branch using our module
+    branch = get_current_branch()
     print(f"📁 Working on branch: {branch}")
 
-    # add any new files
+    # Stage all changes
     print("📝 Adding any new files to git...")
-    subprocess.run(["git", "add", "."])
+    stage_all_changes()
 
-    # get diff output
+    # Get diff output and files using our module
     print("🔄 Analyzing git differences...")
-    diff_files = (
-        subprocess.check_output(["git", "diff", "--name-only", branch])
-        .strip()
-        .decode("utf-8")
-    )
-    diff_output = (
-        subprocess.check_output(["git", "diff", branch])
-        .strip()
-        .decode("utf-8")
-    )
+    diff_files = get_diff_files(branch)
+    diff_output = get_diff_output(branch)
     
     # Check if there are any changes to commit
     if not diff_files and not diff_output:
         print("❌ No changes to commit")
         return None
 
-    # Calculate max tokens and prompt length first
+    # Calculate max tokens and prompt length
     max_tokens = 8000
     max_prompt = max_tokens * 3
     
@@ -310,26 +305,17 @@ files_changed:
             structured_section += "\n"
     
     # Construct final prompt
-    prompt = f"{base_prompt}{diff_files}\n\n{f'# User Comments\n{extra_msg.strip()}\n' if extra_msg else ''}{structured_section}"
+    prompt = f"{base_prompt}{diff_files}\n\n" \
+             f"{(f'# User Comments\n{extra_msg.strip()}\n' if extra_msg else '')}{structured_section}"
 
     print("🤖 Generating commit message with Claude...")
-    dotenv.load_dotenv()
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_API_KEY")
-    )
-
-    response = client.messages.create(
+    ai_client = AIClient(
         model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
         max_tokens=max_tokens,
-        temperature=0.2,
-        system=prompt,
-        messages=[
-            {"role": "user", "content": extra_msg}
-        ]
+        temperature=0.2
     )
+    resp = ai_client.get_response(system_prompt=prompt, user_message=extra_msg)
 
-    resp = response.content[0].text.strip()
-    
     # Clean the response before parsing
     cleaned_resp = clean_yaml_response(resp)
     
@@ -339,7 +325,6 @@ files_changed:
     except yaml.YAMLError as e:
         print(f"⚠️ Error parsing YAML: {str(e)}")
         print("Using fallback format...")
-        # Create a basic structure if YAML parsing fails
         commit_message_data = {
             'title': 'Update files',
             'summary': 'Changes made to repository files.',
@@ -405,13 +390,13 @@ def commit_msg(user_msg):
     choice = input("✋ Do you want to commit with this message? (y/n): ")
     if choice.lower() == "y":
         print("📦 Committing changes...")
-        subprocess.run(["git", "commit", "-m", commit_message])
+        commit_changes(commit_message)
         print("✅ Changes committed")
         
         choice = input("🚀 Do you want to push these changes? (y/n): ")
         if choice.lower() == "y":
             print("📤 Pushing to remote...")
-            subprocess.run(["git", "push"])
+            push_changes()
             print("✅ Changes pushed")
         
         return True
