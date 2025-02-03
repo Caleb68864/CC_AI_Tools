@@ -100,7 +100,6 @@ def parse_diff_to_structured(diff_output, diff_files):
         
         structured_diff = parse_text_response(response_text)
 
-        print(f"🔍 Parsed structured diff: {structured_diff}")
         return structured_diff
 
     except Exception as e:
