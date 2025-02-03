@@ -205,7 +205,7 @@ def create_git_progress_report():
         )
         
         # Debugging print to show the commit message being analyzed
-        print(f"🔍 Analyzing commit message: {commit_message}")
+        # print(f"🔍 Analyzing commit message: {commit_message}")
 
         ai_client = AIClient(
             model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
@@ -224,7 +224,7 @@ def create_git_progress_report():
         response_text = ai_client.get_response(system_prompt=parse_prompt, user_message=message)
 
         # Debugging print to show the raw response from the AI
-        print(f"🔍 Raw AI response: {response_text}")
+        # print(f"🔍 Raw AI response: {response_text}")
 
         # Instead of parsing the response as YAML, directly construct the parsed data
         parsed_data = {
@@ -301,8 +301,8 @@ def create_git_progress_report():
             extraMsg += f"- {summary} (Impact: {impact})\n"
 
     # Debugging print to show the final prompt before sending it to the AI
-    print("🔍 Final prompt being sent to AI:")
-    print(f"Prompt: {prompt}\nExtra Message: {extraMsg}")
+    # print("🔍 Final prompt being sent to AI:")
+    # print(f"Prompt: {prompt}\nExtra Message: {extraMsg}")
 
     def get_ai_output(prompt, extra_msg):
         from AI.ai_client import AIClient
