@@ -453,6 +453,18 @@ def generate_title(user_msg, commit_message):
     title_response = ai_client.get_response(system_prompt=title_prompt, user_message=user_msg)
     return title_response.strip()  # Clean the response
 
+def generate_summary(user_msg, commit_message):
+    """Generate a summary using the small AI model if the summary is missing."""
+    print("🔍 Generating a summary using the small AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=100,
+        temperature=0.5
+    )
+    summary_prompt = f"Generate a concise summary for the following commit message: {commit_message}"
+    summary_response = ai_client.get_response(system_prompt=summary_prompt, user_message=user_msg)
+    return summary_response.strip()  # Clean the response
+
 def commit_msg(user_msg):
     """Handle the commit message workflow"""
     commit_message = get_ai_output(user_msg)
@@ -484,9 +496,13 @@ def commit_msg(user_msg):
     if title == 'No Title' or title.strip() == '':
         title = generate_title(user_msg, commit_message)
 
+    # Generate a summary if it's missing
+    summary = commit_message_data.get('summary', 'No Summary')
+    if summary == 'No Summary' or summary.strip() == '':
+        summary = generate_summary(user_msg, commit_message)
+
     # Construct the final commit message
     final_commit_message = ""
-    summary = commit_message_data.get('summary', 'No Summary')
 
     # Check if the title is meaningful
     if title != 'Update files' and summary.strip():
