@@ -441,48 +441,6 @@ def write_to_file(file_name, ext, content):
     with open(full_file_name, 'w', encoding='utf-8') as file:
         file.write(content)
 
-def generate_title(user_msg, commit_message):
-    """Generate a title using the small AI model if the title is missing."""
-    print("🔍 Generating a title using the small AI model...")
-    ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
-        max_tokens=50,
-        temperature=0.5
-    )
-    title_prompt = f"Generate a concise title for the following commit message: {commit_message}"
-    title_response = ai_client.get_response(system_prompt=title_prompt, user_message=user_msg)
-    title = title_response.strip()  # Clean the response
-    print(f"✅ Generated Title: {title}")  # Display the new title
-    return title
-
-def generate_summary(user_msg, commit_message):
-    """Generate a summary using the small AI model if the summary is missing."""
-    print("🔍 Generating a summary using the small AI model...")
-    ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
-        max_tokens=100,
-        temperature=0.5
-    )
-    summary_prompt = f"Generate a concise summary for the following commit message: {commit_message}"
-    summary_response = ai_client.get_response(system_prompt=summary_prompt, user_message=user_msg)
-    summary = summary_response.strip()  # Clean the response
-    print(f"✅ Generated Summary: {summary}")  # Display the new summary
-    return summary
-
-def generate_details(user_msg, commit_message):
-    """Generate details using the small AI model if the details are missing."""
-    print("🔍 Generating details using the small AI model...")
-    ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
-        max_tokens=150,
-        temperature=0.5
-    )
-    details_prompt = f"Generate detailed information for the following commit message: {commit_message}"
-    details_response = ai_client.get_response(system_prompt=details_prompt, user_message=user_msg)
-    details = details_response.strip()  # Clean the response
-    print(f"✅ Generated Details: {details}")  # Display the new details
-    return details.splitlines()  # Return as a list of lines
-
 def commit_msg(user_msg):
     """Handle the commit message workflow"""
     commit_message = get_ai_output(user_msg)
@@ -491,72 +449,82 @@ def commit_msg(user_msg):
     if commit_message is None:
         return False
         
-    print("\n📝 Proposed commit message:")
-    print("=" * 50)
-    print(f"{commit_message}")
-    print("=" * 50 + "\n")
+    print("\n📝 Analyzing changes...")
+    
+    # Get structured diff data
+    diff_files = get_diff_files(get_current_branch())
+    diff_output = get_diff_output(get_current_branch())
+    structured_diff = parse_diff_to_structured(diff_output, diff_files)
 
-    # Parse the commit message to extract details
-    try:
-        commit_message_data = parse_yaml_response(commit_message)
-    except Exception as e:
-        print(f"⚠️ Error parsing YAML: {str(e)}")
-        print("Using raw response as commit message...")
-        commit_message_data = {
-            'title': 'Raw Commit Message',
-            'summary': commit_message,  # Use the raw response as summary
-            'details': ['No detailed information available.'],
-            'files_changed': []  # Ensure this is initialized
-        }
+    # Initialize message object
+    message = {
+        'title': None,
+        'summary': None,
+        'details': None,
+        'files_changed': structured_diff.get('files', [])
+    }
 
-    # Generate a title if it's missing
-    title = commit_message_data.get('title', 'No Title')
-    if title == 'No Title' or title.strip() == '':
-        title = generate_title(user_msg, commit_message)
+    # Generate title using structured diff
+    print("\n🔍 Generating title...")
+    title = generate_title(user_msg, structured_diff)
+    if title and title != 'Update files':
+        message['title'] = title
+        print(f"✅ Generated Title: {title}")
 
-    # Generate a summary if it's missing
-    summary = commit_message_data.get('summary', 'No Summary')
-    if summary == 'No Summary' or summary.strip() == '':
-        summary = generate_summary(user_msg, commit_message)
+    # Generate summary using structured diff
+    print("\n🔍 Generating summary...")
+    summary = generate_summary(user_msg, structured_diff)
+    if summary and summary != 'No Summary':
+        message['summary'] = summary
+        print(f"✅ Generated Summary: {summary}")
 
-    # Generate details if they are missing
-    details = commit_message_data.get('details', [])
-    if not details or details == ['No detailed information available.']:
-        details = generate_details(user_msg, commit_message)
+    # Generate details using structured diff
+    print("\n🔍 Generating details...")
+    details = generate_details(user_msg, structured_diff)
+    if details and details != ['No detailed information available.']:
+        message['details'] = details
+        print("✅ Generated Details:")
+        for detail in details:
+            print(f"  - {detail}")
 
-    # Construct the final commit message
+    # Construct the final commit message from the message object
     final_commit_message = ""
 
-    # Check if the title is meaningful
-    if title != 'Update files' and summary.strip():
-        final_commit_message += f"{title}\n\n"
-    
-    # Only add summary if it's not empty
-    if summary.strip():
-        final_commit_message += f"Summary:\n{summary}\n\n"
+    if message['title']:
+        final_commit_message += f"{message['title']}\n\n"
 
-    # Add details if they exist
-    if details:
+    if message['summary']:
+        final_commit_message += f"Summary:\n{message['summary']}\n\n"
+
+    if message['details']:
         final_commit_message += "Details:\n"
-        for detail in details:
-            final_commit_message += f"- {detail}\n"
+        for detail in message['details']:
+            if detail.strip():  # Ensure no empty lines are added
+                final_commit_message += f"- {detail}\n"
 
-    # Add files changed if they exist
-    if commit_message_data.get('files_changed'):
-        final_commit_message += "Files Changed:\n"
-        for file in commit_message_data.get('files_changed', []):
-            final_commit_message += f"- {file}\n"
+    if message['files_changed']:
+        final_commit_message += "\nFiles Changed:\n"
+        for file in message['files_changed']:
+            if isinstance(file, dict) and 'name' in file:
+                final_commit_message += f"- {file['name']}\n"
+            elif isinstance(file, str):
+                final_commit_message += f"- {file}\n"
+
+    print("\n📝 Final Commit Message:")
+    print("=" * 50)
+    print(final_commit_message)
+    print("=" * 50)
 
     # Ask the user if they want to commit the changes
-    confirm_commit = input("Do you want to commit these changes? (y/n): ")
+    confirm_commit = input("\nDo you want to commit these changes? (y/n): ")
     if confirm_commit.lower() == 'y':
-        commit_changes(final_commit_message)  # Call the commit function
+        commit_changes(final_commit_message)
         print("✅ Changes committed.")
 
         # Ask the user if they want to push the changes
         confirm_push = input("Do you want to push the changes to the remote repository? (y/n): ")
         if confirm_push.lower() == 'y':
-            push_changes()  # Call the push function
+            push_changes()
             print("✅ Changes pushed to the remote repository.")
         else:
             print("ℹ️ Changes not pushed to the remote repository.")
@@ -570,6 +538,98 @@ def commit_msg(user_msg):
     write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", final_commit_message)
     print("✅ Commit message generated")
     return final_commit_message
+
+def generate_title(user_msg, structured_diff):
+    """Generate a title using the structured diff data."""
+    print("🔍 Generating a title using the small AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=50,
+        temperature=0.5
+    )
+    
+    # Create a prompt using the structured diff data
+    prompt = (
+        "Generate a concise commit title (under 50 chars) based on these changes:\n"
+        f"Files Changed: {len(structured_diff.get('files', []))}\n"
+        f"Total Additions: {structured_diff.get('overall_stats', {}).get('total_additions', 0)}\n"
+        f"Total Deletions: {structured_diff.get('overall_stats', {}).get('total_deletions', 0)}\n\n"
+        "Key Changes:\n"
+    )
+    
+    # Add key changes from each file
+    for file in structured_diff.get('files', []):
+        if file.get('changes', {}).get('key_changes'):
+            prompt += f"- {file['name']}: {', '.join(file['changes']['key_changes'])}\n"
+    
+    title = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip()
+    return title
+
+def generate_summary(user_msg, structured_diff):
+    """Generate a summary using the structured diff data."""
+    print("🔍 Generating a summary using the small AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=100,
+        temperature=0.5
+    )
+    
+    # Create a prompt using the structured diff data
+    prompt = (
+        "Based on the following changes, generate a concise summary of the commit:\n"
+        f"Total Files Changed: {len(structured_diff.get('files', []))}\n"
+        f"Total Additions: {structured_diff.get('overall_stats', {}).get('total_additions', 0)}\n"
+        f"Total Deletions: {structured_diff.get('overall_stats', {}).get('total_deletions', 0)}\n\n"
+        "Here are the key changes:\n"
+    )
+    
+    # Add summaries from each file
+    for file in structured_diff.get('files', []):
+        if file.get('summary'):
+            prompt += f"- {file['name']}: {file['summary']}\n"
+    
+    prompt += "\nPlease provide a concise summary without any introductory phrases or unnecessary content."
+
+    summary = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip()
+    
+    # Clean up the summary to ensure it doesn't contain unwanted phrases
+    if summary.startswith("Sure, I can help you with that."):
+        summary = summary.replace("Sure, I can help you with that.", "").strip()
+
+    return summary
+
+def generate_details(user_msg, structured_diff):
+    """Generate details using the structured diff data."""
+    print("🔍 Generating details using the small AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=150,
+        temperature=0.5
+    )
+    
+    # Create a prompt using the structured diff data
+    prompt = (
+        "Generate detailed bullet points about the following changes:\n"
+        "Focus on the modifications made, including any new features, bug fixes, or enhancements.\n"
+        "Here are the modified functions and key changes:\n"
+    )
+    
+    # Add modified functions and key changes from each file
+    for file in structured_diff.get('files', []):
+        if file.get('changes', {}).get('functions_modified'):
+            prompt += f"- {file['name']}: {', '.join(file['changes']['functions_modified'])}\n"
+        if file.get('changes', {}).get('key_changes'):
+            for change in file['changes']['key_changes']:
+                prompt += f"- {change}\n"
+    
+    prompt += "\nPlease provide the details without any introductory phrases or unnecessary content."
+
+    details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
+    
+    # Filter out unwanted phrases from details
+    filtered_details = [d for d in details if "Based on the changes made, here are the detailed bullet points about the commit:" not in d]
+    
+    return [d.strip('- ') for d in filtered_details if d.strip()]
 
 def create_git_commit_msg():
     """Main function to create a commit message"""
