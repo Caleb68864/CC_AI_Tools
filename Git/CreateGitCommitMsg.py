@@ -576,7 +576,7 @@ def generate_summary(user_msg, structured_diff):
     
     # Create a prompt using the structured diff data
     prompt = (
-        "Based on the following changes, generate a concise summary of the commit:\n"
+        "Generate a concise summary of the following changes:\n"
         f"Total Files Changed: {len(structured_diff.get('files', []))}\n"
         f"Total Additions: {structured_diff.get('overall_stats', {}).get('total_additions', 0)}\n"
         f"Total Deletions: {structured_diff.get('overall_stats', {}).get('total_deletions', 0)}\n\n"
@@ -588,13 +588,13 @@ def generate_summary(user_msg, structured_diff):
         if file.get('summary'):
             prompt += f"- {file['name']}: {file['summary']}\n"
     
-    prompt += "\nPlease provide a concise summary without any introductory phrases or unnecessary content."
+    prompt += "\nPlease provide a summary without any introductory phrases or unnecessary content."
 
     summary = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip()
     
     # Clean up the summary to ensure it doesn't contain unwanted phrases
-    if summary.startswith("Sure, I can help you with that."):
-        summary = summary.replace("Sure, I can help you with that.", "").strip()
+    if "Concise Summary:" in summary:
+        summary = summary.replace("Concise Summary:", "").strip()
 
     return summary
 
