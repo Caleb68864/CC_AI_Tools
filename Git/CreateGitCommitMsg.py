@@ -441,6 +441,18 @@ def write_to_file(file_name, ext, content):
     with open(full_file_name, 'w', encoding='utf-8') as file:
         file.write(content)
 
+def generate_title(user_msg, commit_message):
+    """Generate a title using the small AI model if the title is missing."""
+    print("🔍 Generating a title using the small AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        max_tokens=50,
+        temperature=0.5
+    )
+    title_prompt = f"Generate a concise title (less than 50 characters) for the following commit message: {commit_message}"
+    title_response = ai_client.get_response(system_prompt=title_prompt, user_message=user_msg)
+    return title_response.strip()  # Clean the response
+
 def commit_msg(user_msg):
     """Handle the commit message workflow"""
     commit_message = get_ai_output(user_msg)
@@ -467,14 +479,35 @@ def commit_msg(user_msg):
             'files_changed': []  # Ensure this is initialized
         }
 
+    # Generate a title if it's missing
+    title = commit_message_data.get('title', 'No Title')
+    if title == 'No Title' or title.strip() == '':
+        title = generate_title(user_msg, commit_message)
+
     # Construct the final commit message
-    final_commit_message = f"{commit_message_data.get('title', 'No Title')}\n\nSummary:\n{commit_message_data.get('summary', 'No Summary')}\n\nDetails:\n"
-    for detail in commit_message_data.get('details', []):
-        final_commit_message += f"- {detail}\n"
-    final_commit_message += "Files Changed:\n"
-    for file in commit_message_data.get('files_changed', []):
-        final_commit_message += f"- {file}\n"
+    final_commit_message = ""
+    summary = commit_message_data.get('summary', 'No Summary')
+
+    # Check if the title is meaningful
+    if title != 'Update files' and summary.strip():
+        final_commit_message += f"{title}\n\n"
     
+    # Only add summary if it's not empty
+    if summary.strip():
+        final_commit_message += f"Summary:\n{summary}\n\n"
+
+    # Add details if they exist
+    if commit_message_data.get('details'):
+        final_commit_message += "Details:\n"
+        for detail in commit_message_data.get('details', []):
+            final_commit_message += f"- {detail}\n"
+
+    # Add files changed if they exist
+    if commit_message_data.get('files_changed'):
+        final_commit_message += "Files Changed:\n"
+        for file in commit_message_data.get('files_changed', []):
+            final_commit_message += f"- {file}\n"
+
     # Ask the user if they want to commit the changes
     confirm_commit = input("Do you want to commit these changes? (y/n): ")
     if confirm_commit.lower() == 'y':
