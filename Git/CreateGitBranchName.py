@@ -121,7 +121,7 @@ def create_git_branch_name():
                     
                     # Format date and branch name
                     now = datetime.now()
-                    branch_name_formatted = f"{now.year}/{now.month:02d}/{now.day:02d}-{branch_type}-{description_part}"
+                    branch_name_formatted = f"{now.year}/{now.month:02d}/{now.day:02d}{now.hour:02d}{now.minute:02d}-{branch_type}-{description_part}"
                     
                     # Ask for confirmation with current branch information
                     confirm = input(f"\n🤔 Create new branch '{branch_name_formatted}' from '{current_branch}'? (y/n): ")

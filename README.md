@@ -280,7 +280,7 @@ A Python script that uses Claude AI (Anthropic) to generate **standardized** and
 
 - **Generates 5 branch name suggestions** based on a user-provided description.
 - **Ensures naming convention compliance** (kebab-case, type prefix, 50-char max length).
-- **Automatically adds a date prefix** (e.g. `YYYY/MM/DD-feat-branch-description`).
+- **Automatically adds a date prefix** (e.g. `YYYY/MM/DDHHMM-feat-branch-description`).
 - **Integrates with Claude AI** to produce clear, well-structured suggestions.
 - **Provides an interactive selection** to create a new Git branch directly.
 
