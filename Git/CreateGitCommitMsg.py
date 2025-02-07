@@ -39,32 +39,21 @@ from Git.git_utils import (
     get_diff_output,
     commit_changes,
     push_changes
-
 )
 from YAML.yaml_utils import parse_yaml_response
 
-def get_lines_after_commit_message(text):
-    """Extract lines after the commit message."""
-    lines = text.split("\n")
-    commit_message_index = None
-
-    for i, line in enumerate(lines):
-        if line.startswith("Comments"):
-            commit_message_index = i
-            break
-
-    if commit_message_index is not None:
-        return "\n".join(lines[commit_message_index + 1:])
-    else:
-        return ""
+# AI Configuration
+AI_TEMPERATURE = 0.2
+AI_LARGE_MODEL = os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620")
+AI_SMALL_MODEL = os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307")
 
 def parse_diff_to_structured(diff_output, diff_files):
     """Parse git diff into a structured format using Claude."""
     print("🤖 Parsing git diff with Claude Haiku...")
     ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        model=AI_SMALL_MODEL,
         max_tokens=1000,
-        temperature=0
+        temperature=AI_TEMPERATURE
     )
     
     parse_prompt = (
@@ -261,160 +250,6 @@ def create_fallback_structure(diff_files):
         }
     }
 
-def clean_yaml_response(resp):
-    """Clean the response text to ensure valid YAML format"""
-    lines = resp.split('\n')
-    cleaned_lines = []
-    yaml_started = False
-    
-    # Only keep lines that are part of the YAML structure
-    for line in lines:
-        # Skip code block markers and empty lines
-        if line.strip().startswith('```') or not line.strip():
-            continue
-            
-        # Start collecting lines when we see the first YAML key
-        if line.startswith('title:') or line.startswith('summary:') or line.startswith('details:') or line.startswith('files_changed:'):
-            yaml_started = True
-            
-        if yaml_started:
-            # Ensure proper indentation for list items
-            if line.strip().startswith('-'):
-                cleaned_lines.append('  ' + line.strip())
-            else:
-                cleaned_lines.append(line.strip())
-    
-    cleaned_text = '\n'.join(cleaned_lines)
-    
-    # Validate basic YAML structure
-    try:
-        yaml.safe_load(cleaned_text)
-        return cleaned_text
-    except yaml.YAMLError:
-        # Create fallback YAML if structure is invalid
-        return """title: Update repository files
-summary: Changes made to multiple files in the repository
-details:
-  - Multiple files were modified
-files_changed:
-  - Various files updated"""
-
-def get_ai_output(extra_msg):
-    """Generate commit message using AI"""
-    print("\n🔍 Analyzing changes...")
-    
-    # Get current branch using our module
-    branch = get_current_branch()
-    print(f"📁 Working on branch: {branch}")
-
-    # Stage all changes
-    print("📝 Adding any new files to git...")
-    stage_all_changes()
-
-    # Get diff output and files using our module
-    print("🔄 Analyzing git differences...")
-    diff_files = get_diff_files(branch)
-    diff_output = get_diff_output(branch)
-    
-    # Check if there are any changes to commit
-    if not diff_files and not diff_output:
-        print("❌ No changes to commit")
-        return None
-
-    # Calculate max tokens and prompt length
-    max_tokens = 8000
-    max_prompt = max_tokens * 3
-    
-    # Define base prompt structure
-    base_prompt = """# Git Commit Message Guidelines
-1. Title: Must be under 50 characters, start with a capital verb in present tense (Add, Update, Fix, Refactor, etc.), and no period at the end.
-2. Summary: 2-3 sentences explaining the WHY of the changes.
-3. Details: Bullet points for each significant change.
-4. Files Changed: Group related files together and explain the purpose of each file change.
-
-# Required YAML Format
-title: <commit title>
-summary: <commit summary>
-details:
-  - <detail 1>
-  - <detail 2>
-files_changed:
-  - <file 1>
-  - <file 2>
-
-# Modified Files
-"""
-
-    # Calculate available length for diff
-    diff_length = max_prompt - len(base_prompt) - 1000  # Buffer for structured diff and other content
-    
-    structured_diff = parse_diff_to_structured(diff_output, diff_files)
-    
-    if not structured_diff:
-        print("⚠️ Using basic diff analysis")
-        structured_section = f"\n# Git Diff\n{diff_output[:diff_length].strip()}"
-    else:
-        print("✨ Generated structured analysis")
-        structured_section = "\n# Structured Changes\n"
-        structured_section += f"Total Files: {structured_diff['overall_stats']['total_files']}\n"
-        structured_section += f"Additions: {structured_diff['overall_stats']['total_additions']}\n"
-        structured_section += f"Deletions: {structured_diff['overall_stats']['total_deletions']}\n\n"
-        
-        for file in structured_diff['files']:
-            structured_section += f"File: {file['name']}\n"
-            structured_section += f"Type: {file['change_type']}\n"
-            structured_section += f"Summary: {file['summary']}\n"
-            if file['changes']['functions_modified']:
-                structured_section += f"Modified Functions: {', '.join(file['changes']['functions_modified'])}\n"
-            structured_section += "Key Changes:\n"
-            for change in file['changes']['key_changes']:
-                structured_section += f"  - {change}\n"
-            structured_section += "\n"
-    
-    # Construct final prompt
-    prompt = f"{base_prompt}{diff_files}\n\n" \
-             f"{(f'# User Comments\n{extra_msg.strip()}\n' if extra_msg else '')}{structured_section}"
-
-    print("🤖 Generating commit message with Claude...")
-    ai_client = AIClient(
-        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
-        max_tokens=max_tokens,
-        temperature=0.2
-    )
-    resp = ai_client.get_response(system_prompt=prompt, user_message=extra_msg)
-
-    # Clean the response before parsing
-    cleaned_resp = clean_yaml_response(resp)
-    
-    # Parse the YAML response
-    try:
-        commit_message_data = parse_yaml_response(cleaned_resp)
-    except Exception as e:
-        print(f"⚠️ Error parsing YAML: {str(e)}")
-        print("Using fallback format...")
-        commit_message_data = {
-            'title': 'Update files',  # Default title
-            'summary': 'Changes made to repository files.',
-            'details': ['Files were modified'],
-            'files_changed': diff_files.split('\n')
-        }
-
-    # Construct the final commit message
-    commit_message = f"{commit_message_data.get('title', 'No Title')}\n\nSummary:\n{commit_message_data.get('summary', 'No Summary')}\n\nDetails:\n"
-    for detail in commit_message_data.get('details', []):
-        commit_message += f"- {detail}\n"
-    commit_message += "Files Changed:\n"
-    for file in commit_message_data.get('files_changed', []):
-        commit_message += f"- {file}\n"
-    
-    # Save commit message to file
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    date_string = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-    file_name = clean_file_name(f"{date_string}_{extra_msg}")
-    write_to_file(os.path.join(script_dir, "Commit_Logs", file_name), "txt", prompt)
-    print("✅ Commit message generated")
-    return commit_message
-
 def clean_file_name(file_name):
     """Clean the file name to ensure it's valid"""
     forbidden_chars = '<>"\\|?*:,'
@@ -551,9 +386,9 @@ def generate_title(user_msg, structured_diff):
     """Generate a title using the structured diff data."""
     print("🔍 Generating a title using the small AI model...")
     ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        model=AI_SMALL_MODEL,
         max_tokens=50,
-        temperature=0.2
+        temperature=AI_TEMPERATURE
     )
     
     # Create a prompt using the structured diff data
@@ -577,9 +412,9 @@ def generate_summary(user_msg, structured_diff):
     """Generate a summary using the structured diff data."""
     print("🔍 Generating a summary using the small AI model...")
     ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
+        model=AI_SMALL_MODEL,
         max_tokens=100,
-        temperature=0.2
+        temperature=AI_TEMPERATURE
     )
     
     # Create a prompt using the structured diff data
@@ -610,9 +445,9 @@ def generate_details(user_msg, structured_diff):
     """Generate details using the structured diff data."""
     print("🔍 Generating details using the large AI model...")
     ai_client = AIClient(
-        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
+        model=AI_LARGE_MODEL,
         max_tokens=8000,
-        temperature=0.2
+        temperature=AI_TEMPERATURE
     )
     
     # Create a prompt using the structured diff data
