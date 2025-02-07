@@ -443,98 +443,80 @@ def write_to_file(file_name, ext, content):
 
 def commit_msg(user_msg):
     """Handle the commit message workflow"""
-    commit_message = get_ai_output(user_msg)
-    
-    # Check if there's a commit message
-    if commit_message is None:
-        return False
-        
     print("\n📝 Analyzing changes...")
+    
+    # Stage all changes first
+    print("📝 Adding changes to git...")
+    stage_all_changes()
     
     # Get structured diff data
     diff_files = get_diff_files(get_current_branch())
     diff_output = get_diff_output(get_current_branch())
+    
+    # Check if there are any changes to commit
+    if not diff_files and not diff_output:
+        print("❌ No changes to commit")
+        return False
+        
     structured_diff = parse_diff_to_structured(diff_output, diff_files)
 
-    # Initialize message object
+    # Initialize message object with empty lists/strings instead of None
     message = {
-        'title': None,
-        'summary': None,
-        'details': None,
+        'title': '',
+        'summary': '',
+        'details': [],  # Initialize as empty list
         'files_changed': structured_diff.get('files', [])
     }
 
     # Generate title using structured diff
-    print("\n🔍 Generating title...")
     title = generate_title(user_msg, structured_diff)
     if title and title != 'Update files':
         message['title'] = title
         print(f"✅ Generated Title: {title}")
 
     # Generate summary using structured diff
-    print("\n🔍 Generating summary...")
     summary = generate_summary(user_msg, structured_diff)
     if summary and summary != 'No Summary':
         message['summary'] = summary
         print(f"✅ Generated Summary: {summary}")
 
     # Generate details using structured diff
-    print("\n🔍 Generating details using the large AI model...")
-    ai_client = AIClient(
-        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
-        max_tokens=150,
-        temperature=0.5
-    )
-    
-    # Create a prompt using the structured diff data
-    prompt = (
-        "Generate detailed bullet points about the following changes:\n"
-        "Focus on the modifications made, including any new features, bug fixes, or enhancements.\n"
-        "Here are the modified functions and key changes:\n"
-    )
-    
-    # Add modified functions and key changes from each file
-    for file in structured_diff.get('files', []):
-        if file.get('changes', {}).get('functions_modified'):
-            prompt += f"- {file['name']}: {', '.join(file['changes']['functions_modified'])}\n"
-        if file.get('changes', {}).get('key_changes'):
-            for change in file['changes']['key_changes']:
-                prompt += f"- {change}\n"
-    
-    # Generate the details response
-    details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
-    
-    # Clean up the details to remove unwanted phrases or bullet points
-    filtered_details = [d for d in details if d.strip() and "•" not in d and "Based on the changes made," not in d]
-    
-    if filtered_details:
-        message['details'] = [d.strip('- ') for d in filtered_details if d.strip()]
+    details = generate_details(user_msg, structured_diff)
+    if details:
+        message['details'] = details  # Store the details in the message object
         print("✅ Generated Details:")
-        for detail in message['details']:
+        for detail in details:
             print(f"  - {detail}")
 
-    # Construct the final commit message from the message object
-    final_commit_message = ""
+    # Construct the final commit message
+    final_commit_message = []  # Use list for better control of newlines
 
     if message['title']:
-        final_commit_message += f"{message['title']}\n\n"
+        final_commit_message.append(message['title'])
+        final_commit_message.append("")  # Empty line after title
 
     if message['summary']:
-        final_commit_message += f"Summary:\n{message['summary']}\n\n"
+        final_commit_message.append("Summary:")
+        final_commit_message.append(message['summary'])
+        final_commit_message.append("")  # Empty line after summary
 
-    if message['details']:
-        final_commit_message += "Details:\n"
+    if message['details']:  # Add details section
+        final_commit_message.append("Details:")
         for detail in message['details']:
-            if detail.strip():  # Ensure no empty lines are added
-                final_commit_message += f"- {detail}\n"
+            if detail.strip():  # Skip empty lines
+                final_commit_message.append(f"- {detail}")
+        final_commit_message.append("")  # Empty line after details
 
     if message['files_changed']:
-        final_commit_message += "\nFiles Changed:\n"
+        final_commit_message.append("Files Changed:")
         for file in message['files_changed']:
             if isinstance(file, dict) and 'name' in file:
-                final_commit_message += f"- {file['name']}\n"
+                final_commit_message.append(f"- {file['name']}")
             elif isinstance(file, str):
-                final_commit_message += f"- {file}\n"
+                final_commit_message.append(f"- {file}")
+
+    # Join all parts with newlines
+    final_commit_message = "\n".join(final_commit_message)
 
     print("\n📝 Final Commit Message:")
     print("=" * 50)
@@ -653,10 +635,22 @@ def generate_details(user_msg, structured_diff):
     # Generate the details response
     details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
     
-    # Clean up the details to remove unwanted phrases or bullet points
-    filtered_details = [d for d in details if d.strip() and "•" not in d and "Based on the changes made," not in d]
-    
-    return [d.strip('- ') for d in filtered_details if d.strip()]
+    # Clean up the details
+    cleaned_details = []
+    for detail in details:
+        detail = detail.strip()
+        if detail:
+            # Remove bullet points and unwanted phrases
+            detail = detail.replace("•", "").replace("-", "").strip()
+            if not any(phrase in detail.lower() for phrase in [
+                "based on the changes made",
+                "here are the detailed bullet points",
+                "here are the modified functions"
+            ]):
+                cleaned_details.append(detail)
+
+    return cleaned_details
+
 
 def create_git_commit_msg():
     """Main function to create a commit message"""
