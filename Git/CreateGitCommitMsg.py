@@ -553,7 +553,7 @@ def generate_title(user_msg, structured_diff):
     ai_client = AIClient(
         model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
         max_tokens=50,
-        temperature=0.5
+        temperature=0.2
     )
     
     # Create a prompt using the structured diff data
@@ -579,7 +579,7 @@ def generate_summary(user_msg, structured_diff):
     ai_client = AIClient(
         model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
         max_tokens=100,
-        temperature=0.5
+        temperature=0.2
     )
     
     # Create a prompt using the structured diff data
@@ -612,7 +612,7 @@ def generate_details(user_msg, structured_diff):
     ai_client = AIClient(
         model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
         max_tokens=8000,
-        temperature=0.5
+        temperature=0.2
     )
     
     # Create a prompt using the structured diff data
