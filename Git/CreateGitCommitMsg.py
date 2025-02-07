@@ -461,11 +461,17 @@ def generate_details(user_msg, structured_diff):
     
     # Add modified functions and key changes from each file
     for file in structured_diff.get('files', []):
+        file_name = file.get('name', 'Unknown file')
+        
+        # Add modified functions with file name
         if file.get('changes', {}).get('functions_modified'):
-            prompt += f"- {file['name']}: {', '.join(file['changes']['functions_modified'])}\n"
+            prompt += f"- {file_name}: Modified functions: {', '.join(file['changes']['functions_modified'])}\n"
+        
+        # Add key changes with file name
         if file.get('changes', {}).get('key_changes'):
+            prompt += f"Changes in {file_name}:\n"
             for change in file['changes']['key_changes']:
-                prompt += f"- {change}\n"
+                prompt += f"- {file_name}: {change}\n"
     
     # Generate the details response
     details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
