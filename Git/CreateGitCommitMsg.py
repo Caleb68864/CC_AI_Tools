@@ -479,12 +479,38 @@ def commit_msg(user_msg):
         print(f"✅ Generated Summary: {summary}")
 
     # Generate details using structured diff
-    print("\n🔍 Generating details...")
-    details = generate_details(user_msg, structured_diff)
-    if details and details != ['No detailed information available.']:
-        message['details'] = details
+    print("\n🔍 Generating details using the large AI model...")
+    ai_client = AIClient(
+        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
+        max_tokens=150,
+        temperature=0.5
+    )
+    
+    # Create a prompt using the structured diff data
+    prompt = (
+        "Generate detailed bullet points about the following changes:\n"
+        "Focus on the modifications made, including any new features, bug fixes, or enhancements.\n"
+        "Here are the modified functions and key changes:\n"
+    )
+    
+    # Add modified functions and key changes from each file
+    for file in structured_diff.get('files', []):
+        if file.get('changes', {}).get('functions_modified'):
+            prompt += f"- {file['name']}: {', '.join(file['changes']['functions_modified'])}\n"
+        if file.get('changes', {}).get('key_changes'):
+            for change in file['changes']['key_changes']:
+                prompt += f"- {change}\n"
+    
+    # Generate the details response
+    details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
+    
+    # Clean up the details to remove unwanted phrases or bullet points
+    filtered_details = [d for d in details if d.strip() and "•" not in d and "Based on the changes made," not in d]
+    
+    if filtered_details:
+        message['details'] = [d.strip('- ') for d in filtered_details if d.strip()]
         print("✅ Generated Details:")
-        for detail in details:
+        for detail in message['details']:
             print(f"  - {detail}")
 
     # Construct the final commit message from the message object
@@ -600,15 +626,17 @@ def generate_summary(user_msg, structured_diff):
 
 def generate_details(user_msg, structured_diff):
     """Generate details using the structured diff data."""
-    print("🔍 Generating details using the small AI model...")
+    print("🔍 Generating details using the large AI model...")
     ai_client = AIClient(
-        model=os.getenv("CLAUDE_SMALL_MODEL", "claude-3-haiku-20240307"),
-        max_tokens=150,
+        model=os.getenv("CLAUDE_LARGE_MODEL", "claude-3-5-sonnet-20240620"),
+        max_tokens=8000,
         temperature=0.5
     )
     
     # Create a prompt using the structured diff data
     prompt = (
+        "Please provide a details without any introductory phrases or unnecessary content.\n"
+        "Don't use any phrases like 'Based on the changes made, here are the detailed bullet points about the commit:' or 'Here are the modified functions and key changes: or Based on the information provided, here are detailed bullet points about the changes:'.\n"
         "Generate detailed bullet points about the following changes:\n"
         "Focus on the modifications made, including any new features, bug fixes, or enhancements.\n"
         "Here are the modified functions and key changes:\n"
@@ -622,12 +650,11 @@ def generate_details(user_msg, structured_diff):
             for change in file['changes']['key_changes']:
                 prompt += f"- {change}\n"
     
-    prompt += "\nPlease provide the details without any introductory phrases or unnecessary content."
-
+    # Generate the details response
     details = ai_client.get_response(system_prompt=prompt, user_message=user_msg).strip().splitlines()
     
-    # Filter out unwanted phrases from details
-    filtered_details = [d for d in details if "Based on the changes made, here are the detailed bullet points about the commit:" not in d]
+    # Clean up the details to remove unwanted phrases or bullet points
+    filtered_details = [d for d in details if d.strip() and "•" not in d and "Based on the changes made," not in d]
     
     return [d.strip('- ') for d in filtered_details if d.strip()]
 
