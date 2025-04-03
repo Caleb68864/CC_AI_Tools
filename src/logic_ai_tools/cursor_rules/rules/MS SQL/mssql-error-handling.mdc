@@ -1,0 +1,81 @@
+---
+description: 
+globs: 
+---
+---
+description: Error handling standards for Microsoft SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_error_handling
+description: Standards for implementing error handling in SQL Server
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these error handling guidelines:
+
+      1. TRY-CATCH Blocks:
+         - Use TRY-CATCH blocks in stored procedures
+         - Handle specific errors appropriately
+         - Include proper transaction management
+         - Log errors with relevant details
+
+      2. Error Information:
+         - Use ERROR_NUMBER(), ERROR_MESSAGE(), ERROR_LINE()
+         - Include custom error messages when appropriate
+         - Implement proper error logging
+         - Return meaningful error messages to applications
+
+      3. Transaction Management:
+         - Check @@TRANCOUNT in catch blocks
+         - Implement proper ROLLBACK handling
+         - Use XACT_ABORT when appropriate
+         - Handle nested transactions properly
+
+examples:
+  - input: |
+      -- Bad: No error handling
+      CREATE PROCEDURE UpdateCustomer
+          @CustomerId INT,
+          @Name NVARCHAR(100)
+      AS
+      UPDATE Customers 
+      SET Name = @Name 
+      WHERE CustomerId = @CustomerId
+      
+      -- Good: With error handling
+      CREATE PROCEDURE UpdateCustomer
+          @CustomerId INT,
+          @Name NVARCHAR(100)
+      AS
+      BEGIN
+          SET NOCOUNT ON;
+          
+          BEGIN TRY
+              BEGIN TRANSACTION;
+                  UPDATE Customers 
+                  SET Name = @Name 
+                  WHERE CustomerId = @CustomerId;
+              COMMIT;
+          END TRY
+          BEGIN CATCH
+              IF @@TRANCOUNT > 0
+                  ROLLBACK;
+              
+              DECLARE @ErrorMsg NVARCHAR(4000) = ERROR_MESSAGE();
+              DECLARE @ErrorLine INT = ERROR_LINE();
+              
+              THROW 50000, @ErrorMsg, 1;
+          END CATCH;
+      END
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

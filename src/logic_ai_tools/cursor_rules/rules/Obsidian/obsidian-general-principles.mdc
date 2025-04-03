@@ -1,0 +1,42 @@
+---
+description: General principles for cursor positioning in Obsidian
+globs: *.md
+---
+# General Principles for Obsidian Cursor Rules
+
+<rule>
+name: obsidian_general_principles
+description: Core principles for cursor positioning in Obsidian
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    message: |
+      When positioning cursors in Obsidian:
+
+      1. Efficiency First:
+         - Position cursor to minimize keystrokes
+         - Avoid unnecessary cursor movements
+         - Place cursor where the next likely edit will occur
+
+      2. Context Awareness:
+         - Cursor should adapt to the current template type
+         - Consider the natural flow of note-taking
+         - Respect Vim mode navigation patterns
+
+examples:
+  - input: |
+      # Header
+      |Content  # Bad - requires down movement
+      
+      # Header
+      
+      |Content  # Good - natural flow
+    output: "Proper cursor positioning following efficiency principles"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

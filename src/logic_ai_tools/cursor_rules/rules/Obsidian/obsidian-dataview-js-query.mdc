@@ -1,0 +1,174 @@
+---
+description: Cursor rules for DataviewJS query methods in Obsidian
+globs: *.md
+---
+# DataviewJS Query Rules
+
+<rule>
+name: obsidian_dataviewjs_query
+description: Rules for using DataviewJS query methods
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When using DataviewJS query methods:
+
+      1. Page Querying:
+         - `dv.current()`: Get current page information
+         - `dv.pages(source)`: Query pages matching source pattern
+           - Empty source (`dv.pages()`) returns all pages in vault
+           - Tag source (`dv.pages("#tag")`) returns pages with specific tag
+           - Folder source (`dv.pages('"folder"')`) returns pages from folder
+           - Combined source (`dv.pages("#tag or -#exclude")`) supports complex filters
+         - `dv.pagePaths(source)`: Get only paths of matching pages
+         - `dv.page(path)`: Get page object for specific path
+
+      2. Source Patterns:
+         - Folders must be double-quoted inside the string: `dv.pages('"folder"')`
+         - Tags are prefixed with #: `dv.pages("#tag")`
+         - Exclusion uses -: `dv.pages("-#tag")` or `dv.pages('-"folder"')`
+         - Combine with logical operators: `dv.pages("#tag1 or #tag2")`
+         - Complex filters: `dv.pages("(#tag and -#exclude) or "folder"")`
+
+      3. Data Processing:
+         - Filter with `.where(p => condition)` 
+         - Sort with `.sort(p => property, "asc"/"desc")`
+         - Map with `.map(p => transformation)`
+         - Group with `.groupBy(p => property)`
+         - Limit results with `.limit(n)`
+         - Chain operations: `dv.pages().where().sort().map()`
+
+      4. Common Page Properties:
+         - `file.name`: Filename without extension
+         - `file.path`: Full file path
+         - `file.link`: Link to the file
+         - `file.size`: File size in bytes
+         - `file.ctime`: Creation time
+         - `file.mtime`: Modification time
+         - `file.tags`: Array of tags
+         - `file.etags`: Array of explicit tags
+         - `file.inlinks`: Array of incoming links
+         - `file.outlinks`: Array of outgoing links
+         - `file.tasks`: Array of tasks in the file
+         - Custom frontmatter properties are accessed directly: `page.property`
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Basic page querying with filtering and sorting
+      const books = dv.pages("#book")
+        .where(p => p.rating && p.rating >= 4)
+        .sort(p => p.rating, "desc");
+      
+      dv.table(
+        ["Book", "Author", "Rating", "Genre"],
+        books.map(p => [
+          p.file.link,
+          p.author,
+          p.rating,
+          p.genre
+        ])
+      );
+      ```
+    output: "Basic page querying with filtering and sorting"
+
+  - input: |
+      ```dataviewjs
+      // Complex source patterns and property access
+      const recentProjects = dv.pages('(#project and -#archived) or "Active Projects"')
+        .where(p => p.status && p.status !== "completed")
+        .where(p => {
+          // Only include projects modified in the last 30 days
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return p.file.mtime >= thirtyDaysAgo;
+        })
+        .sort(p => p.file.mtime, "desc");
+      
+      dv.table(
+        ["Project", "Status", "Due Date", "Last Modified"],
+        recentProjects.map(p => [
+          p.file.link,
+          p.status,
+          p.due,
+          p.file.mtime
+        ])
+      );
+      ```
+    output: "Complex source patterns and property access"
+
+  - input: |
+      ```dataviewjs
+      // Working with the current page
+      const currentPage = dv.current();
+      
+      // Display related pages (pages that link to this page)
+      const relatedPages = dv.pages()
+        .where(p => p.file.outlinks.some(link => 
+          link.path === currentPage.file.path
+        ))
+        .sort(p => p.file.mtime, "desc");
+      
+      if (relatedPages.length > 0) {
+        dv.header(3, "Pages that link to this note");
+        dv.table(
+          ["Page", "Last Modified"],
+          relatedPages.map(p => [
+            p.file.link,
+            p.file.mtime
+          ])
+        );
+      } else {
+        dv.paragraph("No pages link to this note yet.");
+      }
+      ```
+    output: "Working with the current page and finding related pages"
+
+  - input: |
+      ```dataviewjs
+      // Days - Get daily notes based on current note's month/year
+      // Extract month and year from the current file name
+      const fileName = dv.current().file.name;
+      const parts = fileName.split(" - ");
+      const monthName = parts[0];
+      const year = parts[1];
+      
+      // Map month names to their numeric values
+      const monthMap = {
+        "January": "01", "February": "02", "March": "03", "April": "04",
+        "May": "05", "June": "06", "July": "07", "August": "08",
+        "September": "09", "October": "10", "November": "11", "December": "12"
+      };
+      
+      // Get the month number
+      const monthNum = monthMap[monthName];
+      
+      // Create the prefix for filtering
+      const prefix = `${year}-${monthNum}`;
+      
+      // Query for daily notes matching the prefix
+      const dailyNotes = dv.pages('"Calendar Notes/Daily Notes"')
+        .where(p => p.file.name.startsWith(prefix))
+        .sort(p => p.file.name);
+      
+      // Render the table
+      dv.table(
+        ["Day", "Created", "Last Modified"],
+        dailyNotes.map(p => [
+          p.file.link,
+          p.file.cday,
+          p.file.mday
+        ])
+      );
+      ```
+    output: "Getting daily notes based on current note's month/year"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

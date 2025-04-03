@@ -1,0 +1,87 @@
+---
+description: Documentation for Model Context Protocol (MCP) implementation and usage
+globs: *.mdc
+---
+
+# Model Context Protocol (MCP)
+
+Documentation for implementing and using custom MCP tools with the Agent in Cursor's Composer feature.
+
+<rule>
+name: cursor_model_context_protocol
+description: Guidelines and standards for implementing Model Context Protocol (MCP) tools in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(js|ts|json)$"
+  - type: content
+    pattern: "mcp"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "mcpServers"
+        message: "MCP server configuration should be properly structured in .cursor/mcp.json"
+      
+      - pattern: "(command|url)"
+        message: "MCP server configuration must specify either command (for stdio) or URL (for SSE)"
+        
+      - pattern: "transport"
+        message: "MCP server type must be specified as either 'stdio' or 'sse'"
+
+examples:
+  - input: |
+      {
+        "mcpServers": {
+          "filesystem": {
+            "command": "npx",
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-filesystem",
+              "/path/to/directory"
+            ]
+          }
+        }
+      }
+    output: |
+      {
+        "mcpServers": {
+          "filesystem": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+              "-y",
+              "@modelcontextprotocol/server-filesystem",
+              "/path/to/directory"
+            ]
+          }
+        }
+      }
+
+  - input: |
+      {
+        "mcpServers": {
+          "sample-server": {
+            "url": "http://localhost:3000/sse"
+          }
+        }
+      }
+    output: |
+      {
+        "mcpServers": {
+          "sample-server": {
+            "type": "sse",
+            "url": "http://localhost:3000/sse"
+          }
+        }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - mcp
+    - protocol
+    - tools
+    - configuration
+</rule> 

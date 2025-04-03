@@ -1,0 +1,99 @@
+---
+description: API reference and guidelines for MudBlazor Progress components
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Progress API
+
+The MudBlazor Progress components (MudProgressCircular and MudProgressLinear) provide visual indicators for process status and wait times.
+
+<rule>
+name: mudblazor_progress
+description: Provides guidelines and API reference for using MudBlazor Progress components.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudProgress(Circular|Linear).*?(?<!Indeterminate=).*?>"
+        message: "Specify Indeterminate property to indicate whether progress is determinate or indeterminate."
+      - pattern: "<MudProgress(Circular|Linear).*?(?<!Color=).*?>"
+        message: "Consider specifying Color for consistent styling with other components."
+      - pattern: "<MudProgressCircular.*?(?<!Size=).*?>"
+        message: "Consider specifying Size (Small, Medium, Large) or custom dimensions for circular progress."
+      - pattern: "<MudProgressLinear.*?Buffer=\"true\".*?(?<!BufferValue=).*?>"
+        message: "When using Buffer, specify BufferValue for proper buffer visualization."
+      - pattern: "<MudProgress(Circular|Linear).*?Value=\"([^\"]*?)\".*?(?<!Min=|Max=).*?>"
+        message: "Consider specifying Min and Max for custom value ranges."
+
+examples:
+  - input: |
+      <MudProgressCircular></MudProgressCircular>
+    output: |
+      @* Circular Progress Examples *@
+      <MudProgressCircular 
+          Color="Color.Primary"
+          Size="Size.Medium"
+          Indeterminate="true" />
+
+      <MudProgressCircular 
+          Color="Color.Secondary"
+          Size="Size.Large"
+          Value="75"
+          Min="0"
+          Max="100" />
+
+      <MudProgressCircular 
+          Style="height:70px;width:70px;"
+          Color="Color.Info"
+          Indeterminate="true" />
+
+      @* Linear Progress Examples *@
+      <MudProgressLinear 
+          Color="Color.Primary"
+          Indeterminate="true"
+          Class="my-7" />
+
+      <MudProgressLinear 
+          Color="Color.Secondary"
+          Buffer="true"
+          BufferValue="80"
+          Value="60"
+          Striped="true"
+          Rounded="true">
+          <MudText>60%</MudText>
+      </MudProgressLinear>
+
+      <div style="height: 200px;">
+          <MudProgressLinear 
+              Color="Color.Success"
+              Vertical="true"
+              Size="Size.Large"
+              Value="25">
+              <MudText>25</MudText>
+          </MudProgressLinear>
+      </div>
+
+      @code {
+          // For dynamic progress updates
+          private double progressValue = 0;
+          private double bufferValue = 0;
+
+          private async Task SimulateProgress()
+          {
+              while (progressValue < 100)
+              {
+                  await Task.Delay(500);
+                  progressValue += 10;
+                  bufferValue = Math.Min(100, progressValue + 20);
+                  StateHasChanged();
+              }
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

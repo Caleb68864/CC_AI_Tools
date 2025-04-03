@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Flask Project Structure
+globs: *.py, *.html
+---
+
+# Flask Project Structure
+
+Standards for Flask project organization and structure.
+
+<rule>
+name: flask_project_structure
+description: Enforces Flask project structure best practices
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "from flask import"
+
+actions:
+  - type: suggest
+    message: |
+      Follow the recommended Flask project structure:
+      
+      ```
+      project/
+      ├── app/
+      │   ├── __init__.py
+      │   ├── models/
+      │   ├── views/
+      │   ├── templates/
+      │   └── static/
+      ├── tests/
+      ├── config.py
+      ├── requirements.txt
+      └── run.py
+      ```
+      
+      Key principles:
+      1. Separate concerns into different modules
+      2. Use blueprints for feature organization
+      3. Keep configuration separate
+      4. Include tests directory
+
+examples:
+  - input: |
+      # All code in a single file
+      app.py
+    output: |
+      Properly structured Flask project with separated concerns
+
+metadata:
+  priority: medium
+  version: 1.0
+</rule> 

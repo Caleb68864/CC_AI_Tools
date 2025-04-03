@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+---
+---
+description: Blazor .NET 8 Workflow and Environment Rules
+globs: *.{cs,razor,cshtml}
+---
+# Blazor Workflow and Environment Rules
+
+<rule>
+name: blazor_workflow_environment
+description: Standards for Blazor .NET 8 development workflow and environment setup
+
+filters:
+  - type: file_extension
+    pattern: "\\.cs$|\\.razor$|\\.cshtml$"
+
+actions:
+  - type: suggest
+    message: |
+      Development Environment Guidelines:
+      
+      1. Use Visual Studio Enterprise for:
+         - Running the application
+         - Debugging
+         - Testing
+         - Project compilation
+      
+      2. Use Cursor AI for:
+         - Code editing
+         - AI suggestions
+         - Code refactoring
+
+      3. Always ensure Visual Studio is properly configured for:
+         - Blazor development
+         - .NET 8 SDK
+         - Required debugging tools
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

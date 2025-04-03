@@ -1,0 +1,67 @@
+---
+description: Rules for using dates in Obsidian Tasks plugin queries
+globs: "*.md"
+---
+
+# Obsidian Tasks Date Syntax
+
+Guidelines for using dates in Tasks plugin queries.
+
+<rule>
+name: obsidian_tasks_dates
+description: Standards for date syntax in Tasks plugin queries
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```tasks"
+
+actions:
+  - type: suggest
+    message: |
+      When working with dates in Tasks queries:
+
+      1. Due Date Syntax:
+         - Exact date: `due YYYY-MM-DD`
+         - Today: `due today`
+         - Relative: `due before YYYY-MM-DD`, `due after YYYY-MM-DD`
+         - Date range: `due after YYYY-MM-DD AND due before YYYY-MM-DD`
+
+      2. Start Date Syntax:
+         - Exact date: `starts YYYY-MM-DD`
+         - Before/after: `starts before YYYY-MM-DD`, `starts after YYYY-MM-DD`
+         - Inclusive range: `starts on or before YYYY-MM-DD`
+         - Today: `starts today`
+
+      3. Date Variables with Templater:
+         - Current date: `<% tp.date.now("YYYY-MM-DD") %>`
+         - Relative dates: `<% tp.date.now("YYYY-MM-DD", +/-N) %>`
+
+      4. Common Query Patterns:
+         - Tasks due today: `due <% tp.date.now("YYYY-MM-DD") %>`
+         - Overdue tasks: `due before <% tp.date.now("YYYY-MM-DD") %>`
+         - Started but not done: `starts before <% tp.date.now("YYYY-MM-DD") %>`
+         - Future tasks: `starts after <% tp.date.now("YYYY-MM-DD") %>`
+
+      5. Combining Date Filters:
+         - Use `OR` for alternative conditions
+         - Use `AND` for overlapping conditions
+         - Group conditions with parentheses
+
+examples:
+  - input: |
+      ```tasks
+      not done
+      due today
+      ```
+
+      ```tasks
+      not done
+      (due <% tp.date.now("YYYY-MM-DD") %>) OR (starts on or before <% tp.date.now("YYYY-MM-DD") %>)
+      ```
+  - output: "Properly formatted Tasks plugin date queries"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

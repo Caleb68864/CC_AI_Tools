@@ -1,0 +1,57 @@
+---
+description: Documentation for using @Git symbol to access git history and changes
+globs: *.mdc
+---
+
+# @Git Symbol
+
+Documentation for using @Git to access git history and changes in Cursor.
+
+<rule>
+name: cursor_symbol_git
+description: Guidelines and standards for using @Git symbol in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@Git"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@Git\\s*$"
+        message: "After @Git, specify the git operation or use arrow keys to select from available git actions"
+      
+      - pattern: "@Git\\s+[^\\s]+"
+        message: "Valid git reference detected. Use arrow keys to navigate git suggestions"
+
+examples:
+  - input: |
+      @Git
+      @Git history
+      @Git changes
+    output: |
+      Valid @Git usage examples:
+      - @Git: Shows list of available git operations
+      - @Git history: Access commit history
+      - @Git changes: View current changes
+
+  - input: |
+      @Git invalid-operation
+      @Git nonexistent-command
+    output: |
+      Invalid @Git usage. Tips:
+      - Operation must be a valid git command
+      - Use arrow keys to select from available git operations
+      - Check git documentation for valid commands
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - git
+    - navigation
+    - context
+</rule> 

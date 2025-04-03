@@ -1,0 +1,100 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework change tracking best practices
+globs: "*.cs"
+---
+# Entity Framework Change Tracking
+
+<rule>
+name: ef_change_tracking
+description: Ensures proper implementation of entity state management and concurrency handling
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "(?:Entry|State|EntityState|ConcurrencyCheck|Timestamp|RowVersion)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "context\\.Database\\.ExecuteSqlCommand"
+        message: "Avoid raw SQL updates - use change tracking instead"
+      - pattern: "\\.AsNoTracking\\(\\).*?\\.SaveChanges"
+        message: "Don't call SaveChanges on no-tracking queries"
+      - pattern: "Entry\\(\\s*entity\\s*\\)\\.State\\s*=\\s*EntityState\\.Modified.*?SaveChanges"
+        message: "Don't mark entire entity as modified - specify properties"
+      - pattern: "\\[Timestamp\\]\\s+public\\s+int\\s+"
+        message: "Use byte[] for timestamp/rowversion properties"
+
+  - type: suggest
+    message: |
+      Change tracking guidelines:
+      1. State Management:
+         - Use Entry() to manage specific property changes
+         - Avoid marking entire entities as Modified
+         - Track only necessary entities
+      2. Concurrency Control:
+         - Use [ConcurrencyCheck] or [Timestamp]
+         - Handle DbUpdateConcurrencyException
+         - Implement optimistic concurrency
+      3. Performance:
+         - Use AsNoTracking for read-only queries
+         - Detach entities when no longer needed
+         - Use bulk operations for large datasets
+      4. Audit Trail:
+         - Track modification dates
+         - Record user changes
+         - Implement soft deletes when appropriate
+
+examples:
+  - input: |
+      context.Entry(entity).State = EntityState.Modified;
+      await context.SaveChangesAsync();
+
+      public class Product
+      {
+          [Timestamp]
+          public int Version { get; set; }
+      }
+    output: |
+      // Track specific properties
+      var entry = context.Entry(entity);
+      entry.Property(e => e.Name).IsModified = true;
+      entry.Property(e => e.Price).IsModified = true;
+      await context.SaveChangesAsync();
+
+      public class Product
+      {
+          public int Id { get; set; }
+          
+          [ConcurrencyCheck]
+          public string Name { get; set; }
+          
+          [Timestamp]
+          public byte[] RowVersion { get; set; }
+          
+          public DateTime LastModified { get; set; }
+          public string LastModifiedBy { get; set; }
+      }
+
+      // Concurrency handling
+      try
+      {
+          await context.SaveChangesAsync();
+      }
+      catch (DbUpdateConcurrencyException ex)
+      {
+          var entry = ex.Entries.Single();
+          var currentValues = entry.CurrentValues;
+          var databaseValues = await entry.GetDatabaseValuesAsync();
+          
+          // Handle concurrency conflict
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

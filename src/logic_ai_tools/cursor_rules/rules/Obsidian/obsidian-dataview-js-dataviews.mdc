@@ -1,0 +1,193 @@
+---
+description: Cursor rules for DataviewJS dataviews methods in Obsidian
+globs: *.md
+---
+# DataviewJS Dataviews Rules
+
+<rule>
+name: obsidian_dataviewjs_dataviews
+description: Rules for using DataviewJS dataviews methods
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When using DataviewJS dataviews methods:
+
+      1. List Rendering:
+         - `dv.list(elements)`: Render array as bulleted list
+           - Works with both regular arrays and Dataview arrays
+           - Example: `dv.list([1, 2, 3])` or `dv.list(dv.pages().file.name)`
+           - Nested arrays will be rendered as nested lists
+
+      2. Task List Rendering:
+         - `dv.taskList(tasks, groupByFile)`: Render tasks as a task list
+           - Tasks are typically obtained via `page.file.tasks`
+           - By default, tasks are grouped by their source file
+           - Set second parameter to `false` to render as a unified list
+           - Example: `dv.taskList(dv.pages("#project").file.tasks)`
+           - Filter tasks with `.where()`: `dv.taskList(tasks.where(t => !t.completed))`
+
+      3. Table Rendering:
+         - `dv.table(headers, elements)`: Render data as a table
+           - First parameter is array of column headers
+           - Second parameter is 2D array of rows and columns
+           - Arrays within cells are rendered as bullet points
+           - Example: `dv.table(["Name", "Value"], [["Row1", "Value1"], ["Row2", "Value2"]])`
+           - Commonly used with `.map()`: `dv.table(headers, pages.map(p => [p.file.link, p.value]))`
+
+      4. Markdown Dataviews:
+         - `dv.markdownTable(headers, values)`: Generate markdown table string
+         - `dv.markdownList(values)`: Generate markdown list string
+         - `dv.markdownTaskList(tasks)`: Generate markdown task list string
+         - These return strings that can be rendered with `dv.paragraph()`
+         - Useful for further processing or combining with other content
+
+      5. Best Practices:
+         - Use descriptive column headers in tables
+         - Sort data before rendering for better readability
+         - Filter out irrelevant data before rendering
+         - Consider using limit to avoid overwhelming displays
+         - Group related data together
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Basic list rendering
+      dv.header(3, "Simple List");
+      dv.list([
+        "Item 1",
+        "Item 2",
+        "Item 3",
+        ["Nested Item 1", "Nested Item 2"]
+      ]);
+      
+      // List of page links
+      dv.header(3, "Book List");
+      dv.list(
+        dv.pages("#book")
+          .sort(b => b.file.name)
+          .file.link
+      );
+      ```
+    output: "Basic list rendering examples"
+
+  - input: |
+      ```dataviewjs
+      // Task list rendering
+      dv.header(3, "Project Tasks");
+      
+      // Get all tasks from project pages
+      const projectTasks = dv.pages("#project").file.tasks;
+      
+      // Group tasks by their source file (default behavior)
+      dv.header(4, "Tasks Grouped by File");
+      dv.taskList(projectTasks);
+      
+      // Show only incomplete tasks without grouping
+      dv.header(4, "Incomplete Tasks (Unified)");
+      dv.taskList(
+        projectTasks.where(t => !t.completed),
+        false
+      );
+      
+      // Show tasks with specific tag
+      dv.header(4, "High Priority Tasks");
+      dv.taskList(
+        projectTasks.where(t => t.text.includes("#high"))
+      );
+      ```
+    output: "Task list rendering with different options"
+
+  - input: |
+      ```dataviewjs
+      // Table rendering
+      dv.header(3, "Book Table");
+      
+      // Get book pages
+      const books = dv.pages("#book")
+        .where(b => b.rating)
+        .sort(b => b.rating, "desc");
+      
+      // Render as table
+      dv.table(
+        ["Book", "Author", "Rating", "Genres", "Read Date"],
+        books.map(b => [
+          b.file.link,
+          b.author,
+          b.rating + "/10",
+          // Arrays in cells render as bullet points
+          b.genres || [],
+          b["date-read"] || "Unread"
+        ])
+      );
+      
+      // Table with computed values
+      dv.header(3, "Reading Stats");
+      const readBooks = books.where(b => b["date-read"]);
+      dv.table(
+        ["Metric", "Value"],
+        [
+          ["Total Books", books.length],
+          ["Books Read", readBooks.length],
+          ["Average Rating", (readBooks.rating.array().reduce((a, b) => a + b, 0) / readBooks.length).toFixed(1)],
+          ["Top Genre", "Fantasy"] // This would normally be computed
+        ]
+      );
+      ```
+    output: "Table rendering with different data structures"
+
+  - input: |
+      ```dataviewjs
+      // Markdown dataviews
+      dv.header(3, "Markdown Dataviews");
+      
+      // Generate markdown table
+      const books = dv.pages("#book").sort(b => b.rating, "desc").limit(5);
+      const mdTable = dv.markdownTable(
+        ["Book", "Rating"],
+        books.map(b => [b.file.link, b.rating])
+      );
+      
+      // Generate markdown list
+      const mdList = dv.markdownList(
+        books.map(b => `${b.file.link} (${b.rating}/10)`)
+      );
+      
+      // Generate markdown task list
+      const tasks = dv.pages("#project").file.tasks.limit(5);
+      const mdTaskList = dv.markdownTaskList(tasks);
+      
+      // Render the markdown
+      dv.header(4, "Markdown Table");
+      dv.paragraph(mdTable);
+      
+      dv.header(4, "Markdown List");
+      dv.paragraph(mdList);
+      
+      dv.header(4, "Markdown Task List");
+      dv.paragraph(mdTaskList);
+      
+      // Combine markdown elements
+      dv.header(4, "Combined Markdown");
+      dv.paragraph(`
+        ## Top Books
+        ${mdTable}
+        
+        ## Reading List
+        ${mdList}
+        
+        ## Tasks
+        ${mdTaskList}
+      `);
+      ```
+    output: "Using markdown dataviews for flexible rendering"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Flask Route Standards
+globs: *.py, *.html
+---
+
+# Flask Route Standards
+
+Standards for Flask route definitions and handlers.
+
+<rule>
+name: flask_route_standards
+description: Enforces best practices for Flask routes
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "@app.route|@blueprint.route"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@app\\.route\\(['\"].*['\"]\\)\\s*\\n\\s*def\\s+\\w+\\(\\):"
+        message: "Route handlers should include type hints and docstrings"
+      
+      - pattern: "return\\s+['\"].*['\"]"
+        message: "Use jsonify or render_template instead of returning raw strings"
+        
+      - pattern: "@app\\.route\\(['\"].*['\"]\\s*,\\s*methods=\\[.*'GET'.*\\]\\)"
+        message: "Explicitly specify HTTP methods in route decorators"
+
+examples:
+  - input: |
+      @app.route('/users')
+      def get_users():
+          return "users list"
+    output: |
+      @app.route('/users', methods=['GET'])
+      def get_users() -> Response:
+          """Retrieve list of users.
+          
+          Returns:
+              Response: JSON list of users
+          """
+          return jsonify(users=User.query.all())
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

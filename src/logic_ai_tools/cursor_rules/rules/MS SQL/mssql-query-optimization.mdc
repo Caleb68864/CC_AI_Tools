@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+---
+---
+description: Query optimization standards for Microsoft SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_query_optimization
+description: Standards for optimizing SQL queries for better performance
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these query optimization guidelines:
+
+      1. SELECT Statements:
+         - Avoid SELECT * in production code
+         - Only retrieve needed columns
+         - Use EXISTS instead of COUNT for existence checks
+         - Implement pagination for large result sets
+
+      2. Index Usage:
+         - Write SARGable queries for better index utilization
+         - Avoid functions in WHERE clauses
+         - Use appropriate covering indexes
+         - Consider index maintenance impact
+
+      3. JOIN Operations:
+         - Use appropriate JOIN types (INNER, LEFT, RIGHT)
+         - Join on indexed columns when possible
+         - Consider table join order for optimization
+         - Use table hints only when necessary
+
+examples:
+  - input: |
+      -- Bad: Non-SARGable query with function
+      SELECT * FROM Orders 
+      WHERE YEAR(OrderDate) = 2023
+      
+      -- Good: SARGable query
+      SELECT OrderId, CustomerId, OrderDate 
+      FROM Orders 
+      WHERE OrderDate >= '2023-01-01' 
+        AND OrderDate < '2024-01-01'
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

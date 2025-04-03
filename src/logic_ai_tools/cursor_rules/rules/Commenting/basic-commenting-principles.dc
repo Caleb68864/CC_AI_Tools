@@ -1,0 +1,23 @@
+---
+description: Basic principles for code comments
+globs: *
+---
+<rule>
+name: basic_commenting_principles
+description: Core rules for writing effective code comments
+
+principles:
+- Keep comments concise and avoid over-explaining
+- Use proper grammar and spelling
+- Avoid redundant comments that state the obvious
+- Focus on explaining why, not what
+- Stay professional and avoid jokes or personal remarks
+
+examples:
+  - input: |
+      // Bad: Redundant comment
+      x = x + 1; // Increment x by 1
+      
+      // Good: Explains the why
+      x = x + 1; // Compensate for zero-based indexing
+</rule>

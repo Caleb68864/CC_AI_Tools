@@ -1,0 +1,112 @@
+---
+description: 
+globs: 
+---
+---
+description: Godot Script Elements Guidelines
+globs: *.gd
+---
+# Godot Script Elements Guidelines
+
+<rule>
+name: godot_script_elements
+description: Standards for organizing Godot script elements and class structure
+
+filters:
+  - type: file_extension
+    pattern: "\\.gd$"
+  - type: content
+    pattern: "extends .*|class_name .*"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: suggest
+    message: |
+      When writing Godot scripts:
+
+      1. Class Declaration Structure:
+         ```gdscript
+         extends Node2D
+         class_name MyClass
+
+         # Constants
+         const SPEED = 300.0
+
+         # Exported variables
+         @export var health: float = 100.0
+
+         # Private variables
+         var _internal_var: int = 0
+         ```
+         - Place extends statement first
+         - Follow with class_name if needed
+         - Group constants and variables by type
+         - Use type hints consistently
+
+      2. Built-in Functions:
+         ```gdscript
+         func _ready() -> void:
+             # Initialization code
+             pass
+
+         func _process(delta: float) -> void:
+             # Per-frame updates
+             pass
+
+         func _physics_process(delta: float) -> void:
+             # Physics updates
+             pass
+         ```
+         - Order built-in functions logically
+         - Include return type hints
+         - Position cursor at function body
+
+      3. Custom Functions:
+         ```gdscript
+         func calculate_damage(base_damage: float, multiplier: float) -> float:
+             return base_damage * multiplier
+
+         func _handle_collision(body: Node2D) -> void:
+             if body.is_in_group("enemies"):
+                 take_damage(10.0)
+         ```
+         - Use snake_case for function names
+         - Prefix private functions with underscore
+         - Include parameter and return type hints
+         - Group related functions together
+
+examples:
+  - input: |
+      # Bad: Unorganized script
+      var health = 100
+      func _ready(): pass
+      const SPEED = 300
+      @export var damage = 10
+
+      # Good: Organized script
+      extends Node2D
+      
+      const SPEED = 300
+      
+      @export var damage: int = 10
+      var health: int = 100
+      
+      func _ready() -> void:
+          pass
+    output: "Properly organized Godot script"
+
+  - input: |
+      # Bad: Missing type hints
+      func deal_damage(amount):
+          health -= amount
+
+      # Good: With type hints
+      func deal_damage(amount: float) -> void:
+          health -= amount
+    output: "Proper function declaration with type hints"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

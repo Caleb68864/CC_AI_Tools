@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+---
+---
+description: Performance monitoring standards for SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_performance_monitoring
+description: Standards for monitoring and optimizing SQL Server performance
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these performance monitoring guidelines:
+
+      1. Query Performance:
+         - Use execution plans for analysis
+         - Monitor query statistics
+         - Track parameter sniffing issues
+         - Identify missing indexes
+
+      2. Resource Monitoring:
+         - Monitor CPU usage
+         - Track memory utilization
+         - Watch for I/O bottlenecks
+         - Monitor transaction log growth
+
+      3. Diagnostic Tools:
+         - Use Dynamic Management Views (DMVs)
+         - Implement Extended Events
+         - Monitor wait statistics
+         - Track blocking and deadlocks
+
+examples:
+  - input: |
+      -- Bad: No performance monitoring
+      SELECT * FROM LargeTable
+      
+      -- Good: Performance monitoring queries
+      -- Check query performance
+      SELECT 
+          qs.execution_count,
+          qs.total_logical_reads/qs.execution_count as avg_logical_reads,
+          SUBSTRING(qt.text,qs.statement_start_offset/2, 
+              (CASE 
+                  WHEN qs.statement_end_offset = -1 
+                  THEN LEN(CONVERT(NVARCHAR(MAX), qt.text)) * 2 
+                  ELSE qs.statement_end_offset
+               END - qs.statement_start_offset)/2) as query_text
+      FROM 
+          sys.dm_exec_query_stats qs
+          CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) qt
+      ORDER BY 
+          avg_logical_reads DESC;
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

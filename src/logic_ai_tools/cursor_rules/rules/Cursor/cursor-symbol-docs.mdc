@@ -1,0 +1,57 @@
+---
+description: Documentation for using @Docs symbol to access documentation and guides
+globs: *.mdc
+---
+
+# @Docs Symbol
+
+Documentation for using @Docs to access documentation and guides in Cursor.
+
+<rule>
+name: cursor_symbol_docs
+description: Guidelines and standards for using @Docs symbol in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@Docs"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@Docs\\s*$"
+        message: "After @Docs, specify the documentation topic or use arrow keys to select from available docs"
+      
+      - pattern: "@Docs\\s+[^\\s]+"
+        message: "Valid documentation reference detected. Use arrow keys to navigate documentation suggestions"
+
+examples:
+  - input: |
+      @Docs
+      @Docs installation
+      @Docs keyboard shortcuts
+    output: |
+      Valid @Docs usage examples:
+      - @Docs: Shows list of available documentation topics
+      - @Docs installation: References installation guide
+      - @Docs keyboard shortcuts: References keyboard shortcuts documentation
+
+  - input: |
+      @Docs invalid-topic
+      @Docs nonexistent-guide
+    output: |
+      Invalid @Docs usage. Tips:
+      - Topic must exist in Cursor documentation
+      - Use arrow keys to select from available documentation
+      - Check documentation index for valid topics
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - documentation
+    - navigation
+    - context
+</rule> 

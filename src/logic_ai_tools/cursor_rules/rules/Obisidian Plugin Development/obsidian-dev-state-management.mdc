@@ -1,0 +1,116 @@
+---
+description: Guidelines for state management in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - State Management
+
+Best practices for managing state in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_state_management
+description: Enforces best practices for state management in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "this\\.state"
+        message: "Ensure proper state initialization and persistence"
+      - pattern: "loadData\\(\\)"
+        message: "Implement proper state loading with error handling"
+      - pattern: "saveData\\(\\)"
+        message: "Ensure state is properly saved and persisted"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          state: MyState;
+          
+          async onload() {
+              this.state = await this.loadData();
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          state: MyState;
+          private stateKey = 'my-plugin-state';
+          
+          async onload() {
+              try {
+                  this.state = await this.loadData();
+                  this.registerEvent(
+                      this.app.workspace.on('file-change', () => {
+                          this.saveState();
+                      })
+                  );
+              } catch (error) {
+                  console.error('Failed to load state:', error);
+                  this.state = this.getDefaultState();
+              }
+          }
+          
+          private async loadData(): Promise<MyState> {
+              const data = await this.loadData();
+              return data || this.getDefaultState();
+          }
+          
+          private getDefaultState(): MyState {
+              return {
+                  // Default state values
+              };
+          }
+          
+          private async saveState() {
+              try {
+                  await this.saveData(this.state);
+              } catch (error) {
+                  console.error('Failed to save state:', error);
+              }
+          }
+      }
+
+documentation:
+  ## State Management Guidelines
+
+  ### 1. State Structure
+  - Define clear state interfaces
+  - Use TypeScript for type safety
+  - Implement default state values
+  - Handle state migrations
+  - Document state structure
+
+  ### 2. State Persistence
+  - Implement proper save/load
+  - Handle persistence errors
+  - Use appropriate storage
+  - Implement state versioning
+  - Handle data migration
+
+  ### 3. State Updates
+  - Use immutable updates
+  - Implement proper validation
+  - Handle concurrent updates
+  - Use proper event handling
+  - Implement undo/redo
+
+  ### 4. State Synchronization
+  - Handle multiple views
+  - Implement proper events
+  - Handle offline changes
+  - Manage state conflicts
+  - Implement proper sync
+
+  ### 5. Performance Considerations
+  - Minimize state updates
+  - Implement proper caching
+  - Handle large datasets
+  - Optimize persistence
+  - Monitor state size
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

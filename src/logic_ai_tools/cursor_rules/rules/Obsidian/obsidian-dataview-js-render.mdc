@@ -1,0 +1,170 @@
+---
+description: Cursor rules for DataviewJS render methods in Obsidian
+globs: *.md
+---
+# DataviewJS Render Rules
+
+<rule>
+name: obsidian_dataviewjs_render
+description: Rules for using DataviewJS render methods
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When using DataviewJS render methods:
+
+      1. HTML Element Rendering:
+         - `dv.el(element, text, [options])`: Render arbitrary HTML element
+           - Options can include `cls` for CSS classes and `attr` for attributes
+           - Example: `dv.el("div", "Content", { cls: "custom-class", attr: { id: "my-id" } })`
+         - `dv.header(level, text)`: Render header (levels 1-6)
+         - `dv.paragraph(text)`: Render text in paragraph
+         - `dv.span(text)`: Render inline text (no padding)
+
+      2. Query Execution:
+         - `dv.execute(source)`: Execute Dataview query and embed results
+           - Example: `dv.execute("LIST FROM #tag")`
+         - `dv.executeJs(source)`: Execute DataviewJS code and embed results
+           - Example: `dv.executeJs("dv.list([1, 2, 3])")`
+
+      3. Custom Views:
+         - `dv.view(path, input)`: Load and execute custom view script
+           - This is asynchronous - use `await dv.view(...)`
+           - Path can be to a JS file or folder with view.js and view.css
+           - Input is passed to the view script as the `input` variable
+           - Example: `await dv.view("views/custom", { arg1: "value" })`
+
+      4. Styling Considerations:
+         - Use appropriate header levels for hierarchy
+         - Group related content with container elements
+         - Apply consistent styling with CSS classes
+         - Consider using custom views for complex or reusable UI components
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Basic HTML element rendering
+      dv.header(2, "Project Summary");
+      
+      // Create a styled container
+      dv.el("div", "", { 
+        cls: "project-container",
+        attr: { id: "project-summary" }
+      });
+      
+      // Add content with various elements
+      dv.paragraph("This is an overview of all active projects.");
+      
+      // Create a styled element with nested content
+      dv.el("div", "Priority Projects", { 
+        cls: "section-header",
+        attr: { "data-type": "priority" }
+      });
+      
+      // Add a span for inline formatting
+      dv.paragraph("Status: ");
+      dv.span("Active");
+      ```
+    output: "Basic HTML element rendering with styling"
+
+  - input: |
+      ```dataviewjs
+      // Executing standard Dataview queries
+      dv.header(3, "Books by Rating");
+      
+      // Execute a LIST query
+      dv.paragraph("List of books:");
+      dv.execute("LIST FROM #book SORT rating DESC");
+      
+      // Execute a TABLE query
+      dv.paragraph("Table of books:");
+      dv.execute(`TABLE author, rating, genre 
+                  FROM #book 
+                  WHERE rating >= 4
+                  SORT rating DESC`);
+      
+      // Execute DataviewJS code
+      dv.paragraph("Custom list:");
+      dv.executeJs(`
+        const books = dv.pages("#book")
+          .sort(b => b.rating, "desc")
+          .limit(3);
+        dv.list(books.file.link);
+      `);
+      ```
+    output: "Executing standard Dataview queries and DataviewJS code"
+
+  - input: |
+      ```dataviewjs
+      // Using custom views
+      dv.header(2, "Custom Views Example");
+      
+      // Load and execute a custom view
+      try {
+        // This is asynchronous - must use await
+        await dv.view("views/book-gallery", { 
+          tag: "#book",
+          limit: 5,
+          sortBy: "rating"
+        });
+        
+        // Another custom view
+        await dv.view("views/task-summary", {
+          tags: ["#project", "#active"],
+          groupBy: "priority"
+        });
+      } catch (error) {
+        dv.paragraph("Error loading custom view: " + error.message);
+      }
+      ```
+    output: "Using custom views with parameters"
+
+  - input: |
+      ```dataviewjs
+      // Creating a complex dashboard with multiple elements
+      // Header section
+      dv.header(2, "Project Dashboard");
+      
+      // Stats section
+      dv.el("div", "", { cls: "stats-container" });
+      
+      const projects = dv.pages("#project");
+      const activeProjects = projects.where(p => p.status === "active");
+      const completedProjects = projects.where(p => p.status === "completed");
+      
+      dv.el("div", `
+        <div class="stat">
+          <div class="stat-value">${projects.length}</div>
+          <div class="stat-label">Total Projects</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${activeProjects.length}</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${completedProjects.length}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      `, { cls: "stats-grid" });
+      
+      // Recent projects section
+      dv.header(3, "Recent Projects");
+      dv.table(
+        ["Project", "Status", "Due Date"],
+        projects
+          .sort(p => p.file.mtime, "desc")
+          .limit(5)
+          .map(p => [p.file.link, p.status, p.due])
+      );
+      ```
+    output: "Creating a complex dashboard with multiple elements"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

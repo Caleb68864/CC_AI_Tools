@@ -1,0 +1,24 @@
+---
+description: Rules for proper comment placement
+globs: *
+---
+<rule>
+name: comment_placement
+description: Guidelines for positioning different types of comments
+
+placement_rules:
+- Inline Comments: Same line as code for clarifying tricky logic
+- Block Comments: Above methods or classes for high-level explanations
+- Documentation Comments: Before public methods, classes, and properties
+
+examples:
+  - input: |
+      // Good: Block comment explaining class purpose
+      /**
+       * Handles user authentication and session management
+       */
+      class AuthManager {
+          
+          x = 5; // Good: Inline comment explaining tricky value
+      }
+</rule>

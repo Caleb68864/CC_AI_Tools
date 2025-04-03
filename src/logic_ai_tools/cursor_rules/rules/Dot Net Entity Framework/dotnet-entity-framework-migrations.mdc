@@ -1,0 +1,127 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework migration best practices
+globs: ["*.cs", "*.csproj"]
+---
+# Entity Framework Migration Practices
+
+<rule>
+name: ef_migration_practices
+description: Ensures proper implementation and management of database migrations
+filters:
+  - type: file_extension
+    pattern: "\\.(cs|csproj)$"
+  - type: content
+    pattern: "(?:Migration|Up|Down|CreateTable|DropTable|AddColumn|DropColumn)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "public\\s+override\\s+void\\s+Up\\(\\)\\s*{[^}]*SQL\\("
+        message: "Avoid raw SQL in migrations when possible - use fluent API"
+      - pattern: "public\\s+override\\s+void\\s+Down\\(\\)\\s*{\\s*}"
+        message: "Implement Down method for reversible migrations"
+      - pattern: "AddColumn\\([^)]+\\).*?AddColumn\\([^)]+\\)"
+        message: "Group related column additions in same migration"
+      - pattern: "\\.HasDefaultValue\\(DateTime\\.Now\\)"
+        message: "Don't use DateTime.Now in migrations - use DateTime.UtcNow"
+
+  - type: suggest
+    message: |
+      Migration guidelines:
+      1. Naming Conventions:
+         - Use descriptive names
+         - Include timestamp prefix
+         - Indicate major changes
+      2. Migration Content:
+         - Keep migrations focused
+         - Group related changes
+         - Include both Up and Down methods
+         - Use builder methods over raw SQL
+      3. Data Handling:
+         - Include seed data when necessary
+         - Handle data migration explicitly
+         - Use UTC for timestamps
+      4. Best Practices:
+         - Test migrations before deployment
+         - Back up database before applying
+         - Document breaking changes
+         - Version control migrations
+
+examples:
+  - input: |
+      public partial class AddUserTable : Migration
+      {
+          public override void Up()
+          {
+              Sql("CREATE TABLE Users (Id INT PRIMARY KEY)");
+          }
+          
+          public override void Down()
+          {
+          }
+      }
+    output: |
+      public partial class AddUserTableAndUserProfile : Migration
+      {
+          public override void Up()
+          {
+              CreateTable(
+                  name: "Users",
+                  columns: table => new
+                  {
+                      Id = table.Column<int>(nullable: false)
+                          .Annotation("SqlServer:Identity", "1, 1"),
+                      Email = table.Column<string>(maxLength: 256),
+                      CreatedAt = table.Column<DateTime>()
+                          .Annotation("DefaultValueSql", "GETUTCDATE()")
+                  },
+                  constraints: table =>
+                  {
+                      table.PrimaryKey("PK_Users", x => x.Id);
+                  });
+
+              CreateIndex(
+                  name: "IX_Users_Email",
+                  table: "Users",
+                  column: "Email",
+                  unique: true);
+          }
+
+          public override void Down()
+          {
+              DropTable(name: "Users");
+          }
+      }
+
+      // Seeding data example
+      public partial class SeedInitialData : Migration
+      {
+          public override void Up()
+          {
+              InsertData(
+                  table: "Roles",
+                  columns: new[] { "Name", "NormalizedName" },
+                  values: new object[,]
+                  {
+                      { "Admin", "ADMIN" },
+                      { "User", "USER" }
+                  });
+          }
+
+          public override void Down()
+          {
+              DeleteData(
+                  table: "Roles",
+                  keyColumn: "Name",
+                  keyValues: new object[] { "Admin", "User" });
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

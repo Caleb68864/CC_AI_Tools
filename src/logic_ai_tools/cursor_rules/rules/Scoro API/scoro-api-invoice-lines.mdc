@@ -1,0 +1,197 @@
+---
+description: Rules for accessing the Scoro Invoice Lines API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Invoice Lines API Rules
+
+Documentation for interacting with the Scoro Invoice Lines API endpoints.
+
+<rule>
+name: scoro_invoice_lines_api
+description: Defines standards for Scoro Invoice Lines API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*invoiceLines.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/invoiceLines"
+        message: "Base endpoint for invoice lines API is /api/v2/invoiceLines"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/invoiceLines/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Get list of invoice lines"
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/invoiceLines/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Modify specific invoice line or add a new one"
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/invoiceLines/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "View specific invoice line"
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/invoiceLines/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Delete specific invoice line"
+
+# Common Fields
+fields:
+  - name: line_id
+    type: Integer
+    description: Invoice line ID
+    
+  - name: invoice_id
+    type: Integer
+    description: Parent invoice ID
+    
+  - name: project_id
+    type: Integer
+    description: Associated project ID
+    
+  - name: vat
+    type: String
+    description: VAT rate
+    
+  - name: product_id
+    type: Integer
+    description: Product ID
+    
+  - name: product_name
+    type: String
+    description: Product name
+    
+  - name: price
+    type: String
+    description: Unit price
+    
+  - name: amount
+    type: String
+    description: Quantity
+    
+  - name: unit
+    type: String
+    description: Unit of measurement (e.g., h for hours)
+    
+  - name: total
+    type: String
+    description: Total amount (price * amount)
+    
+  - name: vat_amount
+    type: String
+    description: VAT amount
+    
+  - name: total_with_vat
+    type: String
+    description: Total amount including VAT
+    
+  - name: depot_amounts
+    type: Array
+    description: Array of depot amounts for inventory items
+    fields:
+      - name: depot_id
+        type: Integer
+        description: Depot ID
+        
+      - name: amount
+        type: Integer
+        description: Amount in depot
+        
+      - name: serial_no
+        type: String
+        description: Serial number
+        
+  - name: dates
+    type: Object
+    description: Object mapping dates to quantities for time-based items
+    
+  - name: description
+    type: String
+    description: Line item description
+    
+  - name: is_billable
+    type: Boolean
+    description: Whether the line item is billable
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "invoice_id": 1,
+          "project_id": "1",
+          "vat": "20",
+          "product_id": "1",
+          "product_name": "Development Hours",
+          "price": "100",
+          "amount": "2",
+          "unit": "h",
+          "description": "Software development work",
+          "is_billable": true,
+          "depot_amounts": [
+            {
+              "depot_id": 1,
+              "amount": 1,
+              "serial_no": "A123"
+            }
+          ],
+          "dates": {
+            "2024-04-01": 1,
+            "2024-04-02": 1
+          }
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "line_id": 1,
+          "invoice_id": 1,
+          "project_id": "1",
+          "vat": "20",
+          "product_id": "1",
+          "product_name": "Development Hours",
+          "price": "100",
+          "amount": "2",
+          "unit": "h",
+          "total": "200",
+          "vat_amount": "40",
+          "total_with_vat": "240",
+          "description": "Software development work",
+          "is_billable": true,
+          "depot_amounts": [
+            {
+              "depot_id": 1,
+              "amount": 1,
+              "serial_no": "A123"
+            }
+          ],
+          "dates": {
+            "2024-04-01": 1,
+            "2024-04-02": 1
+          }
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

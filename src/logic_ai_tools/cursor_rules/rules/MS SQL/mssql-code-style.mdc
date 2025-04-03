@@ -1,0 +1,55 @@
+---
+description: Code style and structure standards for Microsoft SQL Server development
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_code_style
+description: Standards for SQL code formatting and structure
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these code style guidelines:
+
+      1. Keywords and Formatting:
+         - Use consistent capitalization for keywords (UPPERCASE recommended)
+         - Break complex queries into logical chunks with line breaks
+         - Indent subqueries and CTEs
+         - Align column lists and conditions for readability
+
+      2. Aliasing:
+         - Use meaningful table aliases
+         - Keep aliases short but descriptive
+         - Always qualify column names with table aliases in joins
+
+      3. Whitespace:
+         - Use indentation for nested queries
+         - Add line breaks between logical sections
+         - Include spaces around operators
+         - One blank line between statements
+
+examples:
+  - input: |
+      -- Bad
+      select a.customerid,a.name,b.orderdate from customers a join orders b on a.customerid=b.customerid where a.status='active'
+      
+      -- Good
+      SELECT 
+          c.CustomerId,
+          c.Name,
+          o.OrderDate
+      FROM 
+          Customers c
+          INNER JOIN Orders o ON c.CustomerId = o.CustomerId
+      WHERE 
+          c.Status = 'Active'
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

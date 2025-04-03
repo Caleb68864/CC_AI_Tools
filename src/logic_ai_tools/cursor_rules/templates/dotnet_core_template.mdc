@@ -1,0 +1,65 @@
+---
+description: Project context and structure information for .NET Core projects
+globs: **/*.*
+---
+
+# .NET Core Project Context
+
+This file contains the project structure and configuration information for a {project_type} project.
+
+<rule>
+name: project_context
+description: Provides project structure and configuration information for .NET Core projects
+
+metadata:
+  project_root: {project_root}
+  project_type: {project_type}
+  source_path: {source_path}
+  test_path: {test_path}
+  docs_path: {docs_path}
+  language: "C#"
+  dotnet_version: "6.0"
+  sdk: ".NET Core"
+
+file_extensions:
+{file_extensions}
+
+solution_info:
+  solution_path: {solution_path}
+  projects:
+{projects_info}
+
+project_structure:
+  csproj_files:
+{csproj_files}
+  project_references:
+{project_references}
+  package_references:
+{package_references}
+  target_frameworks:
+{target_frameworks}
+  assembly_info:
+{assembly_info}
+
+project_files:
+{project_files}
+
+config_files:
+{config_files}
+
+dependencies:
+{dependencies}
+
+important_files:
+{important_files}
+
+dotnet_specific:
+  target_framework: "net6.0"
+  test_framework: "xUnit"
+  linting_tools: ["StyleCop", "FxCop"]
+  documentation: "XML Documentation"
+  build_configuration: "Release"
+  runtime: "win-x64"
+  container_support: true
+  entity_framework: true
+</rule> 

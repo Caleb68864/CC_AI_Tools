@@ -1,0 +1,106 @@
+---
+description: Guidelines for optimizing Obsidian plugin performance
+globs: *.ts,*.js,*.css
+---
+
+# Obsidian Plugin Development - Performance & Optimization
+
+Best practices for optimizing Obsidian plugin performance and load time.
+
+<rule>
+name: obsidian_dev_performance
+description: Enforces performance optimization best practices for Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js|css)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "new ItemView"
+        message: "Consider using deferred loading for views to improve initial load time"
+      - pattern: "loadData\\(\\)"
+        message: "Implement proper data loading strategies with caching"
+      - pattern: "addEventListener"
+        message: "Ensure proper event listener cleanup to prevent memory leaks"
+
+examples:
+  - input: |
+      class MyView extends ItemView {
+          async onOpen() {
+              // Load all data immediately
+              const data = await this.loadAllData();
+              this.renderData(data);
+          }
+      }
+    output: |
+      class MyView extends ItemView {
+          private data: any[] = [];
+          
+          async onOpen() {
+              // Defer data loading
+              this.renderLoadingState();
+              this.loadDataInChunks();
+          }
+          
+          private async loadDataInChunks() {
+              const chunkSize = 50;
+              let offset = 0;
+              
+              while (true) {
+                  const chunk = await this.loadDataChunk(offset, chunkSize);
+                  if (chunk.length === 0) break;
+                  
+                  this.data = [...this.data, ...chunk];
+                  this.renderDataChunk(chunk);
+                  offset += chunkSize;
+              }
+          }
+          
+          private renderLoadingState() {
+              // Show loading indicator
+          }
+      }
+
+documentation:
+  ## Performance Optimization Guidelines
+
+  ### 1. Load Time Optimization
+  - Use deferred loading for views
+  - Implement lazy loading
+  - Optimize bundle size
+  - Minimize initial payload
+  - Use code splitting
+
+  ### 2. Data Management
+  - Implement efficient data structures
+  - Use proper caching strategies
+  - Handle large datasets
+  - Implement pagination
+  - Use virtual scrolling
+
+  ### 3. Memory Management
+  - Clean up event listeners
+  - Release unused resources
+  - Handle component unmounting
+  - Implement proper garbage collection
+  - Monitor memory usage
+
+  ### 4. UI Performance
+  - Optimize render cycles
+  - Use efficient DOM operations
+  - Implement proper debouncing
+  - Handle animations efficiently
+  - Use CSS optimizations
+
+  ### 5. Monitoring & Profiling
+  - Track performance metrics
+  - Monitor memory usage
+  - Profile render cycles
+  - Track load times
+  - Implement error tracking
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

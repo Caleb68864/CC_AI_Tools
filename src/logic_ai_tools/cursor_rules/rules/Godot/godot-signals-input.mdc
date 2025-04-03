@@ -1,0 +1,97 @@
+---
+description: 
+globs: 
+---
+---
+description: Godot Signals and Input Handling Guidelines
+globs: *.gd
+---
+# Godot Signals and Input Handling Guidelines
+
+<rule>
+name: godot_signals_input
+description: Standards for implementing signals and handling input in Godot
+
+filters:
+  - type: file_extension
+    pattern: "\\.gd$"
+  - type: content
+    pattern: "signal .*|func _input|func _unhandled_input"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: suggest
+    message: |
+      When implementing signals and input handling:
+
+      1. Signal Declaration and Usage:
+         ```gdscript
+         # Signal declarations at top of file
+         signal health_changed(new_health: float)
+         signal game_over
+
+         # Signal emission
+         func take_damage(amount: float) -> void:
+             health -= amount
+             health_changed.emit(health)
+             
+             if health <= 0:
+                 game_over.emit()
+
+         # Signal connection
+         func _ready() -> void:
+             health_changed.connect(_on_health_changed)
+         
+         func _on_health_changed(new_health: float) -> void:
+             update_health_ui(new_health)
+         ```
+         - Declare signals at file start
+         - Use snake_case for signal names
+         - Include signal parameter types
+         - Position cursor after signal declaration
+
+      2. Input Handling:
+         ```gdscript
+         func _input(event: InputEvent) -> void:
+             if event.is_action_pressed("jump"):
+                 jump()
+             elif event.is_action_released("shoot"):
+                 stop_shooting()
+
+         func _unhandled_input(event: InputEvent) -> void:
+             if event.is_action_pressed("pause"):
+                 toggle_pause()
+         ```
+         - Use Input singleton for key mapping
+         - Handle specific input types appropriately
+         - Group related input handlers
+         - Position cursor after handler
+
+examples:
+  - input: |
+      # Bad: Signal without type hints
+      signal damage_taken
+      signal position_updated(x, y)
+
+      # Good: Signals with type hints
+      signal damage_taken(amount: float)
+      signal position_updated(x: float, y: float)
+    output: "Proper signal declaration with type hints"
+
+  - input: |
+      # Bad: Direct key checking
+      func _process(_delta):
+          if Input.is_key_pressed(KEY_SPACE):
+              jump()
+
+      # Good: Input action system
+      func _input(event: InputEvent) -> void:
+          if event.is_action_pressed("jump"):
+              jump()
+    output: "Proper input handling using input actions"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

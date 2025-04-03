@@ -1,0 +1,57 @@
+---
+description: Documentation for using @Web symbol to reference external web resources
+globs: *.mdc
+---
+
+# @Web Symbol
+
+Documentation for using @Web to reference external web resources and documentation.
+
+<rule>
+name: cursor_symbol_web
+description: Guidelines and standards for using @Web symbol in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@Web"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@Web\\s*$"
+        message: "After @Web, specify the web resource or use arrow keys to select from available web references"
+      
+      - pattern: "@Web\\s+[^\\s]+"
+        message: "Valid web reference detected. Use arrow keys to navigate web suggestions"
+
+examples:
+  - input: |
+      @Web
+      @Web https://docs.cursor.com
+      @Web api-reference
+    output: |
+      Valid @Web usage examples:
+      - @Web: Shows list of available web resources
+      - @Web https://docs.cursor.com: Direct URL reference
+      - @Web api-reference: Reference to documentation section
+
+  - input: |
+      @Web invalid-url
+      @Web nonexistent-reference
+    output: |
+      Invalid @Web usage. Tips:
+      - URL must be valid and accessible
+      - Reference must exist in documentation
+      - Use arrow keys to select from available web resources
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - web
+    - navigation
+    - context
+</rule> 

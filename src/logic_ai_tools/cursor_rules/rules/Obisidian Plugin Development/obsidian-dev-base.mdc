@@ -1,0 +1,169 @@
+---
+description: Base guidelines and common patterns for Obsidian plugin development
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Base Guidelines
+
+Common patterns and best practices for all Obsidian plugin development.
+
+<rule>
+name: obsidian_dev_base
+description: Enforces common patterns and best practices for Obsidian plugin development
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class.*extends.*Plugin"
+        message: "Follow Obsidian plugin development best practices"
+      - pattern: "onload\\(\\)"
+        message: "Implement proper initialization and cleanup"
+      - pattern: "destroy\\(\\)"
+        message: "Ensure proper resource cleanup"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              // Initialize plugin
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private resources: Set<any>;
+          
+          onload() {
+              try {
+                  // Initialize resources
+                  this.resources = new Set();
+                  
+                  // Register components
+                  this.registerComponents();
+                  
+                  // Set up event listeners
+                  this.setupEventListeners();
+                  
+                  // Initialize state
+                  this.initializeState();
+              } catch (error) {
+                  console.error('Plugin initialization error:', error);
+                  new Notice('Failed to initialize plugin');
+              }
+          }
+          
+          private registerComponents() {
+              // Register commands, views, etc.
+          }
+          
+          private setupEventListeners() {
+              // Set up event listeners
+          }
+          
+          private initializeState() {
+              // Initialize plugin state
+          }
+          
+          destroy() {
+              try {
+                  // Clean up resources
+                  this.resources.forEach(resource => {
+                      if (resource.destroy) {
+                          resource.destroy();
+                      }
+                  });
+                  this.resources.clear();
+                  
+                  // Remove event listeners
+                  this.removeEventListeners();
+                  
+                  // Clean up state
+                  this.cleanupState();
+              } catch (error) {
+                  console.error('Plugin cleanup error:', error);
+              }
+          }
+          
+          private removeEventListeners() {
+              // Remove event listeners
+          }
+          
+          private cleanupState() {
+              // Clean up plugin state
+          }
+      }
+
+documentation:
+  ## Common Development Patterns
+
+  ### 1. Resource Management
+  - Track all resources
+  - Implement proper cleanup
+  - Handle resource lifecycle
+  - Manage memory efficiently
+  - Monitor resource usage
+
+  ### 2. Error Handling
+  - Use try-catch blocks
+  - Provide user feedback
+  - Log errors appropriately
+  - Implement fallbacks
+  - Handle edge cases
+
+  ### 3. Performance
+  - Optimize initialization
+  - Minimize resource usage
+  - Handle large datasets
+  - Implement caching
+  - Monitor performance
+
+  ### 4. State Management
+  - Track component state
+  - Handle state updates
+  - Implement persistence
+  - Manage state lifecycle
+  - Handle state recovery
+
+  ### 5. Best Practices
+  - Document behavior
+  - Test edge cases
+  - Handle transitions
+  - Consider accessibility
+  - Implement proper cleanup
+
+  ## Common Component Patterns
+
+  ### 1. Event Handling
+  - Register events properly
+  - Handle event cleanup
+  - Manage event state
+  - Handle event errors
+  - Implement debouncing
+
+  ### 2. UI Components
+  - Follow Obsidian patterns
+  - Handle component lifecycle
+  - Manage component state
+  - Implement proper cleanup
+  - Consider accessibility
+
+  ### 3. Data Management
+  - Handle data loading
+  - Implement caching
+  - Manage data updates
+  - Handle data errors
+  - Implement persistence
+
+  ### 4. User Interaction
+  - Provide feedback
+  - Handle user errors
+  - Implement undo/redo
+  - Consider accessibility
+  - Test interactions
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

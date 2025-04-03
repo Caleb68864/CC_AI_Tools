@@ -1,0 +1,41 @@
+---
+description: Rules for cursor positioning in JavaScript error handling blocks
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_error_cursor_rules
+
+## Error Handling Cursor Rules
+
+1. **Try-Catch Blocks**
+   - Position cursor inside catch blocks
+   - Leave space for additional error cases
+   - Group related try-catch blocks
+   - Place cursor at error handling logic start
+
+examples:
+  - input: |
+      try {
+          riskyOperation();
+      } catch (error) {|  // Cursor here for error handling
+          console.error(error);
+      } finally {|  // Cursor here for cleanup
+          cleanup();
+      }
+    output: "Correctly positioned cursors in error handling blocks"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - error-handling
+    - cursor-positioning
+    - javascript
+</rule> 

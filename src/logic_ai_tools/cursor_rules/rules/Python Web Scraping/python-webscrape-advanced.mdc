@@ -1,0 +1,186 @@
+---
+description: Python Advanced Web Scraping
+globs: *.py
+---
+
+# Python Advanced Web Scraping
+
+Advanced techniques and best practices for complex web scraping scenarios.
+
+<rule>
+name: python_webscrape_advanced
+description: Guidelines for advanced web scraping techniques in Python
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "selenium|playwright|pyppeteer|scrapy|splash|headless|chrome|firefox|browser"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "from\\s+selenium\\s+import\\s+webdriver"
+        message: "Consider using WebDriverManager to automatically manage browser drivers"
+      
+      - pattern: "driver\\s*=\\s*webdriver\\.Chrome\\(\\)"
+        message: "Set headless mode and other options for better performance in production environments"
+        
+      - pattern: "driver\\.get\\([^)]+\\)(?!.*wait)"
+        message: "Add explicit waits after page navigation to ensure elements are loaded"
+        
+      - pattern: "(?<!try)(?<!except)driver\\."
+        message: "Add try-except blocks around Selenium operations to handle StaleElementReferenceException and other common errors"
+        
+      - pattern: "driver\\.find_element"
+        message: "Use more robust element location strategies like CSS selectors or XPath with appropriate waits"
+        
+      - pattern: "scrapy\\.Spider"
+        message: "Implement proper request throttling and retry mechanisms in Scrapy spiders"
+        
+      - pattern: "(?<!proxy)(?<!proxies)(?<!PROXY)Playwright|playwright"
+        message: "Consider using proxy rotation for large-scale scraping to avoid IP blocks"
+
+examples:
+  - input: |
+      from selenium import webdriver
+      
+      def scrape_dynamic_page(url):
+          driver = webdriver.Chrome()
+          driver.get(url)
+          elements = driver.find_elements_by_class_name('product')
+          results = [e.text for e in elements]
+          driver.quit()
+          return results
+  - output: |
+      from selenium import webdriver
+      from selenium.webdriver.chrome.service import Service
+      from selenium.webdriver.common.by import By
+      from selenium.webdriver.support.ui import WebDriverWait
+      from selenium.webdriver.support import expected_conditions as EC
+      from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+      from webdriver_manager.chrome import ChromeDriverManager
+      
+      def scrape_dynamic_page(url, headless=True):
+          """Scrape a dynamic page with proper waits and error handling"""
+          options = webdriver.ChromeOptions()
+          if headless:
+              options.add_argument('--headless')
+          options.add_argument('--disable-gpu')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          
+          service = Service(ChromeDriverManager().install())
+          
+          try:
+              driver = webdriver.Chrome(service=service, options=options)
+              driver.set_page_load_timeout(30)
+              
+              try:
+                  driver.get(url)
+                  
+                  # Wait for elements to be present
+                  wait = WebDriverWait(driver, 10)
+                  elements = wait.until(
+                      EC.presence_of_all_elements_located((By.CLASS_NAME, 'product'))
+                  )
+                  
+                  results = []
+                  for element in elements:
+                      try:
+                          results.append(element.text)
+                      except StaleElementReferenceException:
+                          # Re-find the element if it became stale
+                          continue
+                  
+                  return results
+              except TimeoutException:
+                  print(f"Timeout while loading {url}")
+                  return []
+              except Exception as e:
+                  print(f"Error scraping {url}: {e}")
+                  return []
+              finally:
+                  driver.quit()
+          except Exception as e:
+              print(f"Error initializing webdriver: {e}")
+              return []
+
+  - input: |
+      import scrapy
+      
+      class ProductSpider(scrapy.Spider):
+          name = 'products'
+          start_urls = ['https://example.com/products']
+          
+          def parse(self, response):
+              for product in response.css('.product'):
+                  yield {
+                      'name': product.css('.name::text').get(),
+                      'price': product.css('.price::text').get()
+                  }
+  - output: |
+      import scrapy
+      from scrapy.spidermiddlewares.httperror import HttpError
+      from twisted.internet.error import DNSLookupError, TCPTimedOutError
+      
+      class ProductSpider(scrapy.Spider):
+          name = 'products'
+          start_urls = ['https://example.com/products']
+          
+          # Configure crawler settings
+          custom_settings = {
+              'DOWNLOAD_DELAY': 2,  # 2 second delay between requests
+              'RANDOMIZE_DOWNLOAD_DELAY': True,
+              'CONCURRENT_REQUESTS': 8,  # Limit concurrent requests
+              'RETRY_TIMES': 3,  # Retry failed requests up to 3 times
+              'RETRY_HTTP_CODES': [500, 502, 503, 504, 408, 429],  # Retry on these status codes
+              'USER_AGENT': 'MyProductBot/1.0 (+https://example.com/bot)',
+          }
+          
+          def start_requests(self):
+              for url in self.start_urls:
+                  yield scrapy.Request(
+                      url=url, 
+                      callback=self.parse,
+                      errback=self.errback_handler,
+                      meta={'handle_httpstatus_list': [404, 403]}  # Handle these status codes
+                  )
+          
+          def parse(self, response):
+              # Check if response is valid
+              if response.status >= 400:
+                  self.logger.warning(f"Error {response.status} on {response.url}")
+                  return
+                  
+              for product in response.css('.product'):
+                  yield {
+                      'name': product.css('.name::text').get(),
+                      'price': product.css('.price::text').get(),
+                      'url': response.urljoin(product.css('a::attr(href)').get()),
+                  }
+                  
+              # Follow pagination links
+              next_page = response.css('.pagination .next::attr(href)').get()
+              if next_page:
+                  yield response.follow(
+                      next_page, 
+                      callback=self.parse,
+                      errback=self.errback_handler
+                  )
+          
+          def errback_handler(self, failure):
+              # Log different types of failures
+              if failure.check(HttpError):
+                  response = failure.value.response
+                  self.logger.error(f"HttpError on {response.url}: {response.status}")
+              elif failure.check(DNSLookupError):
+                  request = failure.request
+                  self.logger.error(f"DNSLookupError on {request.url}")
+              elif failure.check(TimeoutError, TCPTimedOutError):
+                  request = failure.request
+                  self.logger.error(f"TimeoutError on {request.url}")
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

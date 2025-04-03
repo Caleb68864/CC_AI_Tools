@@ -1,0 +1,58 @@
+---
+description: API reference and guidelines for MudBlazor TextField component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor TextField API
+
+The MudBlazor TextField component provides a customizable text input with various styling options and validation support.
+
+<rule>
+name: mudblazor_textfield
+description: Provides guidelines and API reference for using MudBlazor TextField component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudTextField.*?>"
+        message: "Consider using Variant, Margin, and Label properties for consistent form styling."
+      - pattern: "(?<!@bind-Value=).*<MudTextField.*?>"
+        message: "Use @bind-Value for two-way binding of text value."
+      - pattern: "<MudTextField.*?(?<!Validation=).*?>"
+        message: "Consider adding validation rules using the Validation property."
+      - pattern: "(?<!HelperText=).*<MudTextField.*Required=\"true\".*?>"
+        message: "Add HelperText to provide guidance for required fields."
+      - pattern: "<MudTextField.*?(?<!Immediate=\"true\").*OnDebounceIntervalElapsed.*?>"
+        message: "Set Immediate=\"true\" when using OnDebounceIntervalElapsed for immediate validation."
+
+examples:
+  - input: |
+      <MudTextField></MudTextField>
+    output: |
+      <MudTextField @bind-Value="@text"
+          Label="Username"
+          Variant="Variant.Outlined"
+          Margin="Margin.Dense"
+          Required="true"
+          RequiredError="Username is required"
+          HelperText="Enter your username"
+          Immediate="true"
+          OnDebounceIntervalElapsed="OnTextChanged">
+      </MudTextField>
+
+      @code {
+          private string text;
+
+          private async Task OnTextChanged()
+          {
+              // Handle text changes
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

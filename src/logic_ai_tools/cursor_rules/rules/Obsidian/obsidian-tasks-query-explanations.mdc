@@ -1,0 +1,103 @@
+---
+description: Rules for Obsidian Tasks query explanation formatting and validation
+globs: "*.md"
+---
+
+# Obsidian Tasks Query Explanations
+
+Rules for using query explanations in Obsidian Tasks.
+
+<rule>
+name: obsidian_tasks_query_explanations
+description: Enforces correct usage of query explanations and formatting
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Validate query block format
+      - pattern: "```tasks\\s*(?!explain\\b)"
+        message: "Consider adding 'explain' to tasks query blocks for better understanding of filters"
+
+      # Check for proper line continuations in complex queries
+      - pattern: "\\\\\\s*$\\s*[^\\n]"
+        message: "Line continuations in queries should be followed by a newline for readability"
+
+      # Validate placeholder syntax
+      - pattern: "\\{\\{(?!query\\.file\\.|!).*?\\}\\}"
+        message: "Invalid placeholder. Use {{query.file.*}} for file properties or {{! comment}} for comments"
+
+      # Check for proper query file defaults in frontmatter
+      - pattern: "^---\\s*\\nTQ_.*?:[^|]"
+        message: "Query file defaults should use the '|-' YAML block scalar indicator for multi-line values"
+
+      # Validate CSS class usage
+      - pattern: "\\.tasks-query-explanation\\s*\\{"
+        message: "Use .plugin-tasks-query-explanation for styling query explanations"
+
+examples:
+  - input: |
+      ```tasks
+      not done
+      due next week
+      ```
+
+      ---
+      TQ_extra_instructions: not done
+      ---
+
+      ```css
+      .tasks-query-explanation {
+          color: blue;
+      }
+      ```
+  - output: |
+      ```tasks
+      not done
+      due next week
+      explain
+      ```
+
+      ---
+      TQ_extra_instructions: |-
+        not done
+      ---
+
+      ```css
+      .plugin-tasks-query-explanation {
+          color: var(--color-blue);
+      }
+      ```
+
+metadata:
+  priority: high
+  version: 1.0
+
+notes: |
+  Query Explanation Rules:
+  1. Add 'explain' to tasks query blocks for clarity
+  2. Use line continuations with newlines for complex queries
+  3. Valid placeholders:
+     - {{query.file.path}}
+     - {{query.file.pathWithoutExtension}}
+     - {{query.file.root}}
+     - {{query.file.folder}}
+     - {{query.file.filename}}
+     - {{query.file.filenameWithoutExtension}}
+  4. Query file defaults:
+     - Use TQ_* frontmatter properties
+     - Use |- for multi-line values
+     - Common properties: TQ_extra_instructions, TQ_short_mode, TQ_show_tree
+  5. CSS customization:
+     - Use .plugin-tasks-query-explanation class
+     - Use Obsidian CSS variables for theming
+  6. Explanation features:
+     - Expands dates in filters
+     - Shows boolean query logic
+     - Displays global filters and queries
+     - Shows query file defaults
+     - Lists group by and sort by instructions
+</rule> 

@@ -1,0 +1,220 @@
+---
+description: Rule for OpenWebUI functions development and implementation
+globs: "*.py"
+---
+
+# OpenWebUI Functions Rule
+
+This rule defines the standards and best practices for developing and using OpenWebUI functions. Functions are like plugins for Open WebUI that help extend its capabilities, including adding support for new AI model providers, modifying message processing, or adding custom UI elements.
+
+For detailed documentation, see the [OpenWebUI Functions Documentation](https://docs.openwebui.com/features/plugin/functions/).
+
+<rule>
+name: openwebui_functions_rule
+description: Enforces standards and best practices for OpenWebUI functions development
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "(class Pipe|class Filter|class Action)"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class Pipe[^:]*:"
+        message: "Pipe functions should create custom agents/models that appear as standalone models in the interface."
+      
+      - pattern: "class Filter[^:]*:"
+        message: "Filter functions should modify inputs (inlet) before they reach the model or outputs (outlet) after they come from the model."
+      
+      - pattern: "class Action[^:]*:"
+        message: "Action functions should add custom buttons to the chat interface for interactive shortcuts."
+      
+      - pattern: "def inlet\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. All inlet methods must have proper type hints for arguments and return values."
+      
+      - pattern: "def outlet\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. All outlet methods must have proper type hints for arguments and return values."
+      
+      - pattern: "def process\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. All process methods must have proper type hints for arguments and return values."
+      
+      - pattern: "def (inlet|outlet|process)\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "All function methods must have proper docstrings explaining their purpose and parameters."
+
+examples:
+  - input: |
+      class Pipe:
+          def process(self, message):
+              # Process implementation
+              return response
+    output: |
+      """
+      title: Google Search Integration
+      author: Your Name
+      author_url: https://website.com
+      git_url: https://github.com/username/google-search-pipe.git
+      description: This function integrates Google Search into Open WebUI
+      required_open_webui_version: 0.4.0
+      requirements: google-api-python-client
+      version: 1.0.0
+      licence: MIT
+      """
+      
+      from typing import Dict, List, Any
+      
+      class Pipe:
+          def __init__(self):
+              """Initialize the Pipe function."""
+              self.api_key = ""  # Set up any necessary configuration
+          
+          def process(self, message: str) -> Dict[str, Any]:
+              """
+              Process the user message and return search results.
+              
+              This method takes the user's message, performs a Google search,
+              and returns the formatted results.
+              
+              :param message: The user's input message/query
+              :return: Dictionary containing the response
+              """
+              # Implementation of Google Search API call
+              search_results = self._perform_search(message)
+              
+              # Format and return the results
+              return {
+                  "content": f"Here are the search results for '{message}':\n\n{search_results}",
+                  "role": "assistant"
+              }
+          
+          def _perform_search(self, query: str) -> str:
+              """
+              Helper method to perform the actual search.
+              
+              :param query: The search query
+              :return: Formatted search results as a string
+              """
+              # Implementation details
+              return "Search results would appear here"
+  
+  - input: |
+      class Filter:
+          def inlet(self, messages):
+              return messages
+          
+          def outlet(self, response):
+              return response
+    output: |
+      """
+      title: Format Enhancer
+      author: Your Name
+      author_url: https://website.com
+      description: This filter enhances formatting of inputs and outputs
+      version: 1.0.0
+      """
+      
+      from typing import List, Dict, Any
+      
+      class Filter:
+          def inlet(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+              """
+              Modify the input messages before they reach the model.
+              
+              This method adds formatting instructions to ensure consistent output.
+              
+              :param messages: List of message dictionaries
+              :return: Modified list of message dictionaries
+              """
+              # Add a system message with formatting instructions if not present
+              has_system = any(msg.get("role") == "system" for msg in messages)
+              
+              if not has_system:
+                  messages.insert(0, {
+                      "role": "system",
+                      "content": "Please format your responses with markdown. Use bullet points for lists and code blocks for code."
+                  })
+              
+              return messages
+          
+          def outlet(self, response: Dict[str, Any]) -> Dict[str, Any]:
+              """
+              Modify the output from the model before it's displayed to the user.
+              
+              This method enhances the formatting of the response.
+              
+              :param response: The model's response dictionary
+              :return: Modified response dictionary
+              """
+              # Ensure code blocks are properly formatted
+              if "content" in response:
+                  content = response["content"]
+                  # Enhance formatting (example implementation)
+                  content = self._ensure_code_formatting(content)
+                  response["content"] = content
+              
+              return response
+          
+          def _ensure_code_formatting(self, content: str) -> str:
+              """
+              Helper method to ensure code blocks are properly formatted.
+              
+              :param content: The content to format
+              :return: Formatted content
+              """
+              # Implementation details
+              return content
+  
+  - input: |
+      class Action:
+          def process(self, message):
+              return "Summary of: " + message
+    output: |
+      """
+      title: Message Summarizer
+      author: Your Name
+      description: Adds a button to summarize messages
+      version: 1.0.0
+      """
+      
+      from typing import Dict, Any, Optional
+      
+      class Action:
+          def __init__(self):
+              """Initialize the Action function."""
+              self.name = "Summarize"  # Button label
+              self.description = "Summarize this message"  # Button tooltip
+          
+          def process(self, message: str, model: Optional[str] = None) -> Dict[str, Any]:
+              """
+              Process the message to create a summary.
+              
+              This method is called when the user clicks the Summarize button.
+              
+              :param message: The message content to summarize
+              :param model: Optional model to use for summarization
+              :return: Dictionary with the summarized content
+              """
+              # Implementation of summarization logic
+              # This could use a model call or custom logic
+              
+              summary = f"Summary of the message ({len(message)} chars):\n\n"
+              # Simple example implementation
+              if len(message) > 200:
+                  summary += message[:197] + "..."
+              else:
+                  summary += message
+              
+              return {
+                  "content": summary,
+                  "role": "assistant"
+              }
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - openwebui
+    - functions
+    - pipe
+    - filter
+    - action 

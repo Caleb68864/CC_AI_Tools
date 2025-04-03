@@ -1,0 +1,60 @@
+---
+description: Database design standards for Microsoft SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_database_design
+description: Standards for database design and structure in SQL Server
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these database design guidelines:
+
+      1. Table Design:
+         - Always define primary keys
+         - Implement appropriate foreign key constraints
+         - Use appropriate data types and sizes
+         - Normalize to appropriate form (typically 3NF)
+
+      2. Column Properties:
+         - Define NULL/NOT NULL appropriately
+         - Use DEFAULT constraints where applicable
+         - Implement CHECK constraints for data validation
+         - Use IDENTITY for auto-incrementing columns
+
+      3. Index Design:
+         - Create appropriate clustered indexes
+         - Design non-clustered indexes for common queries
+         - Consider fill factor and page splits
+         - Monitor index fragmentation
+
+examples:
+  - input: |
+      -- Bad: Poor table design
+      CREATE TABLE Orders (
+          id INT,
+          data VARCHAR(MAX),
+          customer VARCHAR(1000)
+      )
+      
+      -- Good: Proper table design
+      CREATE TABLE Orders (
+          OrderId INT IDENTITY(1,1) PRIMARY KEY,
+          OrderDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+          CustomerId INT NOT NULL,
+          Status TINYINT NOT NULL DEFAULT(0),
+          CONSTRAINT FK_Orders_Customers 
+              FOREIGN KEY (CustomerId) 
+              REFERENCES Customers(CustomerId)
+      )
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

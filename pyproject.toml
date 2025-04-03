@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cc-ai-tools"
+version = "0.1.0"
+authors = [
+    { name = "CC AI Tools" },
+]
+description = "Productivity Tools Using AI"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "anthropic>=0.46.0",
+    "openai>=1.1.0",
+    "python-dotenv>=1.0.0",
+    "gitpython>=3.1.40",
+    "pyyaml>=6.0.1",
+    "pyperclip>=1.8.2",
+    "tqdm>=4.66.1"
+]
+
+[project.urls]
+Homepage = "https://github.com/Caleb68864/CC_AI_Tools"
+
+[project.scripts]
+# Old names maintained for backward compatibility
+CreateGitProgressReport = "cc_ai_tools.git.progress_report:create_git_progress_report"
+CreateGitCommitMsg = "cc_ai_tools.git.commit_msg:create_git_commit_msg"
+CreateGitBranchName = "cc_ai_tools.git.branch_name:create_git_branch_name"
+ApplyCursorRules = "cc_ai_tools.cursor_rules.main:main"
+
+# New names (optional, can be added alongside old names)
+git-progress = "cc_ai_tools.git.progress_report:create_git_progress_report"
+git-commit = "cc_ai_tools.git.commit_msg:create_git_commit_msg"
+git-branch = "cc_ai_tools.git.branch_name:create_git_branch_name"
+cursor-rules = "cc_ai_tools.cursor_rules.main:main"
+
+[tool.hatch.build]
+packages = ["src/cc_ai_tools"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cc_ai_tools"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src/cc_ai_tools",
+    "/tests",
+    "README.md",
+]

@@ -1,0 +1,193 @@
+---
+description: Guidelines for managing workspace and views in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Workspace Management
+
+Best practices for managing workspace and views in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_workspace
+description: Enforces best practices for workspace management in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "workspace\\.on\\('layout-change'"
+        message: "Implement proper workspace layout change handling"
+      - pattern: "workspace\\.getActiveView"
+        message: "Use proper view management and state tracking"
+      - pattern: "workspace\\.getLeaf"
+        message: "Handle workspace leaf management efficiently"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              this.registerEvent(
+                  this.app.workspace.on('layout-change', () => {
+                      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                      if (view) {
+                          // Handle view
+                      }
+                  })
+              );
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private activeView: MarkdownView | null;
+          private viewStates: Map<string, any>;
+          
+          onload() {
+              this.viewStates = new Map();
+              this.activeView = null;
+              
+              // Register workspace events
+              this.registerEvent(
+                  this.app.workspace.on('layout-change', () => {
+                      this.handleLayoutChange();
+                  })
+              );
+              
+              this.registerEvent(
+                  this.app.workspace.on('active-leaf-change', (leaf) => {
+                      this.handleActiveLeafChange(leaf);
+                  })
+              );
+              
+              this.registerEvent(
+                  this.app.workspace.on('file-open', (file) => {
+                      this.handleFileOpen(file);
+                  })
+              );
+          }
+          
+          private handleLayoutChange() {
+              try {
+                  const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                  if (view !== this.activeView) {
+                      // Save state of previous view
+                      if (this.activeView) {
+                          this.saveViewState(this.activeView);
+                      }
+                      
+                      // Load state of new view
+                      if (view) {
+                          this.loadViewState(view);
+                      }
+                      
+                      this.activeView = view;
+                  }
+              } catch (error) {
+                  console.error('Layout change error:', error);
+              }
+          }
+          
+          private handleActiveLeafChange(leaf: WorkspaceLeaf) {
+              try {
+                  if (!leaf) return;
+                  
+                  const view = leaf.view;
+                  if (view instanceof MarkdownView) {
+                      this.handleLayoutChange();
+                  }
+              } catch (error) {
+                  console.error('Active leaf change error:', error);
+              }
+          }
+          
+          private handleFileOpen(file: TFile) {
+              try {
+                  if (!file) return;
+                  
+                  // Handle file open event
+                  const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                  if (view) {
+                      this.updateViewForFile(view, file);
+                  }
+              } catch (error) {
+                  console.error('File open error:', error);
+              }
+          }
+          
+          private saveViewState(view: MarkdownView) {
+              const file = view.file;
+              if (file) {
+                  this.viewStates.set(file.path, {
+                      // Save relevant view state
+                      scroll: view.editor.getScroll(),
+                      selection: view.editor.getSelection(),
+                      // Add other state properties
+                  });
+              }
+          }
+          
+          private loadViewState(view: MarkdownView) {
+              const file = view.file;
+              if (file) {
+                  const state = this.viewStates.get(file.path);
+                  if (state) {
+                      // Restore view state
+                      view.editor.setScroll(state.scroll);
+                      view.editor.setSelection(state.selection);
+                      // Restore other state properties
+                  }
+              }
+          }
+          
+          private updateViewForFile(view: MarkdownView, file: TFile) {
+              // Update view based on file
+              const state = this.viewStates.get(file.path);
+              if (state) {
+                  this.loadViewState(view);
+              }
+          }
+          
+          destroy() {
+              this.viewStates.clear();
+              this.activeView = null;
+          }
+      }
+
+documentation:
+  ## Workspace Management Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Workspace Structure
+  - Handle workspace layout
+  - Manage workspace splits
+  - Handle workspace tabs
+  - Implement workspace navigation
+  - Handle workspace resizing
+
+  ### 2. View Management
+  - Create and manage views
+  - Handle view activation
+  - Manage view focus
+  - Handle view persistence
+  - Implement view transitions
+
+  ### 3. Leaf Management
+  - Create and manage leaves
+  - Handle leaf splitting
+  - Manage leaf navigation
+  - Handle leaf persistence
+  - Implement leaf transitions
+
+  ### 4. Workspace Events
+  - Handle layout changes
+  - Manage file changes
+  - Handle view changes
+  - Manage leaf changes
+  - Implement workspace updates
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

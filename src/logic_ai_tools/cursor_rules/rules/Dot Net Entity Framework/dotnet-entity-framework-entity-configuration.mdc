@@ -1,0 +1,96 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework entity configuration best practices
+globs: "*.cs"
+---
+# Entity Framework Entity Configuration
+
+<rule>
+name: ef_entity_configuration
+description: Ensures proper entity configuration using Fluent API and Data Annotations
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "(?:ModelBuilder|IEntityTypeConfiguration|\\[Table|\\[Column)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "\\[Column\\((?![\"']Id[\"']|[\"']\\w+Id[\"']).*?\\)\\]\\s+public\\s+int\\s+Id\\s*{"
+        message: "Primary key columns should be named 'Id' or '{Entity}Id'"
+      - pattern: "\\[StringLength\\(\\d+\\)\\]\\s+public\\s+string\\s+\\w+\\s*{\\s*get;\\s*set;\\s*}"
+        message: "String properties should specify both StringLength and required/optional status"
+      - pattern: "public\\s+DbSet<\\w+>.*?{\\s*get;\\s*set;\\s*}.*?public\\s+DbSet<\\w+>"
+        message: "Move entity configurations to separate configuration classes"
+      - pattern: "modelBuilder\\.Entity<\\w+>\\(\\)\\s*\\.HasMany\\([^)]+\\)\\.WithMany\\(\\)"
+        message: "Many-to-many relationships should specify navigation properties"
+
+  - type: suggest
+    message: |
+      Entity configuration guidelines:
+      1. Use separate configuration classes:
+         - Implement IEntityTypeConfiguration<T>
+         - One configuration class per entity
+      2. Naming conventions:
+         - Primary keys: Id or {Entity}Id
+         - Foreign keys: {Entity}Id
+         - Navigation properties: singular/plural based on relationship
+      3. Configure relationships explicitly:
+         - Specify foreign keys
+         - Define cascade delete behavior
+         - Set required/optional
+      4. Use appropriate data annotations:
+         - [Required] for non-nullable
+         - [StringLength] with error message
+         - [Index] for performance
+      5. Use Fluent API for complex configurations
+
+examples:
+  - input: |
+      public class User
+      {
+          [Column("UserId")]
+          public int Id { get; set; }
+          
+          [StringLength(50)]
+          public string Name { get; set; }
+          
+          public virtual ICollection<Order> Orders { get; set; }
+      }
+    output: |
+      public class User
+      {
+          public int Id { get; set; }
+          
+          [Required]
+          [StringLength(50, ErrorMessage = "Name cannot exceed 50 characters")]
+          public string Name { get; set; }
+          
+          public virtual ICollection<Order> Orders { get; set; }
+      }
+
+      public class UserConfiguration : IEntityTypeConfiguration<User>
+      {
+          public void Configure(EntityTypeBuilder<User> builder)
+          {
+              builder.HasKey(u => u.Id);
+              
+              builder.Property(u => u.Name)
+                    .IsRequired()
+                    .HasMaxLength(50);
+              
+              builder.HasMany(u => u.Orders)
+                    .WithOne(o => o.User)
+                    .HasForeignKey(o => o.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

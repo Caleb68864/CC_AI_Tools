@@ -1,0 +1,81 @@
+---
+description: Cursor Rule Format Standards
+globs: *.mdc
+---
+
+# Cursor Rule Format Standards
+
+Standards for formatting Cursor rule files.
+
+<rule>
+name: cursor_rule_format_standards
+description: Enforces consistent formatting for Cursor rule files
+filters:
+  - type: file_extension
+    pattern: "\\.mdc$"
+  - type: content
+    pattern: "<rule>"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "^(?!---\\ndescription:.*\\nglobs:.*\\n---\\n\\n#.*\\n\\n.*\\n\\n<rule>)"
+        message: "Rule files must start with YAML frontmatter followed by title and description"
+      
+      - pattern: "<rule>\\s*(?!\\s*name:)"
+        message: "Rule block must start with name field"
+        
+      - pattern: "actions:\\s*(?!\\s*-\\s*type:)"
+        message: "Actions must be listed with proper indentation and type field"
+        
+      - pattern: "examples:\\s*(?!\\s*-\\s*input:)"
+        message: "Examples must include input and output sections"
+        
+      - pattern: "</rule>\\s*(?!\\s*$)"
+        message: "Rule block should be the last element in the file"
+
+examples:
+  - input: |
+      <rule>
+      name: some_rule
+      actions:
+        type: suggest
+      </rule>
+    output: |
+      ---
+      description: Rule Description
+      globs: *.ext
+      ---
+
+      # Rule Title
+
+      Detailed description of the rule's purpose.
+
+      <rule>
+      name: some_rule
+      description: Detailed rule description
+      filters:
+        - type: file_extension
+          pattern: "\\.ext$"
+      
+      actions:
+        - type: suggest
+          conditions:
+            - pattern: "pattern_to_match"
+              message: "Suggestion message"
+
+      examples:
+        - input: |
+            Example input code
+          output: |
+            Example output code
+
+      metadata:
+        priority: high
+        version: 1.0
+      </rule>
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

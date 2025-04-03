@@ -1,0 +1,121 @@
+---
+description: Rules for accessing the Scoro Time Entries API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Time Entries API Rules
+
+Documentation for interacting with the Scoro Time Entries API endpoints.
+
+<rule>
+name: scoro_time_entries_api
+description: Defines standards for Scoro Time Entries API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*timeEntries.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/timeEntries"
+        message: "Base endpoint for time entries API is /api/v2/timeEntries"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/timeEntries/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/timeEntries/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/timeEntries/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/timeEntries/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  setDone:
+    url: "https://{company}.scoro.com/api/v2/timeEntries/setDone/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+
+# Common Fields
+fields:
+  - name: time_entry_id
+    type: Integer
+    description: Time entry ID
+    
+  - name: description
+    type: String
+    description: Description
+    
+  - name: title
+    type: String
+    description: Time Entry title (dynamically constructed from description and activity id)
+    
+  - name: start_datetime
+    type: Datetime (Y-m-d\TH:i:sP)
+    description: Planned start date and time
+    
+  - name: end_datetime
+    type: Datetime (Y-m-d\TH:i:sP)
+    description: Planned end date and time
+    
+  - name: duration
+    type: Time (HH:ii:ss)
+    description: Time entry duration (rounded to nearest minute)
+    
+  - name: is_completed
+    type: Boolean
+    description: Time entry completion status
+    
+  - name: is_billable
+    type: Boolean
+    description: Whether the time entry is billable
+    
+  - name: is_locked
+    type: Boolean
+    description: Whether the time entry is locked (only if "Use time locking" enabled)
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "event_id": "1",
+          "description": "Development work",
+          "duration": "01:30:00"
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "time_entry_id": 1,
+          "description": "Development work",
+          "duration": "01:30:00",
+          "event_id": 1,
+          "is_completed": 0,
+          "is_billable": 0
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

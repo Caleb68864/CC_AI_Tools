@@ -1,0 +1,133 @@
+---
+description: API reference and guidelines for MudBlazor Carousel component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Carousel API
+
+The MudBlazor Carousel component provides a slideshow for cycling through elements like images, text, or custom content, with support for custom transitions, templates, and data binding.
+
+<rule>
+name: mudblazor_carousel
+description: Provides guidelines and API reference for using MudBlazor Carousel component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudCarousel.*?>"
+        message: "Consider configuring AutoCycle, ShowArrows, ShowBullets, and EnableSwipeGesture for better user experience."
+      - pattern: "<MudCarousel.*?(?<!ItemsSource=).*?>"
+        message: "Consider using ItemsSource for data binding with collections."
+      - pattern: "<MudCarousel.*?(?<!@bind-SelectedIndex=).*?>"
+        message: "Use @bind-SelectedIndex for two-way binding of the current slide position."
+      - pattern: "<MudCarouselItem.*?(?<!Transition=).*?>"
+        message: "Specify Transition (None, Fade, Slide, or Custom) for better visual effects."
+      - pattern: "<MudCarousel.*?(?<!TData=).*?>"
+        message: "Specify TData generic type parameter for proper type handling."
+      - pattern: "<MudCarouselItem.*?CustomTransitionEnter.*?(?<!CustomTransitionExit).*?>"
+        message: "When using custom transitions, specify both CustomTransitionEnter and CustomTransitionExit."
+
+examples:
+  - input: |
+      <MudCarousel>
+          <MudCarouselItem>Item 1</MudCarouselItem>
+      </MudCarousel>
+    output: |
+      @* Basic Carousel with Navigation *@
+      <MudCarousel @ref="carousel" Class="mud-width-full" Style="height: 400px;" TData="object"
+          ShowArrows="true"
+          ShowBullets="true"
+          EnableSwipeGesture="true"
+          AutoCycle="true"
+          TimerInterval="TimeSpan.FromSeconds(5)">
+          <MudCarouselItem Transition="Transition.Slide" Color="Color.Primary">
+              <div class="d-flex" style="height:100%">
+                  <MudIcon Class="mx-auto my-auto" Icon="@Icons.Custom.Brands.MudBlazor" Size="Size.Large" />
+              </div>
+          </MudCarouselItem>
+      </MudCarousel>
+
+      @* Data Bound Carousel *@
+      <MudCarousel @ref="dataCarousel" Class="mud-width-full" Style="height: 400px;"
+          ItemsSource="@items"
+          @bind-SelectedIndex="selectedIndex"
+          TData="string">
+          <ItemTemplate>
+              <div class="d-flex flex-column justify-center" style="height:100%">
+                  <MudText Align="Align.Center">@context</MudText>
+              </div>
+          </ItemTemplate>
+      </MudCarousel>
+
+      @* Custom Transitions *@
+      <MudCarousel Class="mud-width-full" Style="height: 400px;" TData="object" AutoCycle="false">
+          <MudCarouselItem Transition="Transition.Custom" 
+              CustomTransitionEnter="bounceIn"
+              CustomTransitionExit="bounceOut">
+              <div class="d-flex" style="height:100%">
+                  <MudIcon Class="mx-auto my-auto" Icon="@Icons.Custom.Brands.MudBlazor" Size="Size.Large" />
+              </div>
+          </MudCarouselItem>
+      </MudCarousel>
+
+      @* Custom Navigation Templates *@
+      <MudCarousel Class="mud-width-full" Style="height: 400px;" TData="object">
+          <BulletTemplate Context="selected">
+              <MudIcon Icon="@(selected ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Circle)" />
+          </BulletTemplate>
+          <PreviousButtonTemplate>
+              <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" />
+          </PreviousButtonTemplate>
+          <NextButtonTemplate>
+              <MudIcon Icon="@Icons.Material.Filled.SkipNext" />
+          </NextButtonTemplate>
+      </MudCarousel>
+
+      @code {
+          private MudCarousel<object> carousel;
+          private MudCarousel<string> dataCarousel;
+          private List<string> items = new() { "Item 1", "Item 2", "Item 3" };
+          private int selectedIndex = 0;
+
+          private async Task AddItem()
+          {
+              items.Add($"Item {items.Count + 1}");
+              await Task.Delay(1);
+              dataCarousel.MoveTo(items.Count - 1);
+          }
+
+          private async Task DeleteItem(int index)
+          {
+              if (items.Any())
+              {
+                  items.RemoveAt(index);
+                  await Task.Delay(1);
+                  dataCarousel.MoveTo(Math.Max(Math.Min(index, items.Count - 1), 0));
+              }
+          }
+      }
+
+      @* Required CSS for Custom Transitions *@
+      <style>
+          .bounceIn {
+              opacity: 0;
+              animation-delay: 0.5s;
+              animation-duration: 0.5s;
+              animation-name: bounceIn;
+              animation-fill-mode: forwards;
+          }
+
+          .bounceOut {
+              animation-duration: 0.5s;
+              animation-name: bounceOut;
+              animation-fill-mode: forwards;
+          }
+      </style>
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

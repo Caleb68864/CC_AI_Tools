@@ -1,0 +1,54 @@
+---
+description: Rules for optimizing markdown files for LLM embeddings
+globs: "*.md"
+---
+
+# LLM Embedding Optimization Standards
+
+Standards for preparing markdown files for optimal LLM embedding.
+
+<rule>
+name: llm_embedding_optimization
+description: Enforces standards that optimize markdown files for LLM embeddings
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<[^>]+>"
+        message: "Remove HTML tags for clean embeddings, use markdown formatting instead"
+      
+      - pattern: "\\[\\[(?!.*\\]\\])"
+        message: "Ensure all Obsidian-style links are properly closed"
+      
+      - pattern: "^(?!\\[\\[.*\\]\\])[\\s\\S]*\\[\\[.*\\]\\][\\s\\S]*$"
+        message: "Child files should have backlinks at both the top and bottom of the content"
+      
+      - pattern: "\\s{3,}"
+        message: "Remove excessive whitespace for cleaner embeddings"
+      
+      - pattern: "^\\s*[-*]\\s*\\[\\s*[xX]?\\s*\\]"
+        message: "Convert checkbox lists to regular lists for better embedding"
+
+examples:
+  - input: |
+      <div>Some content</div>
+      [[Unclosed link
+      Too    many    spaces
+  - output: |
+      Some content
+      [[Parent Note]]
+      
+      # Content
+      
+      Main content here...
+      
+      [[Parent Note]]
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

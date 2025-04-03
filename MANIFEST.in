@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include src/cc_ai_tools/cursor_rules/rules *.mdc
+recursive-include docs *.md
+recursive-include tests *.py
+recursive-include src/cc_ai_tools/git *.py
+recursive-include src/cc_ai_tools/ai_tools *.py
+recursive-include src/cc_ai_tools/utils *.py
+

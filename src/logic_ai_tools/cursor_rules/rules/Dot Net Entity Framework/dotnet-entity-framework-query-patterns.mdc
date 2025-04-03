@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework query pattern best practices
+globs: "*.cs"
+---
+# Entity Framework Query Patterns
+
+<rule>
+name: ef_query_patterns
+description: Ensures proper implementation of EF queries and related patterns
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "(?:FromSql|Select|Where|Include|ToList|FirstOrDefault)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "\\.ToList\\(\\)\\.Where"
+        message: "Don't use Where after ToList() - it moves filtering to memory"
+      - pattern: "\\.AsEnumerable\\(\\)\\.Where"
+        message: "Avoid AsEnumerable() before filtering - keeps query in database"
+      - pattern: "Select\\(.*=>.*\\.ToList\\(\\)\\)"
+        message: "Avoid ToList() inside Select - causes N+1 query problems"
+      - pattern: "\\.(First|Single)\\(\\)\\s*\\."
+        message: "Use FirstOrDefault/SingleOrDefault to avoid exceptions"
+      - pattern: "\\.Include\\([^)]+\\).Include\\([^)]+\\).Include"
+        message: "Too many includes may impact performance - consider projection"
+
+  - type: suggest
+    message: |
+      Query pattern guidelines:
+      1. Keep filtering in database:
+         - Use Where before materialization
+         - Avoid ToList/AsEnumerable before filters
+      2. Optimize includes:
+         - Use selective loading
+         - Consider projections for performance
+      3. Handle null cases:
+         - Use FirstOrDefault over First
+         - Use SingleOrDefault over Single
+      4. Use async methods when possible:
+         - ToListAsync
+         - FirstOrDefaultAsync
+      5. Implement paging properly:
+         - Use Skip and Take
+         - Order before paging
+
+examples:
+  - input: |
+      var results = context.Users
+          .ToList()
+          .Where(u => u.IsActive);
+
+      var items = context.Orders
+          .Include(o => o.OrderDetails)
+          .Include(o => o.Customer)
+          .Include(o => o.Payments)
+          .First();
+
+      var data = context.Products
+          .Select(p => p.Reviews.ToList());
+    output: |
+      var results = context.Users
+          .Where(u => u.IsActive)
+          .ToListAsync();
+
+      var items = context.Orders
+          .Where(o => o.Id == orderId)
+          .Select(o => new OrderDto
+          {
+              OrderDetails = o.OrderDetails,
+              CustomerName = o.Customer.Name,
+              PaymentStatus = o.Payments.Any()
+          })
+          .FirstOrDefaultAsync();
+
+      var data = await context.Products
+          .Select(p => new ProductDto
+          {
+              Reviews = p.Reviews.Select(r => new ReviewDto { ... }).ToList()
+          })
+          .ToListAsync();
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

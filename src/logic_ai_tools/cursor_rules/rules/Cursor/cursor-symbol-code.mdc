@@ -1,0 +1,57 @@
+---
+description: Documentation for using @Code symbol to reference code snippets and symbols
+globs: *.mdc
+---
+
+# @Code Symbol
+
+Documentation for using @Code to reference specific code snippets or symbols from your codebase.
+
+<rule>
+name: cursor_symbol_code
+description: Guidelines and standards for using @Code symbol in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@Code"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@Code\\s*$"
+        message: "After @Code, specify the code snippet or symbol to reference"
+      
+      - pattern: "@Code\\s+[^\\s]+"
+        message: "Valid code reference detected. Use arrow keys to navigate code suggestions"
+
+examples:
+  - input: |
+      @Code
+      @Code handleSubmit
+      @Code src/components/Button.tsx:handleSubmit
+    output: |
+      Valid @Code usage examples:
+      - @Code: Shows list of available code snippets
+      - @Code handleSubmit: References specific function or symbol
+      - @Code src/components/Button.tsx:handleSubmit: References specific function in file
+
+  - input: |
+      @Code invalidSymbol
+      @Code nonexistent:function
+    output: |
+      Invalid @Code usage. Tips:
+      - Symbol must exist in codebase
+      - Use file:function format for specific references
+      - Use arrow keys to select from available code snippets
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - code
+    - navigation
+    - context
+</rule> 

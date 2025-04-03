@@ -1,0 +1,42 @@
+---
+description: Python testing standards and practices
+globs: "*.py"
+---
+
+# Python Testing Rules
+
+<rule>
+name: python_testing
+description: Standards for testing Python code
+
+## Unit Testing
+- Write tests for critical code paths
+- Use appropriate testing frameworks (unittest, pytest)
+- Test edge cases and boundary conditions
+- Maintain high test coverage
+
+## Test Organization
+- Group related tests together
+- Use clear test names
+- Follow arrange-act-assert pattern
+- Keep tests independent
+
+## Test Quality
+- Write readable tests
+- Avoid test interdependence
+- Mock external dependencies
+- Test both success and failure cases
+
+examples:
+  - input: |
+      # Good
+      def test_calculate_total_price():
+          # Arrange
+          items = [{"price": 10}, {"price": 20}]
+          
+          # Act
+          result = calculate_total_price(items)
+          
+          # Assert
+          assert result == 30
+</rule> 

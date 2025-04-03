@@ -1,0 +1,125 @@
+---
+description: Guidelines for Obsidian editor integration and extensions
+globs: *.ts,*.js
+---
+
+# Obsidian Editor Integration
+
+Best practices for integrating with and extending the Obsidian editor.
+
+<rule>
+name: obsidian_dev_editor_integration
+description: Enforces proper editor integration and extension patterns
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class.*extends.*EditorExtension"
+        message: "Implement required EditorExtension methods and handle state properly"
+      - pattern: "editor\\.cm\\.dispatch"
+        message: "Use proper transaction handling for editor modifications"
+      - pattern: "new StateField"
+        message: "Define proper state field type and update function"
+
+examples:
+  - input: |
+      class MyExtension extends EditorExtension {
+          constructor() {
+              super();
+          }
+      }
+    output: |
+      class MyExtension extends EditorExtension {
+          constructor() {
+              super();
+          }
+          
+          getExtension() {
+              return [
+                  ViewPlugin.fromClass(MyView),
+                  StateField.define({
+                      create: () => ({ value: null }),
+                      update: (state, tr) => {
+                          // Handle state updates
+                          return state;
+                      }
+                  })
+              ];
+          }
+      }
+
+documentation:
+  ## Editor Components
+
+  ### 1. Editor Extensions
+  - Must extend `EditorExtension`
+  - Required methods:
+    - `getExtension()`
+  - Best practices:
+    - Use proper state management
+    - Handle editor events
+    - Clean up resources
+
+  ### 2. View Plugins
+  - Use `ViewPlugin.fromClass()`
+  - Required methods:
+    - `update()`
+    - `destroy()`
+  - Best practices:
+    - Handle view updates efficiently
+    - Manage view lifecycle
+    - Clean up DOM elements
+
+  ### 3. State Fields
+  - Use `StateField.define()`
+  - Required properties:
+    - `create`: Initial state
+    - `update`: State update function
+  - Best practices:
+    - Use immutable state updates
+    - Handle all relevant transactions
+    - Maintain state consistency
+
+  ### 4. Decorations
+  - Use `DecorationSet`
+  - Required methods:
+    - `update()`
+    - `destroy()`
+  - Best practices:
+    - Use efficient decoration types
+    - Update decorations only when needed
+    - Clean up decorations properly
+
+  ## Best Practices
+
+  1. **State Management**
+     - Use immutable state updates
+     - Handle all relevant transactions
+     - Maintain state consistency
+     - Clean up state properly
+
+  2. **Performance**
+     - Minimize editor updates
+     - Use efficient decoration types
+     - Handle large documents properly
+     - Implement proper cleanup
+
+  3. **Error Handling**
+     - Handle invalid states
+     - Provide meaningful error messages
+     - Recover from errors gracefully
+     - Log errors appropriately
+
+  4. **Integration**
+     - Follow Obsidian's editor patterns
+     - Use provided APIs correctly
+     - Handle editor events properly
+     - Clean up resources
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

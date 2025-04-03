@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+---
+---
+description: Security standards for Microsoft SQL Server development
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_security_practices
+description: Standards for implementing secure SQL practices
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these security guidelines:
+
+      1. Query Parameters:
+         - Always use parameterized queries
+         - Never concatenate user input directly into SQL
+         - Use sp_executesql for dynamic SQL
+         - Validate and sanitize all inputs
+
+      2. Access Control:
+         - Use principle of least privilege
+         - Implement proper role-based security
+         - Avoid running with elevated permissions unnecessarily
+         - Regular audit of user permissions
+
+      3. Sensitive Data:
+         - Encrypt sensitive data at rest
+         - Use appropriate encryption methods
+         - Mask sensitive data in non-production environments
+         - Implement column-level encryption when needed
+
+examples:
+  - input: |
+      -- Bad: SQL injection vulnerability
+      DECLARE @sql NVARCHAR(MAX) = 'SELECT * FROM Users WHERE Username = ''' + @Username + ''''
+      EXEC(@sql)
+      
+      -- Good: Parameterized query
+      DECLARE @sql NVARCHAR(MAX) = N'SELECT * FROM Users WHERE Username = @Username'
+      EXEC sp_executesql @sql, N'@Username NVARCHAR(50)', @Username
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

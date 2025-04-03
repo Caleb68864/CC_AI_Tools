@@ -1,0 +1,86 @@
+---
+description: 
+globs: 
+---
+---
+description: Godot Basic Structure Guidelines
+globs: *.gd
+---
+# Godot Basic Structure Guidelines
+
+<rule>
+name: godot_basic_structure
+description: Standards for organizing Godot project structure and node hierarchy
+
+filters:
+  - type: file_extension
+    pattern: "\\.gd$"
+  - type: content
+    pattern: "extends .*"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: suggest
+    message: |
+      When organizing Godot projects:
+
+      1. Node Structure:
+         - Keep node tree hierarchy shallow and logical
+         - Name nodes using PascalCase
+         - Use groups for related nodes
+         - Position cursor after node creation
+
+      2. Script Organization:
+         - Place scripts in dedicated `scripts/` folder
+         - Use PascalCase for script filenames
+         - Match script names to node names
+         - Position cursor at script entry point
+
+      3. Project Structure:
+         ```
+         project/
+         ├── scenes/
+         ├── scripts/
+         ├── assets/
+         │   ├── sprites/
+         │   ├── sounds/
+         │   └── resources/
+         └── addons/
+         ```
+
+examples:
+  - input: |
+      # Bad: Flat file structure
+      main.gd
+      player.gd
+      enemy.gd
+
+      # Good: Organized structure
+      scripts/
+      ├── entities/
+      │   ├── player.gd
+      │   └── enemy.gd
+      └── main.gd
+    output: "Properly organized Godot project structure"
+
+  - input: |
+      # Bad: Deep node hierarchy
+      Root
+      └── A
+          └── B
+              └── C
+                  └── Player
+
+      # Good: Shallow hierarchy
+      Root
+      ├── Players
+      │   └── Player1
+      └── Enemies
+          └── Enemy1
+    output: "Efficient node hierarchy"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

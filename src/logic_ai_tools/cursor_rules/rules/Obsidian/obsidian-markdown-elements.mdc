@@ -1,0 +1,70 @@
+---
+description: Cursor rules for Markdown elements in Obsidian
+globs: *.md
+---
+# Markdown Element Cursor Rules
+
+<rule>
+name: obsidian_markdown_elements
+description: Rules for cursor positioning with Markdown elements
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    message: |
+      When working with Markdown elements:
+
+      1. Headers:
+         - Place cursor after header creation
+         - Leave one blank line after headers
+         - Use consistent header levels
+
+      2. Lists:
+         - Position cursor at list end for continuation
+         - Maintain consistent indentation
+         - Leave blank line before and after lists
+         - Use same list marker style
+
+      3. Links and References:
+         - Place cursor after link completion
+         - Group related links together
+         - Maintain consistent link style
+
+      4. Code Blocks:
+         - Leave blank lines around code blocks
+         - Include language specification
+         - Position cursor at code block end
+
+      5. Formatting:
+         - Use consistent emphasis style
+         - Place cursor after formatting completion
+         - Keep formatting markers close to text
+
+      6. Tables:
+         - Align table columns consistently
+         - Position cursor at logical next cell
+         - Leave blank lines around tables
+
+      7. Quotes and Images:
+         - Leave blank lines around blockquotes
+         - Include alt text for images
+         - Position cursor after element completion
+
+examples:
+  - input: |
+      # Header|Text  # Bad
+      
+      # Header
+      |Text  # Good
+      
+      - List item|Next  # Bad
+      - List item
+      |  # Good - ready for next item
+    output: "Proper cursor positioning for Markdown elements"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

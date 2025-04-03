@@ -1,0 +1,27 @@
+---
+description: Rules for maintaining comments
+globs: *
+---
+<rule>
+name: comment_maintenance
+description: Guidelines for keeping comments current and useful
+
+maintenance_rules:
+- Update or remove comments when code changes
+- Avoid speculative comments about future changes
+- Remove outdated comments promptly
+- Use examples when explaining complex logic
+- Strive for self-documenting code over excessive comments
+
+examples:
+  - input: |
+      // Bad: Speculative comment
+      function process() {
+          // TODO: Maybe add validation in the future
+      }
+      
+      // Good: Current, specific comment
+      function process() {
+          // NOTE: Input validation handled by upstream service
+      }
+</rule> 

@@ -1,0 +1,44 @@
+---
+description: Project context and structure information for Python projects
+globs: **/*.*
+---
+
+# Python Project Context
+
+This file contains the project structure and configuration information for a {project_type} project.
+
+<rule>
+name: project_context
+description: Provides project structure and configuration information for Python projects
+
+metadata:
+  project_root: {project_root}
+  project_type: {project_type}
+  source_path: {source_path}
+  test_path: {test_path}
+  docs_path: {docs_path}
+  language: Python
+  python_version: "3.x"
+
+file_extensions:
+{file_extensions}
+
+project_files:
+{project_files}
+
+config_files:
+{config_files}
+
+dependencies:
+{dependencies}
+
+important_files:
+{important_files}
+
+python_specific:
+  virtual_env: "venv"
+  test_framework: "pytest"
+  linting_tools: ["flake8", "pylint"]
+  type_checking: "mypy"
+  documentation: "sphinx"
+</rule> 

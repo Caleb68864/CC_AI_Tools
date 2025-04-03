@@ -1,0 +1,76 @@
+---
+description: Rules for Obsidian task queries
+globs: "*.md"
+---
+
+# Obsidian Tasks Queries
+
+Rules for task query blocks in Obsidian markdown files.
+
+<rule>
+name: obsidian_tasks_queries
+description: Enforces correct syntax for task queries
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Ensure proper query block syntax
+      - pattern: "```\\s*tasks\\s*$"
+        message: "Task query blocks must start with ```tasks"
+
+      # Ensure query blocks are closed
+      - pattern: "```tasks[^`]*$"
+        message: "Task query blocks must be closed with ```"
+
+      # Warn about tasks in code blocks
+      - pattern: "```[^t\\n][^`]*\\[\\s?\\]"
+        message: "Tasks inside code blocks will not be tracked. Consider using callouts instead."
+
+      # Warn about tasks in canvas
+      - pattern: "\\{\\{canvas[^}]*\\[\\s?\\]"
+        message: "Tasks in Canvas cards are not supported"
+
+      # Warn about tasks in comments
+      - pattern: "(?:<!--[^>]*\\[\\s?\\]|%%[^%]*\\[\\s?\\])"
+        message: "Tasks in comments will not be tracked"
+
+      # Warn about regular footnotes
+      - pattern: "\\[\\s?\\].*\\[[\\^][^\\]]\\]"
+        message: "Only inline footnotes (^[text]) are supported in tasks"
+
+examples:
+  - input: |
+      ```task
+      not done
+      ```
+
+      ```
+      - [ ] Task in regular code block
+      ```
+
+      <!-- - [ ] Task in HTML comment -->
+      %% - [ ] Task in Obsidian comment %%
+
+      - [ ] Task with regular footnote[^1]
+
+      {{canvas-open}}
+      - [ ] Task in canvas
+      {{canvas-close}}
+  - output: |
+      ```tasks
+      not done
+      ```
+
+      > [!note]
+      > - [ ] Task in callout instead of code block
+
+      - [ ] Task with inline footnote^[footnote text]
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

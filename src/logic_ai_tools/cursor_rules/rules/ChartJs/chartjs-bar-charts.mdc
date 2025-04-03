@@ -1,0 +1,107 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+name: chartjs_bar_charts
+description: Guidelines for creating and configuring Chart.js bar charts
+globs: *.js, *.py, *.html, *.cshtml, *.razor
+---
+
+basic_configuration:
+```javascript
+const config = {
+  type: 'bar',
+  data: data,
+  options: {
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  },
+};
+```
+
+dataset_properties:
+- backgroundColor: Color for the bars (default: 'rgba(0, 0, 0, 0.1)')
+- borderColor: Border color for the bars (default: 'rgba(0, 0, 0, 0.1)')
+- borderWidth: Width of the bar borders in pixels (default: 0)
+- borderRadius: Radius of the bar corners in pixels (default: 0)
+- barPercentage: Percent (0-1) of available width each bar should use (default: 0.9)
+- categoryPercentage: Percent (0-1) of available width each category should use (default: 0.8)
+- barThickness: Fixed width for bars in pixels, or 'flex' for automatic sizing
+- maxBarThickness: Maximum thickness for bars in pixels
+- minBarLength: Minimum length for bars in pixels
+- grouped: Whether bars should be grouped by index (default: true)
+- stack: ID of the stack group this dataset belongs to
+
+styling_options:
+- backgroundColor: Bar background color
+- borderColor: Bar border color
+- borderSkipped: Edge to skip when drawing bar ('start', 'end', 'middle', 'bottom', 'left', 'top', 'right', false, true)
+- borderWidth: Bar border width in pixels
+- borderRadius: Bar border radius in pixels
+
+interaction_options:
+- hoverBackgroundColor: Bar background color when hovered
+- hoverBorderColor: Bar border color when hovered
+- hoverBorderWidth: Bar border width when hovered
+- hoverBorderRadius: Bar border radius when hovered
+
+scale_configuration:
+```javascript
+options = {
+    scales: {
+        x: {
+            grid: {
+              offset: true
+            }
+        }
+    }
+};
+```
+
+stacked_bar_chart:
+```javascript
+const stackedBar = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+        scales: {
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true
+            }
+        }
+    }
+});
+```
+
+horizontal_bar_chart:
+```javascript
+const config = {
+  type: 'bar',
+  data,
+  options: {
+    indexAxis: 'y',
+  }
+};
+```
+
+best_practices:
+- Use barPercentage and categoryPercentage to control spacing between bars
+- For stacked charts, set stacked: true on both x and y axes
+- For horizontal bars, set indexAxis: 'y'
+- Use borderRadius for rounded corners on bars
+- Set beginAtZero: true on the y-axis to start bars from zero
+- Use different colors for different datasets for better visualization
+- Consider using the 'bottom' legend position for bar charts
+
+examples:
+- Simple bar chart: https://www.chartjs.org/docs/latest/charts/bar.html
+- Stacked bar chart: https://www.chartjs.org/docs/latest/charts/bar.html#stacked-bar-chart
+- Horizontal bar chart: https://www.chartjs.org/docs/latest/charts/bar.html#horizontal-bar-chart 

@@ -1,0 +1,140 @@
+---
+description: Guidelines for implementing editor decorations in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Editor Decorations
+
+Best practices for implementing and managing editor decorations in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_decorations
+description: Enforces best practices for editor decorations in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "Decoration\\.set"
+        message: "Implement proper decoration management and cleanup"
+      - pattern: "createDecorations"
+        message: "Ensure efficient decoration creation and updates"
+      - pattern: "view\\.dispatch\\(.*decorations"
+        message: "Use proper decoration update patterns"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          createDecorations(view: EditorView) {
+              const decorations = [];
+              view.state.doc.iter(0, view.state.doc.length, (node, pos) => {
+                  decorations.push(Decoration.widget({
+                      widget: new MyWidget(),
+                      side: 1
+                  }).range(pos));
+              });
+              return Decoration.set(decorations);
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private decorations: DecorationSet;
+          private updateTimeout: number;
+          
+          constructor() {
+              super();
+              this.decorations = Decoration.none;
+          }
+          
+          createDecorations(view: EditorView): DecorationSet {
+              const decorations: Decoration[] = [];
+              
+              try {
+                  view.state.doc.iter(0, view.state.doc.length, (node, pos) => {
+                      // Only create decorations for specific node types
+                      if (node.type.name === 'text') {
+                          decorations.push(Decoration.widget({
+                              widget: new MyWidget(),
+                              side: 1,
+                              key: `widget-${pos}` // Unique key for each decoration
+                          }).range(pos));
+                      }
+                  });
+                  
+                  return Decoration.set(decorations, true);
+              } catch (error) {
+                  console.error('Decoration creation error:', error);
+                  return Decoration.none;
+              }
+          }
+          
+          updateDecorations(view: EditorView) {
+              // Debounce updates
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              
+              this.updateTimeout = window.setTimeout(() => {
+                  try {
+                      const newDecorations = this.createDecorations(view);
+                      
+                      // Only update if decorations changed
+                      if (!this.decorations.eq(newDecorations)) {
+                          this.decorations = newDecorations;
+                          view.dispatch(view.state.update({
+                              decorations: this.decorations
+                          }));
+                      }
+                  } catch (error) {
+                      console.error('Decoration update error:', error);
+                  }
+              }, 100);
+          }
+          
+          destroy() {
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              this.decorations = Decoration.none;
+          }
+      }
+
+documentation:
+  ## Editor Decorations Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Decoration Types
+  - Text Decorations
+  - Widget Decorations
+  - Line Decorations
+  - Block Decorations
+  - Custom Decorations
+
+  ### 2. Decoration Management
+  - Creation Process
+  - Update Process
+  - Removal Process
+  - State Tracking
+  - Performance Optimization
+
+  ### 3. Decoration Integration
+  - Editor Integration
+  - View Integration
+  - Event Integration
+  - State Integration
+  - Theme Integration
+
+  ### 4. Decoration Features
+  - Styling Options
+  - Interaction Handling
+  - Update Strategies
+  - Performance Considerations
+  - Mobile Support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

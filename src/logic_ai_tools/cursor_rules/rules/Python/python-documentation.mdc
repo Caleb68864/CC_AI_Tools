@@ -1,0 +1,44 @@
+---
+description: Python documentation standards
+globs: "*.py"
+---
+
+# Python Documentation Rules
+
+<rule>
+name: python_documentation
+description: Standards for documenting Python code
+
+## Docstrings
+- Include docstrings for modules, classes, and functions
+- Document parameters, return values, and exceptions
+- Use clear, concise descriptions
+- Follow consistent docstring format
+
+## Comments
+- Write meaningful comments explaining complex logic
+- Avoid obvious comments
+- Keep comments up-to-date with code changes
+- Use inline comments sparingly
+
+## Project Documentation
+- Maintain comprehensive README files
+- Document setup and installation procedures
+- Include usage examples
+- Keep documentation current
+
+examples:
+  - input: |
+      # Good
+      def calculate_total_price(items):
+          """
+          Calculate the total price of a list of items.
+          
+          Args:
+              items (list): A list of dictionaries with item prices.
+          
+          Returns:
+              float: The total price of all items.
+          """
+          return sum(item['price'] for item in items)
+</rule> 

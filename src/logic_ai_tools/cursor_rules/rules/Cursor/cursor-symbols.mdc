@@ -1,0 +1,68 @@
+---
+description: Documentation for Cursor's @ symbols and their usage in context and commands
+globs: *.mdc
+---
+
+# Cursor @ Symbols
+
+Documentation for using @ symbols in Cursor's input boxes for context and commands.
+
+<rule>
+name: cursor_symbols
+description: Guidelines and standards for using @ symbols in Cursor's input boxes
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@(?!Files|Folders|Code|Docs|Git|Notepads|Summarized Composers|Cursor Rules|Web|Link|Recent Changes|Codebase|Lint Errors|Definitions)"
+        message: "Invalid @ symbol. Use one of the standard Cursor @ symbols"
+      
+      - pattern: "@(Files|Folders|Code|Docs|Git|Notepads|Summarized Composers|Cursor Rules|Web|Link|Recent Changes|Codebase|Lint Errors|Definitions)"
+        message: "Valid @ symbol detected. Use arrow keys to navigate suggestions"
+
+examples:
+  - input: |
+      @Files - Reference specific files
+      @Code - Reference code snippets
+      @Docs - Access documentation
+    output: |
+      Valid @ symbol usage examples:
+      - @Files: Reference specific files in your project
+      - @Code: Reference specific code snippets or symbols
+      - @Docs: Access documentation and guides
+
+  - input: |
+      @InvalidSymbol
+      @CustomSymbol
+    output: |
+      Invalid @ symbol usage. Standard symbols are:
+      - @Files
+      - @Folders
+      - @Code
+      - @Docs
+      - @Git
+      - @Notepads
+      - @Summarized Composers
+      - @Cursor Rules
+      - @Web
+      - @Link
+      - @Recent Changes
+      - @Codebase
+      - @Lint Errors
+      - @Definitions
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - context
+    - commands
+    - navigation
+</rule> 

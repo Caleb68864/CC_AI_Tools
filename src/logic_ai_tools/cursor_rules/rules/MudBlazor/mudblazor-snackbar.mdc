@@ -1,0 +1,117 @@
+---
+description: API reference and guidelines for MudBlazor Snackbar component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Snackbar API
+
+The MudBlazor Snackbar component provides toast-style notifications with configurable behavior, positioning, and content.
+
+<rule>
+name: mudblazor_snackbar
+description: Provides guidelines and API reference for using MudBlazor Snackbar service and components.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "(?<!<MudSnackbarProvider>).*@inject\\s+ISnackbar.*"
+        message: "Ensure MudSnackbarProvider is added to your layout for Snackbar functionality."
+      - pattern: "Snackbar\\.Add\\(.*?\\)"
+        message: "Consider using configuration options and severity levels for better user experience."
+      - pattern: "Snackbar\\.Add\\(.*?RenderFragment.*?\\)"
+        message: "When using RenderFragment, provide a key to prevent unwanted duplicates."
+      - pattern: "builder\\.Services\\.AddMudServices\\(\\)"
+        message: "Consider configuring global Snackbar settings in AddMudServices configuration."
+      - pattern: "Snackbar\\.Add\\(.*?Severity\\.Error.*?\\)"
+        message: "For error messages, consider setting RequireInteraction=true for important notifications."
+
+examples:
+  - input: |
+      @inject ISnackbar Snackbar
+      <MudButton OnClick="@ShowMessage">Show</MudButton>
+    output: |
+      @inject ISnackbar Snackbar
+
+      @* Basic Usage *@
+      <MudButton OnClick="@ShowSimpleMessage">Show Simple Message</MudButton>
+
+      @* Advanced Usage with Configuration *@
+      <MudButton OnClick="@ShowConfiguredMessage">Show Configured Message</MudButton>
+
+      @* Custom Component Message *@
+      <MudButton OnClick="@ShowCustomMessage">Show Custom Message</MudButton>
+
+      @code {
+          private void ShowSimpleMessage()
+          {
+              Snackbar.Add("Operation completed successfully", Severity.Success);
+          }
+
+          private void ShowConfiguredMessage()
+          {
+              Snackbar.Add("Critical system alert", 
+                  Severity.Error,
+                  config =>
+                  {
+                      config.RequireInteraction = true;
+                      config.ShowCloseIcon = true;
+                      config.VisibleStateDuration = 10000;
+                      config.ShowTransitionDuration = 500;
+                      config.HideTransitionDuration = 500;
+                      config.SnackbarVariant = Variant.Filled;
+                      config.PositionClass = Defaults.Classes.Position.BottomRight;
+                      config.Action = "ACKNOWLEDGE";
+                      config.ActionColor = Color.Error;
+                      config.OnClick = snackbar => 
+                      {
+                          HandleCriticalAlert();
+                          return Task.CompletedTask;
+                      };
+                  });
+          }
+
+          private void ShowCustomMessage()
+          {
+              RenderFragment message = builder =>
+              {
+                  builder.OpenComponent<MudAlert>(0);
+                  builder.AddAttribute(1, "Severity", Severity.Warning);
+                  builder.AddAttribute(2, "ChildContent", (RenderFragment)(b => 
+                      b.AddContent(0, "Complex notification with custom content")));
+                  builder.CloseComponent();
+              };
+
+              Snackbar.Add(message, "custom-key", config =>
+              {
+                  config.CloseAfterNavigation = true;
+              });
+          }
+
+          private void HandleCriticalAlert()
+          {
+              // Handle critical alert acknowledgment
+          }
+      }
+
+      @* Program.cs Configuration *@
+      /*
+      builder.Services.AddMudServices(config =>
+      {
+          config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
+          config.SnackbarConfiguration.PreventDuplicates = true;
+          config.SnackbarConfiguration.NewestOnTop = true;
+          config.SnackbarConfiguration.ShowCloseIcon = true;
+          config.SnackbarConfiguration.VisibleStateDuration = 10000;
+          config.SnackbarConfiguration.HideTransitionDuration = 500;
+          config.SnackbarConfiguration.ShowTransitionDuration = 500;
+          config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
+      });
+      */
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

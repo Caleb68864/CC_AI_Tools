@@ -1,0 +1,63 @@
+---
+description: 
+globs: 
+---
+---
+description: Blazor .NET 8 Security and Testing Rules
+globs: *.{cs,razor,cshtml}
+---
+# Blazor Security and Testing Rules
+
+<rule>
+name: blazor_security_testing
+description: Standards for Blazor .NET 8 security and testing practices
+
+filters:
+  - type: file_extension
+    pattern: "\\.cs$|\\.razor$|\\.cshtml$"
+
+actions:
+  - type: suggest
+    message: |
+      Security and Testing Guidelines:
+
+      1. Testing Requirements:
+         - Use Visual Studio Enterprise for all testing
+         - Implement unit tests with xUnit/NUnit/MSTest
+         - Use Moq/NSubstitute for mocking
+         - Utilize Visual Studio's debugging tools
+         - Use diagnostic tools for performance profiling
+
+      2. Security Implementation:
+         - Use ASP.NET Identity or JWT tokens
+         - Implement HTTPS
+         - Configure proper CORS policies
+         - Follow security best practices
+
+      3. API Documentation:
+         - Use Swagger/OpenAPI
+         - Include XML documentation
+         - Document models and API methods
+
+examples:
+  - input: |
+      // Bad
+      public class UnsecuredController
+      {
+          [HttpGet]
+          public IActionResult GetData() { }
+      }
+
+      // Good
+      [Authorize]
+      public class SecuredController
+      {
+          [HttpGet]
+          public IActionResult GetData() { }
+      }
+    output: "Properly secured API endpoint"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

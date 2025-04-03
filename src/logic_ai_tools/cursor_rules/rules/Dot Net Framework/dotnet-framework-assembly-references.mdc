@@ -1,0 +1,70 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces .NET Framework assembly reference best practices
+globs: ["*.cs", "*.csproj"]
+---
+# .NET Framework Assembly References
+
+<rule>
+name: dotnet_assembly_references
+description: Ensures proper assembly reference patterns and practices in .NET Framework
+filters:
+  - type: file_extension
+    pattern: "\\.(cs|csproj)$"
+  - type: content
+    pattern: "(?:using|Reference Include|PackageReference)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "using\\s+[^\\s;]+\\s*=\\s*[^\\s;]+\\s*;"
+        message: "Avoid using aliases unless absolutely necessary for conflict resolution"
+      - pattern: "using\\s+static"
+        message: "Avoid using static directives unless absolutely necessary"
+      - pattern: "<Reference\\s+Include=\".*?\\.dll\""
+        message: "Use NuGet packages instead of direct DLL references when possible"
+      - pattern: "using\\s+System\\s*;\\s*using\\s+System\\..*;"
+        message: "Group System namespaces together"
+
+  - type: suggest
+    message: |
+      Assembly reference guidelines:
+      1. Organize using directives:
+         - System namespaces first
+         - Third-party namespaces next
+         - Project namespaces last
+         - Alphabetical order within groups
+      2. Remove unused using directives
+      3. Prefer NuGet packages over direct DLL references
+      4. Use specific namespaces over wildcards
+      5. Keep references minimal and necessary
+      6. Version consistency in package references
+
+examples:
+  - input: |
+      using System.Collections;
+      using MyCompany.Project;
+      using System;
+      using static System.Math;
+      using Col = System.Collections;
+    output: |
+      using System;
+      using System.Collections;
+      
+      using MyCompany.Project;
+
+  - input: |
+      <Reference Include="ThirdParty.dll" />
+      <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    output: |
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>
+ 

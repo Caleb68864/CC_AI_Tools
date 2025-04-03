@@ -1,0 +1,85 @@
+---
+description: Python RSS Feed Processing
+globs: *.py
+---
+
+# Python RSS Feed Processing
+
+Best practices for parsing and processing RSS feeds with Python.
+
+<rule>
+name: python_webscrape_rss
+description: Guidelines for working with RSS feeds in Python
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "feedparser|RSS|rss|atom|xml|feed"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "import\\s+feedparser"
+        message: "Consider handling HTTP errors when fetching RSS feeds with feedparser"
+      
+      - pattern: "feedparser\\.parse\\([^,]+(\\))"
+        message: "Add error handling when parsing feeds and check for feed.bozo to detect malformed feeds"
+        
+      - pattern: "feed\\[\\'entries\\'\\]"
+        message: "Check if 'entries' exists in feed before accessing to handle empty or malformed feeds"
+        
+      - pattern: "(?<!etag)(?<!modified)(?<!If-None-Match)(?<!If-Modified-Since)feedparser\\.parse"
+        message: "Consider using etag and modified parameters with feedparser to implement conditional GET"
+        
+      - pattern: "for\\s+entry\\s+in\\s+feed\\[\\'entries\\'\\]"
+        message: "Consider sorting or filtering entries by published date before processing"
+
+examples:
+  - input: |
+      import feedparser
+      
+      def parse_rss(url):
+          feed = feedparser.parse(url)
+          for entry in feed['entries']:
+              print(entry.title)
+  - output: |
+      import feedparser
+      import time
+      from datetime import datetime
+      
+      def parse_rss(url, etag=None, modified=None):
+          """Parse RSS feed with proper error handling and conditional GET"""
+          try:
+              feed = feedparser.parse(url, etag=etag, modified=modified)
+              
+              # Check for HTTP status
+              if hasattr(feed, 'status'):
+                  if feed.status == 304:  # Not modified
+                      return None, feed.etag, feed.modified
+                  if feed.status >= 400:
+                      print(f"Error fetching feed: HTTP {feed.status}")
+                      return None, None, None
+              
+              # Check if feed is well-formed
+              if feed.bozo and hasattr(feed, 'bozo_exception'):
+                  print(f"Warning: Malformed feed - {feed.bozo_exception}")
+              
+              # Safely access entries
+              if 'entries' not in feed or not feed.entries:
+                  print("No entries found in feed")
+                  return [], feed.get('etag'), feed.get('modified')
+              
+              # Sort entries by date if available
+              entries = feed.entries
+              if entries and hasattr(entries[0], 'published_parsed'):
+                  entries.sort(key=lambda e: e.published_parsed or time.gmtime(0), reverse=True)
+              
+              return entries, feed.get('etag'), feed.get('modified')
+          except Exception as e:
+              print(f"Error parsing feed {url}: {e}")
+              return None, None, None
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,79 @@
+---
+description: 
+globs: 
+---
+---
+description: Transaction management standards for SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_transaction_management
+description: Standards for implementing and managing SQL Server transactions
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these transaction management guidelines:
+
+      1. Transaction Scope:
+         - Keep transactions as short as possible
+         - Use appropriate isolation levels
+         - Handle nested transactions properly
+         - Consider using XACT_ABORT ON
+
+      2. Error Handling:
+         - Check @@TRANCOUNT before COMMIT/ROLLBACK
+         - Implement proper savepoint management
+         - Handle deadlock scenarios
+         - Log transaction failures
+
+      3. Best Practices:
+         - Use explicit transactions
+         - Avoid mixing DDL and DML in transactions
+         - Consider using snapshot isolation
+         - Monitor long-running transactions
+
+examples:
+  - input: |
+      -- Bad: Implicit transaction without error handling
+      UPDATE Accounts SET Balance = Balance - @Amount WHERE AccountId = @FromAccount
+      UPDATE Accounts SET Balance = Balance + @Amount WHERE AccountId = @ToAccount
+      
+      -- Good: Explicit transaction with error handling
+      BEGIN TRY
+          SET XACT_ABORT ON;
+          
+          BEGIN TRANSACTION;
+              -- Validate sufficient funds
+              IF NOT EXISTS (
+                  SELECT 1 FROM Accounts 
+                  WHERE AccountId = @FromAccount 
+                  AND Balance >= @Amount
+              )
+                  THROW 50000, 'Insufficient funds.', 1;
+                  
+              UPDATE Accounts 
+              SET Balance = Balance - @Amount 
+              WHERE AccountId = @FromAccount;
+              
+              UPDATE Accounts 
+              SET Balance = Balance + @Amount 
+              WHERE AccountId = @ToAccount;
+          COMMIT TRANSACTION;
+      END TRY
+      BEGIN CATCH
+          IF @@TRANCOUNT > 0
+              ROLLBACK TRANSACTION;
+          
+          THROW;
+      END CATCH
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

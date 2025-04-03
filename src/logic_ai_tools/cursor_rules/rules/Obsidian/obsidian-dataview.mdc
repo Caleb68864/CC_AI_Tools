@@ -1,0 +1,60 @@
+---
+description: Cursor rules for DataView queries in Obsidian
+globs: *.md
+---
+# DataView Cursor Rules
+
+<rule>
+name: obsidian_dataview
+description: Rules for cursor positioning with DataView queries
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataview"
+
+actions:
+  - type: suggest
+    message: |
+      When working with DataView:
+
+      1. Query Structure:
+         - Position cursor after query block completion
+         - Place cursor at next filter position
+         - Maintain consistent query formatting
+
+      2. Metadata Fields:
+         - Position cursor after field completion
+         - Group related fields together
+         - Place cursor at next field entry point
+
+      3. Query Types:
+         - LIST: Position cursor at next filter
+         - TABLE: Align column specifications
+         - TASK: Group related task queries
+         - CALENDAR: Include required date field
+
+      4. Data Commands:
+         - FROM: Start with source specification
+         - WHERE: Align filter conditions
+         - SORT: Group sort criteria
+         - GROUP BY: Maintain grouping hierarchy
+
+examples:
+  - input: |
+      ```dataview
+      TABLE field
+      FROM "source"|  # Bad - blocks query editing
+      ```
+      
+      ```dataview
+      TABLE field
+      FROM "source"
+      ```
+      |  # Good - ready for next query
+    output: "Proper cursor positioning for DataView queries"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

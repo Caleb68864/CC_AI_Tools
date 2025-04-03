@@ -1,0 +1,223 @@
+---
+description: Cursor rules for DataviewJS utility methods in Obsidian
+globs: *.md
+---
+# DataviewJS Utility Rules
+
+<rule>
+name: obsidian_dataviewjs_utility
+description: Rules for using DataviewJS utility methods
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When using DataviewJS utility methods:
+
+      1. Array Utilities:
+         - `dv.array(value)`: Convert value to Dataview array
+           - Returns unchanged if already a Dataview array
+           - Example: `dv.array([1, 2, 3])`
+         - `dv.isArray(value)`: Check if value is array or Dataview array
+           - Example: `dv.isArray(dv.array([1, 2, 3]))` or `dv.isArray([1, 2, 3])`
+
+      2. Link Utilities:
+         - `dv.fileLink(path, [embed?], [display-name])`: Create file link
+           - Example: `dv.fileLink("Projects/Project A")`
+           - Embed: `dv.fileLink("Projects/Project A", true)`
+           - Custom display: `dv.fileLink("Projects/Project A", false, "Project Alpha")`
+         - `dv.sectionLink(path, section, [embed?], [display?])`: Create section link
+           - Example: `dv.sectionLink("Index", "Books")`
+           - Custom display: `dv.sectionLink("Index", "Books", false, "My Books")`
+         - `dv.blockLink(path, blockId, [embed?], [display?])`: Create block link
+           - Example: `dv.blockLink("Notes", "12gdhjg3")`
+
+      3. Date and Duration Utilities:
+         - `dv.date(text)`: Parse text to DateTime object
+           - Example: `dv.date("2021-08-08")` or `dv.date("today")`
+           - Returns unchanged if already a DateTime
+         - `dv.duration(text)`: Parse text to Duration object
+           - Example: `dv.duration("8 minutes")` or `dv.duration("2 days, 5 hours")`
+
+      4. Comparison Utilities:
+         - `dv.compare(a, b)`: Compare values using Dataview rules
+           - Returns negative if a < b, 0 if equal, positive if a > b
+           - Example: `dv.compare(1, 2)` or `dv.compare("yes", "no")`
+         - `dv.equal(a, b)`: Check if values are equal using Dataview rules
+           - Example: `dv.equal(1, 1)` or `dv.equal({ a: 1 }, { a: 1 })`
+
+      5. Other Utilities:
+         - `dv.clone(value)`: Deep clone any Dataview value
+           - Example: `dv.clone({ a: 1 })`
+         - `dv.parse(value)`: Parse string into Dataview type
+           - Example: `dv.parse("[[A]]")` or `dv.parse("2020-08-14")`
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Working with arrays
+      const regularArray = [1, 2, 3, 4, 5];
+      const dataviewArray = dv.array(regularArray);
+      
+      dv.paragraph(`Is regular array an array? ${dv.isArray(regularArray)}`);
+      dv.paragraph(`Is dataview array an array? ${dv.isArray(dataviewArray)}`);
+      
+      // Dataview arrays have additional methods
+      dv.paragraph(`Sum of values: ${dataviewArray.reduce((a, b) => a + b, 0)}`);
+      dv.paragraph(`Average value: ${dataviewArray.array().reduce((a, b) => a + b, 0) / dataviewArray.length}`);
+      
+      // Display the arrays
+      dv.header(4, "Regular Array");
+      dv.list(regularArray);
+      
+      dv.header(4, "Dataview Array");
+      dv.list(dataviewArray);
+      ```
+    output: "Working with arrays and array utilities"
+
+  - input: |
+      ```dataviewjs
+      // Working with links
+      dv.header(3, "Link Examples");
+      
+      // Create different types of links
+      const fileLink = dv.fileLink("Projects/Project A");
+      const embeddedLink = dv.fileLink("Projects/Project A", true);
+      const customNameLink = dv.fileLink("Projects/Project A", false, "Project Alpha");
+      
+      const sectionLink = dv.sectionLink("Index", "Books");
+      const customSectionLink = dv.sectionLink("Index", "Books", false, "My Books");
+      
+      const blockLink = dv.blockLink("Notes", "12gdhjg3");
+      
+      // Display the links
+      dv.table(
+        ["Link Type", "Link"],
+        [
+          ["File Link", fileLink],
+          ["Embedded Link", embeddedLink],
+          ["Custom Name Link", customNameLink],
+          ["Section Link", sectionLink],
+          ["Custom Section Link", customSectionLink],
+          ["Block Link", blockLink]
+        ]
+      );
+      
+      // Use links in queries
+      const linkedPages = dv.pages()
+        .where(p => p.file.outlinks.some(link => 
+          link.path === "Projects/Project A"
+        ));
+      
+      dv.header(4, "Pages linking to Project A");
+      dv.list(linkedPages.file.link);
+      ```
+    output: "Working with different types of links"
+
+  - input: |
+      ```dataviewjs
+      // Working with dates and durations
+      dv.header(3, "Date and Duration Examples");
+      
+      // Create dates
+      const today = dv.date("today");
+      const tomorrow = dv.date("tomorrow");
+      const specificDate = dv.date("2023-05-15");
+      const fileDate = dv.date(dv.fileLink("2023-05-16"));
+      
+      // Create durations
+      const fiveMinutes = dv.duration("5 minutes");
+      const twoHours = dv.duration("2 hours");
+      const complexDuration = dv.duration("2 days, 5 hours, 30 minutes");
+      
+      // Display dates
+      dv.table(
+        ["Date Description", "Date Value", "Day of Week"],
+        [
+          ["Today", today.toFormat("yyyy-MM-dd"), today.weekdayLong],
+          ["Tomorrow", tomorrow.toFormat("yyyy-MM-dd"), tomorrow.weekdayLong],
+          ["Specific Date", specificDate.toFormat("yyyy-MM-dd"), specificDate.weekdayLong],
+          ["File Date", fileDate.toFormat("yyyy-MM-dd"), fileDate.weekdayLong]
+        ]
+      );
+      
+      // Display durations
+      dv.table(
+        ["Duration Description", "Duration Value", "In Minutes"],
+        [
+          ["Five Minutes", fiveMinutes.toFormat("m 'minutes'"), fiveMinutes.as("minutes")],
+          ["Two Hours", twoHours.toFormat("h 'hours'"), twoHours.as("minutes")],
+          ["Complex Duration", complexDuration.toFormat("d 'days', h 'hours', m 'minutes'"), complexDuration.as("minutes")]
+        ]
+      );
+      
+      // Date calculations
+      dv.header(4, "Date Calculations");
+      dv.table(
+        ["Calculation", "Result"],
+        [
+          ["Days between today and specific date", specificDate.diff(today).days.toFixed(0)],
+          ["Add 2 days to today", today.plus({ days: 2 }).toFormat("yyyy-MM-dd")],
+          ["Subtract 1 week from specific date", specificDate.minus({ weeks: 1 }).toFormat("yyyy-MM-dd")]
+        ]
+      );
+      ```
+    output: "Working with dates, durations, and date calculations"
+
+  - input: |
+      ```dataviewjs
+      // Working with comparison and other utilities
+      dv.header(3, "Comparison and Utility Examples");
+      
+      // Compare values
+      dv.table(
+        ["Comparison", "Result"],
+        [
+          ["dv.compare(1, 2)", dv.compare(1, 2)],
+          ["dv.compare(2, 1)", dv.compare(2, 1)],
+          ["dv.compare('apple', 'banana')", dv.compare("apple", "banana")],
+          ["dv.compare('banana', 'apple')", dv.compare("banana", "apple")],
+          ["dv.equal(1, 1)", dv.equal(1, 1)],
+          ["dv.equal(1, '1')", dv.equal(1, "1")],
+          ["dv.equal({a: 1}, {a: 1})", dv.equal({a: 1}, {a: 1})]
+        ]
+      );
+      
+      // Parse values
+      dv.header(4, "Parsing Examples");
+      dv.table(
+        ["Parse Input", "Result Type"],
+        [
+          ["dv.parse('[[A]]')", "Link to A"],
+          ["dv.parse('2020-08-14')", "DateTime"],
+          ["dv.parse('9 seconds')", "Duration"]
+        ]
+      );
+      
+      // Clone values
+      const original = { name: "Original", nested: { value: 42 } };
+      const cloned = dv.clone(original);
+      
+      // Modify the clone
+      cloned.name = "Modified";
+      cloned.nested.value = 100;
+      
+      dv.header(4, "Cloning Example");
+      dv.table(
+        ["Object", "Name", "Nested Value"],
+        [
+          ["Original", original.name, original.nested.value],
+          ["Cloned", cloned.name, cloned.nested.value]
+        ]
+      );
+      ```
+    output: "Working with comparison utilities, parsing, and cloning"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

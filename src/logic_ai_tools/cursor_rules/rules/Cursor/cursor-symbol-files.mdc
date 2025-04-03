@@ -1,0 +1,55 @@
+---
+description: Documentation for using @Files symbol to reference specific files in Cursor
+globs: *.mdc
+---
+
+# @Files Symbol
+
+Documentation for using @Files to reference specific files in your project.
+
+<rule>
+name: cursor_symbol_files
+description: Guidelines and standards for using @Files symbol in Cursor
+
+filters:
+  - type: file_extension
+    pattern: "\\.(md|txt|mdc)$"
+  - type: content
+    pattern: "@Files"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "@Files\\s*$"
+        message: "After @Files, specify the file path or use arrow keys to select from available files"
+      
+      - pattern: "@Files\\s+[^\\s]+"
+        message: "Valid file reference detected. Use arrow keys to navigate file suggestions"
+
+examples:
+  - input: |
+      @Files
+      @Files src/components/Button.tsx
+    output: |
+      Valid @Files usage examples:
+      - @Files: Shows list of available files to select from
+      - @Files src/components/Button.tsx: Directly references specific file
+
+  - input: |
+      @Files invalid/path
+      @Files nonexistent.file
+    output: |
+      Invalid @Files usage. Tips:
+      - Use relative paths from project root
+      - File must exist in project
+      - Use arrow keys to select from available files
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - symbols
+    - files
+    - navigation
+    - context
+</rule> 

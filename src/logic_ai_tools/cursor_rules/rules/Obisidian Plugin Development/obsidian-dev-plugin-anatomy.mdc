@@ -1,0 +1,87 @@
+---
+description: Guidelines for Obsidian plugin structure and anatomy
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Anatomy
+
+Essential structure and components of an Obsidian plugin.
+
+<rule>
+name: obsidian_dev_plugin_anatomy
+description: Enforces proper plugin structure and component organization
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class.*extends.*Plugin"
+        message: "Ensure your plugin class extends the Obsidian Plugin class"
+      - pattern: "onload\\(\\)"
+        message: "Implement onload() method for plugin initialization"
+      - pattern: "onunload\\(\\)"
+        message: "Implement onunload() method for cleanup"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              // Initialize plugin
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          onload() {
+              // Initialize plugin
+              this.registerCommands();
+              this.registerSettings();
+              this.registerViews();
+          }
+          
+          onunload() {
+              // Cleanup resources
+              this.unregisterCommands();
+              this.unregisterSettings();
+              this.unregisterViews();
+          }
+      }
+
+documentation:
+  ## Plugin Anatomy Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Plugin Structure
+  - Main Plugin Class
+  - Settings Interface
+  - View Classes
+  - Utility Functions
+  - Type Definitions
+
+  ### 2. Plugin Lifecycle
+  - Loading Process
+  - Initialization
+  - Event Registration
+  - Resource Management
+  - Cleanup Process
+
+  ### 3. Plugin Configuration
+  - Settings Management
+  - Data Storage
+  - State Persistence
+  - Configuration Loading
+  - Configuration Saving
+
+  ### 4. Plugin Integration
+  - Workspace Integration
+  - File System Integration
+  - Theme Integration
+  - Command Integration
+  - Event Integration
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

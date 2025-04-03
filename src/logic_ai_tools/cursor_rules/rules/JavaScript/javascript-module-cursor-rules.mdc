@@ -1,0 +1,41 @@
+---
+description: Rules for cursor positioning in JavaScript module operations and imports/exports
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_module_cursor_rules
+
+## Module Operations Cursor Rules
+
+1. **Imports and Exports**
+   - Position cursor after import statements
+   - Group related imports together
+   - Maintain consistent export organization
+   - Place cursor at next import/export point
+
+examples:
+  - input: |
+      import { Component } from 'framework';|  // Cursor here for next related import
+      import { utils } from './utils';|  // Cursor here for next import group
+      
+      export const MyComponent = () => {};|  // Cursor here for next export
+      export { helperFunction };|  // Cursor here for next export
+    output: "Correctly positioned cursors in module operations"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - modules
+    - imports
+    - exports
+    - cursor-positioning
+    - javascript
+</rule> 

@@ -1,0 +1,106 @@
+---
+description: Cursor rules for DataviewJS structure and basic usage in Obsidian
+globs: *.md
+---
+# DataviewJS Structure Rules
+
+<rule>
+name: obsidian_dataviewjs_structure
+description: Rules for DataviewJS codeblock structure and basic usage
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When creating DataviewJS codeblocks:
+
+      1. Basic Structure:
+         - Use the `dataviewjs` language specifier for codeblocks
+         - Access the API through the implicitly provided `dv` or `dataview` variable
+         - End JavaScript statements with semicolons
+         - Use proper error handling for potential failures
+
+      2. Asynchronous Operations:
+         - Always use `await` for asynchronous API calls (marked with ⌛)
+         - Handle potential errors in asynchronous operations with try/catch
+         - Don't forget to await the result of asynchronous functions
+
+      3. Performance Considerations:
+         - Limit the scope of queries to specific folders or tags when possible
+         - Cache results of expensive operations in variables
+         - Use filtering early in the query chain to reduce data processing
+         - Avoid unnecessary re-rendering or duplicate queries
+
+      4. Code Organization:
+         - Group related operations together
+         - Use descriptive variable names
+         - Add comments for complex logic
+         - Break complex operations into smaller, manageable steps
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Basic structure with proper semicolons and error handling
+      try {
+        // Access API through dv variable
+        const pages = dv.pages("#important");
+        
+        // Process data
+        const filteredPages = pages
+          .where(p => p.status === "active")
+          .sort(p => p.priority, "desc");
+        
+        // Render results
+        dv.header(3, "Important Active Pages");
+        dv.table(
+          ["Page", "Priority", "Due Date"],
+          filteredPages.map(p => [
+            p.file.link,
+            p.priority,
+            p.due
+          ])
+        );
+      } catch (error) {
+        dv.paragraph("Error: " + error.message);
+      }
+      ```
+    output: "Properly structured DataviewJS codeblock with error handling"
+
+  - input: |
+      ```dataviewjs
+      // Example of async operations with proper await and error handling
+      try {
+        // Async operation with await
+        const csvData = await dv.io.csv("data/projects.csv");
+        
+        // Process data after it's loaded
+        if (csvData && csvData.length > 0) {
+          const processedData = csvData
+            .where(row => row.status === "active")
+            .sort(row => row.deadline);
+          
+          dv.table(
+            ["Project", "Deadline", "Status"],
+            processedData.map(row => [
+              row.name,
+              row.deadline,
+              row.status
+            ])
+          );
+        } else {
+          dv.paragraph("No data found or CSV file is empty.");
+        }
+      } catch (error) {
+        dv.paragraph("Error loading CSV: " + error.message);
+      }
+      ```
+    output: "Proper async operation handling with error checking"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

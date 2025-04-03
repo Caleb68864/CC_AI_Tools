@@ -1,0 +1,343 @@
+---
+description: Rule for OpenWebUI Filter functions development and implementation
+globs: "*.py"
+---
+
+# OpenWebUI Filter Functions Rule
+
+This rule defines the standards and best practices for developing and using OpenWebUI Filter functions. Filter functions allow you to modify data before it's sent to the Large Language Model (inlet) or after it's returned from the LLM (outlet), as well as intercept streaming responses (stream).
+
+For detailed documentation, see the [OpenWebUI Filter Functions Documentation](https://docs.openwebui.com/features/plugin/functions/filter/).
+
+<rule>
+name: openwebui_filter_functions_rule
+description: Enforces standards and best practices for OpenWebUI Filter functions development
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "class Filter"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class Filter[^:]*:"
+        message: "Filter functions should modify inputs before they reach the model or outputs after they come from the model."
+      
+      - pattern: "class Filter[^:]*:(?!\\s*class Valves)"
+        message: "Filter class should include a nested Valves class for configurable options."
+      
+      - pattern: "class Valves\\(BaseModel\\):"
+        message: "Valves should inherit from BaseModel and define configuration parameters with Field."
+      
+      - pattern: "def __init__\\(self\\):"
+        message: "Initialize necessary properties in the __init__ method, primarily self.valves."
+      
+      - pattern: "def inlet\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The inlet method must have proper type hints for arguments and return values."
+      
+      - pattern: "def outlet\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The outlet method must have proper type hints for arguments and return values."
+      
+      - pattern: "def stream\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The stream method must have proper type hints for arguments and return values."
+      
+      - pattern: "def inlet\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The inlet method must have proper docstrings explaining its purpose and parameters."
+      
+      - pattern: "def outlet\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The outlet method must have proper docstrings explaining its purpose and parameters."
+      
+      - pattern: "def stream\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The stream method must have proper docstrings explaining its purpose and parameters."
+      
+      - pattern: "try:(?!.*except)"
+        message: "Always handle exceptions in filter methods to ensure graceful error handling."
+
+examples:
+  - input: |
+      class Filter:
+          def inlet(self, body):
+              return body
+          
+          def outlet(self, body):
+              return body
+    output: |
+      """
+      title: Basic Filter Example
+      author: Your Name
+      author_url: https://website.com
+      description: A simple filter function example
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List, Optional
+      
+      class Filter:
+          class Valves(BaseModel):
+              """Configuration options for the filter."""
+              TRANSFORM_UPPERCASE: bool = Field(
+                  default=False,
+                  description="Whether to transform assistant responses to uppercase."
+              )
+          
+          def __init__(self):
+              """Initialize the Filter function."""
+              self.valves = self.Valves()
+          
+          def inlet(self, body: Dict[str, Any], __user__: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              """
+              Modify the input data before it reaches the model.
+              
+              This function can add context, clean input, or format data.
+              
+              :param body: Dictionary containing the input data
+              :param __user__: Optional dictionary containing user information
+              :return: Modified dictionary containing the input data
+              """
+              try:
+                  # Example: Add a system message for context if not present
+                  has_system = any(msg.get("role") == "system" for msg in body.get("messages", []))
+                  
+                  if not has_system:
+                      context_message = {
+                          "role": "system",
+                          "content": "You are a helpful assistant."
+                      }
+                      body.setdefault("messages", []).insert(0, context_message)
+                  
+                  return body
+              except Exception as e:
+                  print(f"Inlet error: {str(e)}")
+                  return body
+          
+          def outlet(self, body: Dict[str, Any], __user__: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              """
+              Modify the output data after it comes from the model.
+              
+              This function can format responses, redact sensitive information, or add styling.
+              
+              :param body: Dictionary containing the output data
+              :param __user__: Optional dictionary containing user information
+              :return: Modified dictionary containing the output data
+              """
+              try:
+                  # Example: Transform assistant messages to uppercase if configured
+                  if self.valves.TRANSFORM_UPPERCASE:
+                      for message in body.get("messages", []):
+                          if message.get("role") == "assistant" and "content" in message:
+                              message["content"] = message["content"].upper()
+                  
+                  return body
+              except Exception as e:
+                  print(f"Outlet error: {str(e)}")
+                  return body
+  
+  - input: |
+      class Filter:
+          def inlet(self, body):
+              # Clean user input
+              return body
+          
+          def stream(self, event):
+              # Process streaming chunks
+              return event
+          
+          def outlet(self, body):
+              # Format final output
+              return body
+    output: |
+      """
+      title: Complete Filter with Stream Processing
+      author: Your Name
+      author_url: https://website.com
+      description: A filter that processes inputs, streaming chunks, and outputs
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List, Optional
+      
+      class Filter:
+          class Valves(BaseModel):
+              """Configuration options for the filter."""
+              CLEAN_INPUT: bool = Field(
+                  default=True,
+                  description="Whether to clean user input by removing excessive punctuation."
+              )
+              FILTER_EMOJIS: bool = Field(
+                  default=False,
+                  description="Whether to filter out emojis from streamed responses."
+              )
+              ADD_MARKDOWN: bool = Field(
+                  default=True,
+                  description="Whether to add markdown formatting to assistant responses."
+              )
+          
+          def __init__(self):
+              """Initialize the Filter function."""
+              self.valves = self.Valves()
+          
+          def inlet(self, body: Dict[str, Any], __user__: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              """
+              Clean and prepare user input before it reaches the model.
+              
+              :param body: Dictionary containing the input data
+              :param __user__: Optional dictionary containing user information
+              :return: Modified dictionary containing the input data
+              """
+              try:
+                  if self.valves.CLEAN_INPUT and "messages" in body and body["messages"]:
+                      # Get the last user message (most recent input)
+                      last_message = body["messages"][-1]
+                      if last_message.get("role") == "user" and "content" in last_message:
+                          # Clean excessive punctuation
+                          content = last_message["content"]
+                          content = content.replace("!!!", "!").replace("???", "?").strip()
+                          last_message["content"] = content
+                  
+                  return body
+              except Exception as e:
+                  print(f"Inlet error: {str(e)}")
+                  return body
+          
+          def stream(self, event: Dict[str, Any]) -> Dict[str, Any]:
+              """
+              Process streaming chunks of the model's response in real-time.
+              
+              :param event: Dictionary containing a chunk of the streaming response
+              :return: Modified streaming chunk
+              """
+              try:
+                  if self.valves.FILTER_EMOJIS:
+                      # Filter emojis from streaming content
+                      for choice in event.get("choices", []):
+                          delta = choice.get("delta", {})
+                          if "content" in delta:
+                              # Simple emoji filtering (would need a more comprehensive approach in production)
+                              import re
+                              delta["content"] = re.sub(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]', '', delta["content"])
+                  
+                  return event
+              except Exception as e:
+                  print(f"Stream error: {str(e)}")
+                  return event
+          
+          def outlet(self, body: Dict[str, Any], __user__: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              """
+              Format the final output after it comes from the model.
+              
+              :param body: Dictionary containing the output data
+              :param __user__: Optional dictionary containing user information
+              :return: Modified dictionary containing the output data
+              """
+              try:
+                  if self.valves.ADD_MARKDOWN and "messages" in body:
+                      for message in body["messages"]:
+                          if message.get("role") == "assistant" and "content" in message:
+                              # Add markdown formatting to important parts
+                              content = message["content"]
+                              
+                              # Highlight important phrases (simple example)
+                              content = content.replace("Important:", "**Important:**")
+                              content = content.replace("Note:", "**Note:**")
+                              
+                              # Ensure code blocks are properly formatted
+                              if "```" not in content and "`" in content:
+                                  # Convert inline code to proper code blocks where appropriate
+                                  import re
+                                  content = re.sub(r'`([^`]+)`', r'```\n\1\n```', content)
+                              
+                              message["content"] = content
+                  
+                  return body
+              except Exception as e:
+                  print(f"Outlet error: {str(e)}")
+                  return body
+  
+  - input: |
+      class Filter:
+          class Valves(BaseModel):
+              ADD_CONTEXT: bool = Field(default=True)
+          
+          def __init__(self):
+              self.valves = self.Valves()
+          
+          def inlet(self, body):
+              # Add context to user input
+              return body
+    output: |
+      """
+      title: Context Enhancement Filter
+      author: Your Name
+      author_url: https://website.com
+      description: A filter that adds context to user inputs
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List, Optional
+      
+      class Filter:
+          class Valves(BaseModel):
+              """Configuration options for the context enhancement filter."""
+              ADD_CONTEXT: bool = Field(
+                  default=True,
+                  description="Whether to add context to user inputs."
+              )
+              CONTEXT_TYPE: str = Field(
+                  default="software_development",
+                  description="Type of context to add (software_development, customer_service, etc.)"
+              )
+          
+          def __init__(self):
+              """Initialize the Filter function."""
+              self.valves = self.Valves()
+              # Define context templates for different domains
+              self.context_templates = {
+                  "software_development": "You are a software development assistant. Help the user with coding, debugging, and software architecture questions.",
+                  "customer_service": "You are a customer service assistant. Help the user with product inquiries, troubleshooting, and support issues.",
+                  "general": "You are a helpful assistant. Provide clear, concise, and accurate information."
+              }
+          
+          def inlet(self, body: Dict[str, Any], __user__: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+              """
+              Add relevant context to user inputs based on the configured context type.
+              
+              :param body: Dictionary containing the input data
+              :param __user__: Optional dictionary containing user information
+              :return: Modified dictionary containing the input data with added context
+              """
+              try:
+                  if self.valves.ADD_CONTEXT:
+                      # Get the appropriate context template
+                      context_type = self.valves.CONTEXT_TYPE
+                      context_message = {
+                          "role": "system",
+                          "content": self.context_templates.get(context_type, self.context_templates["general"])
+                      }
+                      
+                      # Check if there's already a system message
+                      messages = body.get("messages", [])
+                      has_system = any(msg.get("role") == "system" for msg in messages)
+                      
+                      if not has_system:
+                          # Add the context as a system message at the beginning
+                          body.setdefault("messages", []).insert(0, context_message)
+                      
+                  return body
+              except Exception as e:
+                  print(f"Inlet error: {str(e)}")
+                  return body
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - openwebui
+    - functions
+    - filter
+    - data-transformation
+    - streaming
+</rule> 

@@ -1,0 +1,55 @@
+---
+description: Rules for basic Obsidian task syntax
+globs: "*.md"
+---
+
+# Obsidian Tasks Basic Syntax
+
+Rules for ensuring proper task syntax in Obsidian markdown files.
+
+<rule>
+name: obsidian_tasks_basic_syntax
+description: Enforces correct syntax for Obsidian tasks
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Ensure proper task checkbox syntax
+      - pattern: "^[-\\*\\+]\\s*\\[[^\\s\\]]\\]|^[0-9]+[\\.\\)]\\s*\\[[^\\s\\]]\\]"
+        message: "Task checkboxes must have a space: '[ ]' not '[x]' or '[/]'"
+
+      # Ensure single-line tasks
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*\\n\\s+\\S+"
+        message: "Tasks must be single-line items. Multi-line tasks are not supported."
+
+      # Proper list markers
+      - pattern: "^[^-\\*\\+0-9]\\s*\\[\\s?\\]"
+        message: "Tasks must start with either '- [ ]', '* [ ]', '+ [ ]', or a number followed by '. [ ]' or ') [ ]'"
+
+examples:
+  - input: |
+      - [x] Invalid checkbox format
+      - [ ] Correct task format
+      * [ ] Also correct with asterisk
+      + [ ] Also correct with plus
+      1. [ ] Correct numbered task
+      2) [ ] Also correct numbered task
+      - [ ] Multi-line task
+          continues here (not supported)
+  - output: |
+      - [ ] Fixed checkbox format
+      - [ ] Correct task format
+      * [ ] Also correct with asterisk
+      + [ ] Also correct with plus
+      1. [ ] Correct numbered task
+      2) [ ] Also correct numbered task
+      - [ ] Multi-line task (all on one line)
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

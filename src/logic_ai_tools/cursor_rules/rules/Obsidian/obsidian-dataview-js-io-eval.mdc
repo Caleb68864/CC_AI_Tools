@@ -1,0 +1,291 @@
+---
+description: Cursor rules for DataviewJS File I/O and Query Evaluation methods in Obsidian
+globs: *.md
+---
+# DataviewJS File I/O and Query Evaluation Rules
+
+<rule>
+name: obsidian_dataviewjs_io_eval
+description: Rules for using DataviewJS File I/O and Query Evaluation methods
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```dataviewjs"
+
+actions:
+  - type: suggest
+    message: |
+      When using DataviewJS File I/O and Query Evaluation methods:
+
+      1. File I/O Methods (all asynchronous ⌛):
+         - `dv.io.csv(path, [origin-file])`: Load CSV file as data array
+           - Example: `await dv.io.csv("data/books.csv")`
+           - Returns array of objects with CSV column headers as keys
+           - Returns `undefined` if file doesn't exist
+         - `dv.io.load(path, [origin-file])`: Load file contents as string
+           - Example: `await dv.io.load("Notes/Ideas.md")`
+           - Returns `undefined` if file doesn't exist
+         - `dv.io.normalize(path, [origin-file])`: Convert relative path to absolute
+           - Example: `dv.io.normalize("Ideas", "Notes/Index.md")`
+           - Resolves relative to current file if origin-file not provided
+
+      2. Query Evaluation Methods:
+         - `dv.query(source, [file, settings])` ⌛: Execute Dataview query
+           - Example: `await dv.query("LIST FROM #tag")`
+           - Returns result object with success status and value
+         - `dv.tryQuery(source, [file, settings])` ⌛: Execute query with exceptions
+           - Example: `await dv.tryQuery("LIST FROM #tag")`
+           - Throws error on failure instead of returning result object
+         - `dv.queryMarkdown(source, [file], [settings])` ⌛: Execute query and return markdown
+           - Example: `await dv.queryMarkdown("LIST FROM #tag")`
+         - `dv.tryQueryMarkdown(source, [file], [settings])` ⌛: Execute query with exceptions
+           - Example: `await dv.tryQueryMarkdown("LIST FROM #tag")`
+         - `dv.tryEvaluate(expression, [context])`: Evaluate Dataview expression
+           - Example: `dv.tryEvaluate("2 + 2")` or `dv.tryEvaluate("x + 2", {x: 3})`
+           - Throws error on failure
+         - `dv.evaluate(expression, [context])`: Evaluate with result object
+           - Example: `dv.evaluate("2 + 2")`
+           - Returns result object with success status and value/error
+
+      3. Asynchronous Operation Best Practices:
+         - Always use `await` with asynchronous methods (marked with ⌛)
+         - Wrap asynchronous operations in try/catch blocks
+         - Check for undefined/null results before processing
+         - Use proper error handling for potential failures
+         - Consider using Promise.all for parallel operations
+
+examples:
+  - input: |
+      ```dataviewjs
+      // Loading and processing a CSV file
+      dv.header(3, "CSV Data Example");
+      
+      try {
+        // Load CSV file (asynchronous operation)
+        const csvData = await dv.io.csv("data/books.csv");
+        
+        if (csvData && csvData.length > 0) {
+          // Process the CSV data
+          const processedData = csvData
+            .where(row => row.rating >= 4)
+            .sort(row => row.title);
+          
+          // Display the data
+          dv.table(
+            ["Title", "Author", "Rating", "Genre"],
+            processedData.map(row => [
+              row.title,
+              row.author,
+              row.rating,
+              row.genre
+            ])
+          );
+          
+          // Show summary
+          dv.paragraph(`Loaded ${csvData.length} books, ${processedData.length} with rating >= 4`);
+        } else {
+          dv.paragraph("No CSV data found or file is empty.");
+        }
+      } catch (error) {
+        dv.paragraph("Error loading CSV: " + error.message);
+      }
+      ```
+    output: "Loading and processing a CSV file"
+
+  - input: |
+      ```dataviewjs
+      // Loading file contents
+      dv.header(3, "File Content Example");
+      
+      try {
+        // Load file contents (asynchronous operation)
+        const fileContent = await dv.io.load("Notes/Ideas.md");
+        
+        if (fileContent) {
+          // Display first 200 characters of the file
+          dv.paragraph("File preview:");
+          dv.el("pre", fileContent.substring(0, 200) + "...");
+          
+          // Count lines, words, and characters
+          const lines = fileContent.split("\n").length;
+          const words = fileContent.split(/\s+/).length;
+          const chars = fileContent.length;
+          
+          dv.table(
+            ["Metric", "Count"],
+            [
+              ["Lines", lines],
+              ["Words", words],
+              ["Characters", chars]
+            ]
+          );
+        } else {
+          dv.paragraph("File not found or is empty.");
+        }
+      } catch (error) {
+        dv.paragraph("Error loading file: " + error.message);
+      }
+      ```
+    output: "Loading and analyzing file contents"
+
+  - input: |
+      ```dataviewjs
+      // Path normalization
+      dv.header(3, "Path Normalization Examples");
+      
+      // Current file is in "Projects/Planning"
+      const paths = [
+        "Ideas",
+        "../Notes/Ideas",
+        "../../Archive/2023/Ideas"
+      ];
+      
+      // Normalize paths relative to current file
+      dv.table(
+        ["Relative Path", "Normalized Path"],
+        paths.map(path => [
+          path,
+          dv.io.normalize(path)
+        ])
+      );
+      
+      // Normalize paths relative to specific file
+      dv.header(4, "Normalized relative to Notes/Index.md");
+      dv.table(
+        ["Relative Path", "Normalized Path"],
+        paths.map(path => [
+          path,
+          dv.io.normalize(path, "Notes/Index.md")
+        ])
+      );
+      ```
+    output: "Path normalization examples"
+
+  - input: |
+      ```dataviewjs
+      // Query execution examples
+      dv.header(3, "Query Execution Examples");
+      
+      try {
+        // Execute a standard Dataview query
+        const result = await dv.query("LIST FROM #book WHERE rating >= 4");
+        
+        if (result.successful) {
+          dv.header(4, "Query Result");
+          dv.paragraph(`Query returned ${result.value.values.length} items`);
+          
+          // Display the query result
+          dv.el("pre", JSON.stringify(result.value, null, 2));
+        } else {
+          dv.paragraph("Query failed: " + result.error);
+        }
+        
+        // Execute a query and get markdown
+        const mdResult = await dv.queryMarkdown("LIST FROM #book LIMIT 3");
+        
+        if (mdResult.successful) {
+          dv.header(4, "Markdown Result");
+          dv.paragraph("Raw markdown:");
+          dv.el("pre", mdResult.value);
+          
+          dv.paragraph("Rendered markdown:");
+          dv.paragraph(mdResult.value);
+        }
+      } catch (error) {
+        dv.paragraph("Error executing query: " + error.message);
+      }
+      ```
+    output: "Query execution examples"
+
+  - input: |
+      ```dataviewjs
+      // Expression evaluation examples
+      dv.header(3, "Expression Evaluation Examples");
+      
+      // Simple expressions
+      const expressions = [
+        "2 + 2",
+        "3 * 4 + 2",
+        "date(today) + dur('1 day')",
+        "length(this.file.tasks)",
+        "regextest('abc123', '\\d+')",
+        "contains('hello world', 'world')"
+      ];
+      
+      // Evaluate expressions
+      dv.table(
+        ["Expression", "Result"],
+        expressions.map(expr => {
+          try {
+            return [expr, JSON.stringify(dv.tryEvaluate(expr))];
+          } catch (error) {
+            return [expr, "Error: " + error.message];
+          }
+        })
+      );
+      
+      // Evaluate with context
+      dv.header(4, "Evaluation with Context");
+      
+      const contextExpressions = [
+        "x + y",
+        "multiply(a, b)",
+        "items.length"
+      ];
+      
+      const context = {
+        x: 10,
+        y: 20,
+        multiply: (a, b) => a * b,
+        a: 5,
+        b: 6,
+        items: [1, 2, 3, 4]
+      };
+      
+      dv.table(
+        ["Expression", "Context", "Result"],
+        contextExpressions.map(expr => {
+          try {
+            return [
+              expr, 
+              JSON.stringify(context), 
+              JSON.stringify(dv.tryEvaluate(expr, context))
+            ];
+          } catch (error) {
+            return [expr, JSON.stringify(context), "Error: " + error.message];
+          }
+        })
+      );
+      ```
+    output: "Expression evaluation examples"
+
+  - input: |
+      ```dataviewjs
+      // Linked - Get files that link to the current file
+      // Get files that link to the current file
+      const currentFileName = dv.current().file.name;
+      const linkedFiles = dv.pages()
+        .where(p => p.file.outlinks.some(link => link.path.includes(currentFileName)))
+        .sort(p => p.file.name);
+      
+      // Render the table
+      if (linkedFiles.length > 0) {
+        dv.table(
+          ["File", "Created", "Last Modified"],
+          linkedFiles.map(p => [
+            p.file.link,
+            p.file.cday,
+            p.file.mday
+          ])
+        );
+      } else {
+        dv.paragraph("No files link to this note yet.");
+      }
+      ```
+    output: "Finding files that link to the current note"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

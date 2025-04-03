@@ -1,0 +1,61 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: DevExpress DataGrid Overview Standards
+globs: *.{ts,js,jsx,tsx,cs,cshtml}
+---
+
+# DevExpress DataGrid Overview Standards
+
+Standards for implementing DevExpress DataGrid components.
+
+<rule>
+name: devexpress_datagrid_overview
+description: Core standards for implementing DevExpress DataGrid components
+
+filters:
+  - type: content
+    pattern: "dx-data-grid|DxDataGrid|dxDataGrid"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "(?<!import.*?)DxDataGrid(?!.*from)"
+        message: "DataGrid component should be properly imported from devextreme package"
+      
+      - pattern: "dataSource=\\{[^}]*\\}"
+        message: "DataSource should be properly configured with data array or store"
+        
+      - pattern: "columns=\\{[^}]*\\}"
+        message: "Columns should be explicitly defined with appropriate data fields and types"
+
+examples:
+  - input: |
+      <DxDataGrid>
+        <DxColumn dataField="someField" />
+      </DxDataGrid>
+    output: |
+      import { DxDataGrid, DxColumn } from 'devextreme-vue/data-grid';
+      import 'devextreme/dist/css/dx.light.css';
+
+      <DxDataGrid
+        :data-source="dataSource"
+        :show-borders="true"
+        :allow-column-resizing="true">
+        <DxColumn 
+          data-field="someField"
+          caption="Some Field"
+          data-type="string" />
+      </DxDataGrid>
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - devexpress
+    - datagrid
+    - ui
+</rule> 

@@ -1,0 +1,176 @@
+---
+description: Python Web Scraping Data Storage
+globs: *.py
+---
+
+# Python Web Scraping Data Storage
+
+Best practices for storing and processing scraped data.
+
+<rule>
+name: python_webscrape_storage
+description: Guidelines for storing and processing web scraped data
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "csv|json|sqlite|pandas|pd\\.|DataFrame|database|mongodb|sql|store|save|export"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "open\\([^,]+,\\s*['\"]w['\"]\\)"
+        message: "Consider using 'with' context manager when opening files to ensure proper closure"
+      
+      - pattern: "json\\.dump\\([^,]+\\)"
+        message: "Set indent parameter in json.dump for more readable JSON files"
+        
+      - pattern: "csv\\.writer\\("
+        message: "Consider using DictWriter for more maintainable CSV writing with named fields"
+        
+      - pattern: "pandas|pd\\."
+        message: "Consider using pandas for data cleaning, transformation, and analysis of scraped data"
+        
+      - pattern: "sqlite3\\.connect\\([^,]+\\)"
+        message: "Use parameterized queries with SQLite to prevent SQL injection"
+        
+      - pattern: "\\b(?:mongo|pymongo)\\b"
+        message: "Implement proper indexing for MongoDB collections that will be queried frequently"
+        
+      - pattern: "DataFrame\\([^)]*\\)\\.to_"
+        message: "Consider data validation and cleaning before storing scraped data"
+
+examples:
+  - input: |
+      import json
+      
+      def save_data(data, filename):
+          with open(filename, 'w') as f:
+              json.dump(data, f)
+  - output: |
+      import json
+      import os
+      
+      def save_data(data, filename, indent=2):
+          """Save data to JSON with proper formatting and error handling"""
+          # Ensure directory exists
+          os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+          
+          try:
+              with open(filename, 'w', encoding='utf-8') as f:
+                  json.dump(data, f, indent=indent, ensure_ascii=False)
+                  return True
+          except Exception as e:
+              print(f"Error saving data to {filename}: {e}")
+              return False
+
+  - input: |
+      import csv
+      
+      def save_to_csv(data, filename):
+          with open(filename, 'w', newline='') as f:
+              writer = csv.writer(f)
+              writer.writerow(['name', 'price', 'url'])
+              for item in data:
+                  writer.writerow([item['name'], item['price'], item['url']])
+  - output: |
+      import csv
+      import os
+      
+      def save_to_csv(data, filename):
+          """Save data to CSV with proper field names and error handling"""
+          # Ensure directory exists
+          os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+          
+          # Define fieldnames from data if available
+          if not data:
+              print("No data to save")
+              return False
+              
+          fieldnames = data[0].keys() if isinstance(data[0], dict) else ['name', 'price', 'url']
+          
+          try:
+              with open(filename, 'w', newline='', encoding='utf-8') as f:
+                  writer = csv.DictWriter(f, fieldnames=fieldnames)
+                  writer.writeheader()
+                  
+                  if isinstance(data[0], dict):
+                      writer.writerows(data)
+                  else:
+                      # Convert list data to dict if needed
+                      for item in data:
+                          if isinstance(item, list) and len(item) >= len(fieldnames):
+                              row_dict = {field: item[i] for i, field in enumerate(fieldnames)}
+                              writer.writerow(row_dict)
+                  return True
+          except Exception as e:
+              print(f"Error saving data to {filename}: {e}")
+              return False
+
+  - input: |
+      import sqlite3
+      
+      def store_in_db(data, db_path):
+          conn = sqlite3.connect(db_path)
+          cursor = conn.cursor()
+          cursor.execute('CREATE TABLE IF NOT EXISTS products (name TEXT, price TEXT, url TEXT)')
+          
+          for item in data:
+              cursor.execute(f"INSERT INTO products VALUES ('{item['name']}', '{item['price']}', '{item['url']}')")
+          
+          conn.commit()
+          conn.close()
+  - output: |
+      import sqlite3
+      import os
+      
+      def store_in_db(data, db_path):
+          """Store data in SQLite with proper parameterization and error handling"""
+          # Ensure directory exists
+          os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+          
+          try:
+              # Use context manager for automatic resource cleanup
+              with sqlite3.connect(db_path) as conn:
+                  cursor = conn.cursor()
+                  
+                  # Create table if it doesn't exist
+                  cursor.execute('''
+                      CREATE TABLE IF NOT EXISTS products (
+                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          name TEXT NOT NULL,
+                          price TEXT,
+                          url TEXT UNIQUE,
+                          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                      )
+                  ''')
+                  
+                  # Use parameterized query to prevent SQL injection
+                  insert_query = '''
+                      INSERT OR IGNORE INTO products (name, price, url)
+                      VALUES (?, ?, ?)
+                  '''
+                  
+                  # Execute many for better performance with large datasets
+                  items_to_insert = [(item.get('name', ''), 
+                                     item.get('price', ''), 
+                                     item.get('url', '')) 
+                                     for item in data]
+                  
+                  cursor.executemany(insert_query, items_to_insert)
+                  
+                  # Create index for faster lookups if needed
+                  cursor.execute('CREATE INDEX IF NOT EXISTS idx_url ON products(url)')
+                  
+                  return cursor.rowcount
+          except sqlite3.Error as e:
+              print(f"Database error: {e}")
+              return 0
+          except Exception as e:
+              print(f"Error storing data in database: {e}")
+              return 0
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,91 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: DevExpress DataGrid WebAPI Data Binding Standards
+globs: *.{ts,js,jsx,tsx,cs,cshtml}
+---
+
+# DevExpress DataGrid WebAPI Data Binding Standards
+
+Standards for implementing DevExpress DataGrid with WebAPI data binding.
+
+<rule>
+name: devexpress_datagrid_webapi
+description: Standards for implementing DevExpress DataGrid with WebAPI data binding
+
+filters:
+  - type: content
+    pattern: "dx-data-grid|DxDataGrid|dxDataGrid|CustomStore"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "new CustomStore\\(\\{[^}]*\\}\\)"
+        message: "CustomStore should be properly configured with load, insert, update, and delete operations"
+      
+      - pattern: "loadOptions"
+        message: "LoadOptions should handle sorting, filtering, and paging parameters"
+        
+      - pattern: "\\.load\\(\\)"
+        message: "Load operation should properly handle async data fetching and error handling"
+        
+      - pattern: "onBeforeSend"
+        message: "Configure onBeforeSend to handle authentication headers and other request configurations"
+
+examples:
+  - input: |
+      const dataSource = new CustomStore({
+        load: () => {
+          return fetch(url);
+        }
+      });
+    output: |
+      import CustomStore from 'devextreme/data/custom_store';
+      import { LoadOptions } from 'devextreme/data/load_options';
+
+      const dataSource = new CustomStore({
+        key: 'id',
+        load: async (loadOptions: LoadOptions) => {
+          try {
+            const { skip, take, sort, filter } = loadOptions;
+            
+            const params = new URLSearchParams({
+              skip: skip?.toString() || '0',
+              take: take?.toString() || '10',
+              sort: JSON.stringify(sort || []),
+              filter: JSON.stringify(filter || '')
+            });
+
+            const response = await fetch(`${url}?${params}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            return {
+              data: data.items,
+              totalCount: data.totalCount
+            };
+          } catch (error) {
+            console.error('Data loading error:', error);
+            throw error;
+          }
+        },
+        onBeforeSend: (operation, request) => {
+          request.headers = {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          };
+        }
+      });
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - devexpress
+    - datagrid
+    - webapi
+    - data-binding
+</rule> 

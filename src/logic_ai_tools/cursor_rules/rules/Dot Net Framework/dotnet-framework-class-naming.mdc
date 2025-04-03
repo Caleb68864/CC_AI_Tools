@@ -1,0 +1,61 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces .NET Framework class naming conventions
+globs: "*.cs"
+---
+# .NET Framework Class Naming
+
+<rule>
+name: dotnet_class_naming
+description: Ensures classes follow .NET Framework naming conventions and best practices
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "\\bclass\\s+[\\w]+"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "\\bclass\\s+[a-z]"
+        message: "Class names must start with an uppercase letter"
+      - pattern: "\\bclass\\s+I[A-Z]"
+        message: "Class names should not start with 'I' (reserved for interfaces)"
+      - pattern: "\\bclass\\s+_"
+        message: "Class names should not start with an underscore"
+      - pattern: "\\bclass\\s+.*Base$"
+        message: "Avoid using 'Base' suffix for non-abstract classes"
+
+  - type: suggest
+    message: |
+      Class naming guidelines:
+      1. Use PascalCase
+      2. Start with an uppercase letter
+      3. Use nouns or noun phrases
+      4. Be descriptive and clear
+      5. Avoid prefixes
+      6. Consider using suffix patterns:
+         - Exception → for custom exceptions
+         - Collection → for collection classes
+         - Manager/Service → for service classes
+         - Factory → for factory pattern implementations
+
+examples:
+  - input: |
+      class myClass
+      class _Helper
+      class IManager
+      class baseController
+    output: |
+      class MyClass
+      class Helper
+      class Manager
+      class Controller
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

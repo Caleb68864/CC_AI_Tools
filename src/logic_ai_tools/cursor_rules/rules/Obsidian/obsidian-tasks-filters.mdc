@@ -1,0 +1,98 @@
+---
+description: Rules for using filters in Obsidian Tasks plugin queries
+globs: "*.md"
+---
+
+# Obsidian Tasks Filter Syntax
+
+Guidelines for filtering tasks in queries.
+
+<rule>
+name: obsidian_tasks_filters
+description: Standards for filter syntax in Tasks plugin queries
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "```tasks"
+
+actions:
+  - type: suggest
+    message: |
+      When filtering tasks in queries:
+
+      1. Date Filters:
+         - Single Date Format:
+           - `(due|scheduled|starts|happens) (on|before|after|on or before|on or after) <date>`
+           - `<date>` can be:
+             - Absolute: `YYYY-MM-DD`
+             - Relative: `today`, `tomorrow`, `next monday`, `in two weeks`
+         - Date Range Format:
+           - `(due|scheduled|starts|happens) (in|before|after|in or before|in or after) <date range>`
+           - `<date range>` can be:
+             - Absolute: `YYYY-MM-DD YYYY-MM-DD`
+             - Relative: `last|this|next week|month|quarter|year`
+             - Numbered: `YYYY-Www`, `YYYY-mm`, `YYYY-Qq`, `YYYY`
+
+      2. Status Filters:
+         - Basic: `done`, `not done`
+         - Status Type: `status.type (is|is not) (TODO|DONE|IN_PROGRESS|CANCELLED|NON_TASK)`
+         - Status Name: `status.name (includes|does not include) <string>`
+
+      3. Text and Description Filters:
+         - Basic: `description (includes|does not include) <string>`
+         - Regex: `description (regex matches|regex does not match) /<pattern>/`
+         - Heading: `heading (includes|does not include) <string>`
+
+      4. Priority and Tags:
+         - Priority: `priority is (above|below|not)? (lowest|low|none|medium|high|highest)`
+         - Tags: 
+           - Basic: `tags (include|do not include) <tag>`
+           - Presence: `has tags`, `no tags`
+           - Regex: `tags (regex matches|regex does not match) /<pattern>/`
+
+      5. File Location Filters:
+         - Path: `path (includes|does not include) <path>`
+         - Folder: `folder (includes|does not include) <folder>`
+         - Root: `root (includes|does not include) <root>`
+         - Filename: `filename (includes|does not include) <filename>`
+
+      6. Boolean Combinations:
+         - Combine with `AND` (implicit between lines)
+         - Use `(filter1) OR (filter2)` for alternatives
+         - Use `NOT`, `AND NOT`, `OR NOT`, `XOR`
+         - Example: `(no due date) OR (due after today)`
+
+      7. Important Notes:
+         - All text matches are case-insensitive unless using regex
+         - Regex searches are case-sensitive by default
+         - Date ranges are inclusive of start and end dates
+         - Use `explain` in query to debug unexpected results
+
+examples:
+  - input: |
+      ```tasks
+      not done
+      (due today) OR (scheduled before tomorrow)
+      path includes Projects
+      tags include #priority
+      ```
+
+      ```tasks
+      not done
+      due this week
+      heading includes Daily Review
+      priority is above none
+      ```
+
+      ```tasks
+      (status.type is TODO) OR (status.type is IN_PROGRESS)
+      folder includes Work/Projects
+      description includes deadline
+      ```
+  - output: "Properly formatted Tasks plugin queries with various filters"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

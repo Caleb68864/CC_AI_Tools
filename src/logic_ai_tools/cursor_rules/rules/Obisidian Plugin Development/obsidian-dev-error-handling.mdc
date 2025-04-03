@@ -1,0 +1,109 @@
+---
+description: Guidelines for error handling and debugging in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Error Handling & Debugging
+
+Best practices for handling errors and debugging Obsidian plugins.
+
+<rule>
+name: obsidian_dev_error_handling
+description: Enforces best practices for error handling and debugging in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "catch\\s*\\(error\\)"
+        message: "Implement proper error handling with specific error types"
+      - pattern: "console\\.log"
+        message: "Use proper logging levels and structured logging"
+      - pattern: "throw new Error"
+        message: "Use custom error classes for better error handling"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          async onload() {
+              try {
+                  await this.loadData();
+              } catch (error) {
+                  console.log(error);
+              }
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private logger = new Logger('MyPlugin');
+          
+          async onload() {
+              try {
+                  await this.loadData();
+              } catch (error) {
+                  if (error instanceof DataLoadError) {
+                      this.logger.error('Failed to load data:', error);
+                      this.showErrorNotification('Failed to load data');
+                  } else if (error instanceof ValidationError) {
+                      this.logger.warn('Data validation failed:', error);
+                      this.showWarningNotification('Invalid data format');
+                  } else {
+                      this.logger.error('Unexpected error:', error);
+                      this.showErrorNotification('An unexpected error occurred');
+                  }
+              }
+          }
+          
+          private showErrorNotification(message: string) {
+              new Notice(message, 5000);
+          }
+          
+          private showWarningNotification(message: string) {
+              new Notice(message, 3000);
+          }
+      }
+
+documentation:
+  ## Error Handling & Debugging Guidelines
+
+  ### 1. Error Types
+  - Create custom error classes
+  - Use specific error types
+  - Implement error hierarchies
+  - Document error types
+  - Handle async errors
+
+  ### 2. Error Handling
+  - Use try-catch blocks
+  - Implement proper recovery
+  - Handle async errors
+  - Provide user feedback
+  - Log errors properly
+
+  ### 3. Logging
+  - Use structured logging
+  - Implement log levels
+  - Include context
+  - Handle sensitive data
+  - Configure log output
+
+  ### 4. Debugging
+  - Use proper debug tools
+  - Implement debug modes
+  - Add debug logging
+  - Handle edge cases
+  - Test error scenarios
+
+  ### 5. User Feedback
+  - Show error messages
+  - Provide recovery options
+  - Handle offline errors
+  - Implement retry logic
+  - Guide user actions
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

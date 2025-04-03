@@ -1,0 +1,99 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework relationship mapping best practices
+globs: "*.cs"
+---
+# Entity Framework Relationship Mapping
+
+<rule>
+name: ef_relationship_mapping
+description: Ensures proper configuration and usage of entity relationships
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "(?:HasOne|HasMany|WithOne|WithMany|ForeignKey|InverseProperty)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "public\\s+\\w+\\s+\\w+Id\\s*{\\s*get;\\s*set;\\s*}\\s*public\\s+\\w+\\s+\\w+\\s*{\\s*get;\\s*set;\\s*}"
+        message: "Foreign key property should be defined after navigation property"
+      - pattern: "\\[ForeignKey\\([^)]+\\)\\]\\s+public\\s+virtual"
+        message: "Don't combine virtual with ForeignKey attribute on navigation property"
+      - pattern: "HasMany\\([^)]+\\)\\.WithMany\\(\\)\\s*$"
+        message: "Many-to-many relationships must define navigation properties on both sides"
+      - pattern: "ICollection<\\w+>\\s+\\w+\\s*{\\s*get;\\s*set;\\s*}\\s*=\\s*new\\s+List<"
+        message: "Don't initialize navigation properties in entity definition"
+
+  - type: suggest
+    message: |
+      Relationship mapping guidelines:
+      1. One-to-Many Relationships:
+         - Define navigation property and foreign key
+         - Use ICollection<T> for collections
+         - Configure cascade delete explicitly
+      2. Many-to-Many Relationships:
+         - Use join entity for extra properties
+         - Define navigation properties on both sides
+      3. One-to-One Relationships:
+         - Use proper foreign key convention
+         - Configure required/optional status
+      4. Navigation Properties:
+         - Use virtual for lazy loading
+         - Don't initialize collections inline
+         - Follow naming conventions
+
+examples:
+  - input: |
+      public class Order
+      {
+          public int CustomerId { get; set; }
+          public Customer Customer { get; set; }
+          public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+      }
+    output: |
+      public class Order
+      {
+          public int Id { get; set; }
+          
+          public virtual Customer Customer { get; set; }
+          public int CustomerId { get; set; }
+          
+          public virtual ICollection<OrderItem> Items { get; set; }
+      }
+
+      public class OrderConfiguration : IEntityTypeConfiguration<Order>
+      {
+          public void Configure(EntityTypeBuilder<Order> builder)
+          {
+              builder.HasOne(o => o.Customer)
+                    .WithMany(c => c.Orders)
+                    .HasForeignKey(o => o.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+              builder.HasMany(o => o.Items)
+                    .WithOne(i => i.Order)
+                    .HasForeignKey(i => i.OrderId);
+          }
+      }
+
+      // Many-to-Many with join entity
+      public class StudentCourse
+      {
+          public int StudentId { get; set; }
+          public virtual Student Student { get; set; }
+          
+          public int CourseId { get; set; }
+          public virtual Course Course { get; set; }
+          
+          public DateTime EnrollmentDate { get; set; }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

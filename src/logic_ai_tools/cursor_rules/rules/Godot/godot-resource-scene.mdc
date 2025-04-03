@@ -1,0 +1,82 @@
+---
+description: 
+globs: 
+---
+---
+description: Godot Resource and Scene Management Guidelines
+globs: *.gd
+---
+# Godot Resource and Scene Management Guidelines
+
+<rule>
+name: godot_resource_scene
+description: Standards for managing resources and scenes in Godot
+
+filters:
+  - type: file_extension
+    pattern: "\\.gd$"
+  - type: content
+    pattern: "preload|load|scene|instantiate"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: suggest
+    message: |
+      When managing resources and scenes:
+
+      1. Resource Loading:
+         ```gdscript
+         # Static resources (known at compile time)
+         @onready var sprite_texture = preload("res://assets/sprite.png")
+         const ENEMY_SCENE = preload("res://scenes/enemy.tscn")
+
+         # Dynamic resources (loaded at runtime)
+         var dynamic_resource = load("res://assets/resource.tres")
+         ```
+         - Use preload for known resources
+         - Group resource loading statements
+         - Maintain consistent path format
+         - Position cursor after resource load
+
+      2. Scene Management:
+         ```gdscript
+         func change_scene() -> void:
+             get_tree().change_scene_to_file("res://scenes/level.tscn")
+
+         func instance_object() -> Node:
+             var scene = load("res://scenes/object.tscn")
+             return scene.instantiate()
+
+         func instance_from_preload() -> Node:
+             return ENEMY_SCENE.instantiate()
+         ```
+         - Use consistent scene loading patterns
+         - Handle scene transitions cleanly
+         - Position cursor after scene change
+         - Group scene management functions
+
+examples:
+  - input: |
+      # Bad: Inconsistent resource loading
+      var texture1 = preload("res://sprite1.png")
+      var texture2 = load("res://sprite2.png")
+
+      # Good: Consistent resource loading
+      @onready var texture1 = preload("res://sprites/sprite1.png")
+      @onready var texture2 = preload("res://sprites/sprite2.png")
+    output: "Consistent resource loading pattern"
+
+  - input: |
+      # Bad: Direct scene instantiation
+      var enemy = Enemy.new()
+
+      # Good: Scene instantiation
+      var enemy_scene = preload("res://scenes/enemy.tscn")
+      var enemy = enemy_scene.instantiate()
+    output: "Proper scene instantiation"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

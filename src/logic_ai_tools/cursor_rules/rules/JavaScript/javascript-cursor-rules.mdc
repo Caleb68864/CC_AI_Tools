@@ -1,0 +1,98 @@
+---
+description: Rules for cursor positioning in JavaScript code within Obsidian, covering function declarations, variable management, async operations, and event handlers
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_cursor_rules
+
+## JavaScript Cursor Rules
+
+1. **Function Declarations**
+   - Place cursor after function signature for quick parameter edits
+   - Leave blank line before and after functions
+   - Maintain consistent function naming style
+   - Position cursor at function body start for implementation
+
+2. **Variable Management**
+   - Position cursor after variable declarations
+   - Group related variables together
+   - Use consistent variable naming conventions
+   - Place cursor at next logical variable declaration point
+
+3. **Async Operations**
+   - Position cursor after await statements
+   - Leave space for error handling blocks
+   - Group related async operations
+   - Place cursor at promise chain end
+
+4. **Template Literals**
+   - Position cursor inside `${}` for quick value edits
+   - Maintain consistent spacing around expressions
+   - Group related template strings
+   - Place cursor after template literal completion
+
+5. **Error Handling**
+   - Position cursor inside catch blocks
+   - Leave space for additional error cases
+   - Group related try-catch blocks
+   - Place cursor at error handling logic start
+
+6. **Comments and Documentation**
+   - Place cursor after JSDoc parameter definitions
+   - Maintain consistent comment indentation
+   - Group related documentation blocks
+   - Position cursor at next documentation point
+
+7. **Module Operations**
+   - Position cursor after import statements
+   - Group related imports together
+   - Maintain consistent export organization
+   - Place cursor at next import/export point
+
+8. **Event Handlers**
+   - Position cursor inside handler functions
+   - Group related event listeners
+   - Maintain consistent handler naming
+   - Place cursor at handler logic start
+
+examples:
+  - input: |
+      // Imports at top
+      import { Notice } from 'obsidian';|  // Cursor here for next import
+
+      // Function declaration
+      async function processData(input) {|  // Cursor here for parameter edits
+          try {
+              const result = await fetch(input);|  // Cursor here for URL edits
+              return result.json();
+          } catch (error) {|  // Cursor here for error handling
+              new Notice(`Error: ${error.message}`);|  // Cursor here for message edits
+          }
+      }
+
+      // Event handler
+      element.addEventListener('click', () => {|  // Cursor here for handler logic
+          // Handler implementation
+      });
+    output: "Correctly positioned cursors in JavaScript code"
+
+metadata:
+  priority: medium
+  version: 1.0
+  applies_to:
+    - javascript
+    - typescript
+    - markdown-javascript-blocks
+  tags:
+    - cursor-positioning
+    - code-editing
+    - javascript
+    - obsidian
+</rule> 

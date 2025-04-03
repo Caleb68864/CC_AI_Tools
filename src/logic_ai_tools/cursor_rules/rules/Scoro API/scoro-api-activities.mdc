@@ -1,0 +1,114 @@
+---
+description: Rules for accessing the Scoro Activities API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Activities API Rules
+
+Documentation for interacting with the Scoro Activities API endpoints.
+
+<rule>
+name: scoro_activities_api
+description: Defines standards for Scoro Activities API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*activities.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/activities"
+        message: "Base endpoint for activities API is /api/v2/activities"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/activities/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/activities/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/activities/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/activities/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+
+# Common Fields
+fields:
+  - name: activity_id
+    type: Integer
+    description: Activity ID
+    
+  - name: name
+    type: String
+    description: Activity name
+    
+  - name: description
+    type: String
+    description: Activity description
+    
+  - name: is_active
+    type: Boolean
+    description: Whether the activity is active
+    
+  - name: is_billable
+    type: Boolean
+    description: Whether the activity is billable
+    
+  - name: is_default
+    type: Boolean
+    description: Whether this is a default activity
+    
+  - name: color
+    type: String
+    description: Activity color code (hex format)
+    
+  - name: category_id
+    type: Integer
+    description: Activity category ID
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "name": "Development",
+          "description": "Software development work",
+          "is_active": true,
+          "is_billable": true,
+          "color": "#FF0000"
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "activity_id": 1,
+          "name": "Development",
+          "description": "Software development work",
+          "is_active": true,
+          "is_billable": true,
+          "color": "#FF0000"
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

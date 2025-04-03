@@ -1,0 +1,53 @@
+---
+description: 
+globs: 
+---
+---
+description: Code style and structure rules for .NET development
+globs: "*.cs"
+---
+
+<rule>
+name: dotnet_code_style
+description: Standards for .NET code style and structure
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+
+actions:
+  - type: suggest
+    message: |
+      When writing .NET code:
+
+      1. Code Style:
+         - Write concise, idiomatic C# code
+         - Follow .NET and ASP.NET Core conventions
+         - Use object-oriented and functional patterns appropriately
+         - Prefer LINQ and lambda expressions for collections
+         - Use descriptive names (e.g., 'IsUserSignedIn', 'CalculateTotal')
+
+      2. File Structure:
+         - Organize by .NET conventions (Controllers, Models, Services)
+         - Group related functionality together
+         - Maintain consistent file organization
+
+      3. C# Features:
+         - Use C# 10+ features when appropriate
+         - Leverage built-in ASP.NET Core features
+         - Use Entity Framework Core effectively
+
+examples:
+  - input: |
+      // Bad
+      public bool chk() { return usr != null; }
+
+      // Good
+      public bool IsUserSignedIn() 
+      {
+          return currentUser != null;
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

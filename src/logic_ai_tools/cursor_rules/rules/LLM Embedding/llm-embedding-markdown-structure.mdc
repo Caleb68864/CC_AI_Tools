@@ -1,0 +1,67 @@
+---
+description: Rules for LLM-optimized markdown file structure and formatting
+globs: "*.md"
+---
+
+# LLM-Optimized Markdown Structure Standards
+
+Standards for creating and maintaining LLM-optimized markdown files with parent-child relationships.
+
+<rule>
+name: llm_embedding_markdown_structure
+description: Enforces consistent structure and formatting for LLM-optimized markdown files
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "---[\\s\\S]*?---"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "^(?!---\\ntitle:.*\\n)"
+        message: "Parent and child files must start with YAML front matter containing at least a title field"
+      
+      - pattern: "^---[\\s\\S]*?tags:(?![\\s\\S]*?\\[.*\\])[\\s\\S]*?---"
+        message: "YAML front matter must include tags as a list"
+        
+      - pattern: "^((?!\\[\\[.*\\]\\]).)*$"
+        message: "Child files must include Obsidian-style backlinks to their parent"
+        
+      - pattern: "# [^\\n]+\\n\\n(?!\\[\\[.*\\]\\])"
+        message: "Child files should have a backlink at the top of the content"
+        
+      - pattern: "children:\\s*(?!\\s*-\\s*.*\\.md)"
+        message: "Parent files must list child files in the children field"
+
+examples:
+  - input: |
+      # Some Content
+      
+      Regular text without proper structure
+  - output: |
+      ---
+      title: "Data Collection Overview"
+      parent_id: "C-5272"
+      parent_name: "Data Collection Initiative"
+      category: "Research"
+      start_date: "2023-01-01"
+      end_date: "2024-12-31"
+      contact_person: "John Doe"
+      tags: ["data", "research", "collection"]
+      children:
+        - "Child_C-5272_Methods.md"
+      ---
+      
+      # Data Collection Overview
+      
+      Content here...
+      
+      ## Linked Child Files
+      - [[Collection Methods]]
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

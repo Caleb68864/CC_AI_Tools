@@ -1,0 +1,54 @@
+---
+description: Naming conventions for Microsoft SQL Server development
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_naming_conventions
+description: Standards for naming conventions in Microsoft SQL Server
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these naming conventions:
+
+      1. Table Names:
+         - Use PascalCase
+         - Use singular form unless specifically representing collections
+         - Be descriptive and avoid abbreviations
+         - Examples: Customer, OrderDetail, ProductInventory
+
+      2. Stored Procedure Names:
+         - Use PascalCase
+         - Prefix with action verbs (Get, Update, Insert, Delete)
+         - Be descriptive of the operation
+         - Examples: GetCustomerById, UpdateOrderStatus
+
+      3. Column Names:
+         - Use PascalCase
+         - Avoid abbreviations unless widely accepted
+         - Be descriptive and clear
+         - Examples: FirstName, LastLoginDate, TotalAmount
+
+examples:
+  - input: |
+      -- Bad
+      CREATE TABLE custs (
+          cust_id int,
+          fname varchar(50)
+      )
+      
+      -- Good
+      CREATE TABLE Customer (
+          CustomerId int,
+          FirstName varchar(50)
+      )
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

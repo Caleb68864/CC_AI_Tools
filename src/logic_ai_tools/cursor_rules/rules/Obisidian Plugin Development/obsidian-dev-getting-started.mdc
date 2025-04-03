@@ -1,0 +1,94 @@
+---
+description: Guidelines for getting started with Obsidian plugin development
+globs: *.ts,*.js,*.json
+---
+
+# Obsidian Plugin Development - Getting Started
+
+Essential guidelines for starting Obsidian plugin development.
+
+<rule>
+name: obsidian_dev_getting_started
+description: Enforces best practices for initial plugin setup and development
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js|json)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "manifest\\.json"
+        message: "Ensure manifest.json includes required fields: id, name, version, minAppVersion"
+      - pattern: "class.*extends.*Plugin"
+        message: "Main plugin class should extend Plugin and implement onload() and onunload()"
+      - pattern: "new Plugin\\(app"
+        message: "Initialize plugin with proper app instance and settings"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              // Plugin initialization
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          async onload() {
+              // Load settings
+              await this.loadSettings();
+              
+              // Add commands
+              this.addCommand({
+                  id: 'my-command',
+                  name: 'My Command',
+                  callback: () => {
+                      // Command implementation
+                  }
+              });
+              
+              // Add settings tab
+              this.addSettingTab(new MySettingTab(this.app, this));
+          }
+          
+          async onunload() {
+              // Cleanup resources
+          }
+      }
+
+documentation:
+  ## Getting Started Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Development Setup
+  - Development Environment
+  - Build Tools
+  - Testing Framework
+  - Linting Configuration
+  - TypeScript Setup
+
+  ### 2. Project Structure
+  - File Organization
+  - Module Structure
+  - Asset Management
+  - Build Output
+  - Distribution Files
+
+  ### 3. Development Workflow
+  - Version Control
+  - Build Process
+  - Testing Process
+  - Deployment Process
+  - Release Management
+
+  ### 4. Development Tools
+  - IDE Configuration
+  - Debug Tools
+  - Testing Tools
+  - Build Tools
+  - Documentation Tools
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

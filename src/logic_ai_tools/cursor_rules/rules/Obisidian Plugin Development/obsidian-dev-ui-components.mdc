@@ -1,0 +1,89 @@
+---
+description: Guidelines for Obsidian UI component development
+globs: *.ts,*.js,*.css
+---
+
+# Obsidian UI Components
+
+Best practices for creating and using UI components in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_ui_components
+description: Enforces proper UI component implementation and styling
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js|css)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "new Modal\\(app\\)"
+        message: "Ensure modals are properly initialized with the app instance"
+      - pattern: "class.*extends.*ItemView"
+        message: "Implement required ItemView methods: getViewType(), getDisplayText(), async onOpen()"
+      - pattern: "addCommand\\(\\{"
+        message: "Commands should include id, name, and callback properties"
+
+examples:
+  - input: |
+      class MyView extends ItemView {
+          getViewType() {
+              return "my-view";
+          }
+      }
+    output: |
+      class MyView extends ItemView {
+          getViewType() {
+              return "my-view";
+          }
+          
+          getDisplayText() {
+              return "My View";
+          }
+          
+          async onOpen() {
+              const container = this.containerEl.children[1];
+              container.empty();
+              
+              // Add your view content here
+              container.createEl("h4", { text: "My View Content" });
+          }
+      }
+
+documentation:
+  ## UI Component Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Component Types
+  - Views (ItemView)
+  - Modals
+  - Settings Tabs
+  - Commands
+  - Custom Components
+
+  ### 2. Component Lifecycle
+  - Initialization
+  - State Management
+  - Event Handling
+  - Cleanup
+  - Error Handling
+
+  ### 3. Component Integration
+  - Workspace Integration
+  - Theme Integration
+  - Plugin Integration
+  - Event Integration
+  - State Integration
+
+  ### 4. Component Styling
+  - Theme Variables
+  - Responsive Design
+  - Accessibility
+  - Performance
+  - Mobile Support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

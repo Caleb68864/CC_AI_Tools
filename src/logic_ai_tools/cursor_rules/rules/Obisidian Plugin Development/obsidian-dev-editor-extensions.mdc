@@ -1,0 +1,128 @@
+---
+description: Guidelines for creating and managing editor extensions in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Editor Extensions
+
+Best practices for creating and managing editor extensions in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_editor_extensions
+description: Enforces best practices for editor extensions in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "EditorExtension"
+        message: "Implement proper editor extension lifecycle management"
+      - pattern: "editor\\.update"
+        message: "Ensure efficient editor updates and state management"
+      - pattern: "ViewPlugin"
+        message: "Use proper view plugin setup and cleanup"
+
+examples:
+  - input: |
+      class MyEditorExtension extends EditorExtension {
+          constructor() {
+              super();
+              this.update = this.update.bind(this);
+          }
+          
+          update(view: EditorView) {
+              // Update implementation
+          }
+      }
+    output: |
+      class MyEditorExtension extends EditorExtension {
+          private decorations: DecorationSet;
+          private updateTimeout: number;
+          
+          constructor() {
+              super();
+              this.update = this.update.bind(this);
+              this.decorations = Decoration.none;
+          }
+          
+          update(view: EditorView) {
+              // Debounce updates
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              
+              this.updateTimeout = window.setTimeout(() => {
+                  try {
+                      // Create new decorations
+                      const newDecorations = this.createDecorations(view);
+                      
+                      // Update only if changed
+                      if (!this.decorations.eq(newDecorations)) {
+                          this.decorations = newDecorations;
+                          view.dispatch(view.state.update({
+                              decorations: this.decorations
+                          }));
+                      }
+                  } catch (error) {
+                      console.error('Editor extension update error:', error);
+                  }
+              }, 100);
+          }
+          
+          private createDecorations(view: EditorView): DecorationSet {
+              // Implement decoration creation
+              return Decoration.none;
+          }
+          
+          destroy() {
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              this.decorations = Decoration.none;
+          }
+      }
+
+documentation:
+  ## Editor Extension Guidelines
+
+  ### 1. Extension Lifecycle
+  - Implement proper initialization
+  - Handle extension updates
+  - Manage extension state
+  - Implement cleanup
+  - Handle extension events
+
+  ### 2. Performance
+  - Optimize update frequency
+  - Implement debouncing
+  - Minimize state updates
+  - Handle large documents
+  - Monitor performance
+
+  ### 3. State Management
+  - Track extension state
+  - Handle state updates
+  - Implement undo/redo
+  - Manage decorations
+  - Handle selection state
+
+  ### 4. Error Handling
+  - Handle update errors
+  - Implement fallbacks
+  - Log extension errors
+  - Provide user feedback
+  - Handle edge cases
+
+  ### 5. Best Practices
+  - Document extension behavior
+  - Test edge cases
+  - Handle view changes
+  - Consider accessibility
+  - Implement proper cleanup
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

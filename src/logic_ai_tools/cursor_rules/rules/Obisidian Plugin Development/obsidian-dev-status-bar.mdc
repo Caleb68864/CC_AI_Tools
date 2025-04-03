@@ -1,0 +1,149 @@
+---
+description: Guidelines for implementing status bar items in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Status Bar
+
+Best practices for implementing and managing status bar items in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_status_bar
+description: Enforces best practices for status bar items in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "addStatusBarItem"
+        message: "Implement proper status bar item management"
+      - pattern: "statusBarEl"
+        message: "Handle status bar updates efficiently"
+      - pattern: "setStatusBarText"
+        message: "Use proper status bar text updates"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              const statusBarItem = this.addStatusBarItem();
+              statusBarItem.setText('My Status');
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private statusBarItem: HTMLElement;
+          private updateTimeout: number;
+          private lastStatus: string;
+          
+          onload() {
+              // Create status bar item
+              this.statusBarItem = this.addStatusBarItem();
+              this.lastStatus = '';
+              
+              // Register event for status updates
+              this.registerEvent(
+                  this.app.workspace.on('file-change', () => {
+                      this.updateStatus();
+                  })
+              );
+          }
+          
+          private updateStatus() {
+              // Debounce status updates
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              
+              this.updateTimeout = window.setTimeout(() => {
+                  try {
+                      const newStatus = this.getStatusText();
+                      
+                      // Only update if status changed
+                      if (newStatus !== this.lastStatus) {
+                          this.setStatusText(newStatus);
+                          this.lastStatus = newStatus;
+                      }
+                  } catch (error) {
+                      console.error('Status update error:', error);
+                  }
+              }, 100);
+          }
+          
+          private getStatusText(): string {
+              // Get current status text
+              const activeFile = this.app.workspace.getActiveFile();
+              if (!activeFile) return 'No file open';
+              
+              return `Processing ${activeFile.name}`;
+          }
+          
+          private setStatusText(text: string) {
+              if (!this.statusBarItem) return;
+              
+              // Update status text with icon
+              this.statusBarItem.setText(`📝 ${text}`);
+              
+              // Add tooltip
+              this.statusBarItem.title = 'Click for more info';
+              
+              // Add click handler
+              this.statusBarItem.onclick = () => {
+                  this.handleStatusClick();
+              };
+          }
+          
+          private handleStatusClick() {
+              // Show modal with detailed status
+              new Notice('Status details: ' + this.lastStatus);
+          }
+          
+          destroy() {
+              if (this.updateTimeout) {
+                  window.clearTimeout(this.updateTimeout);
+              }
+              if (this.statusBarItem) {
+                  this.statusBarItem.remove();
+              }
+          }
+      }
+
+documentation:
+  ## Status Bar Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Status Bar Specifics
+  - Use appropriate status bar item types
+  - Handle status bar positioning
+  - Manage status bar visibility
+  - Implement status bar interactions
+  - Handle status bar updates
+
+  ### 2. Status Content
+  - Display relevant information
+  - Update content efficiently
+  - Handle content formatting
+  - Manage content updates
+  - Consider content length
+
+  ### 3. Status Bar Events
+  - Handle status bar clicks
+  - Manage status bar hover
+  - Implement status bar tooltips
+  - Handle status bar focus
+  - Manage status bar keyboard events
+
+  ### 4. Status Bar Integration
+  - Integrate with workspace events
+  - Handle file changes
+  - Manage plugin state
+  - Handle theme changes
+  - Consider mobile support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,66 @@
+---
+description: Rules for Obsidian Tasks global filter usage
+globs: "*.md"
+---
+
+# Obsidian Tasks Global Filter
+
+Rules for using global filters in Obsidian Tasks.
+
+<rule>
+name: obsidian_tasks_global_filter
+description: Enforces correct usage of global filters in tasks
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Warn about sub-tags on global filter tag
+      - pattern: "(#task/[\\w-]+|#task\\s+#[\\w-]+)"
+        message: "Global filter tags (#task) cannot have sub-tags. Use a different tag for sub-categorization."
+
+      # Ensure global filter is at start or end of task
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*#task.*#task"
+        message: "Global filter (#task) should only appear once in a task"
+
+      # Warn about potential global filter conflicts
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*#(?:todo|todos|tasklist).*#task"
+        message: "Consider using only one task-related tag to avoid conflicts with global filter"
+
+      # Suggest consistent global filter placement
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\](?!.*#task).*#task\\s*$"
+        message: "Consider placing global filter (#task) at the start of the task description for better readability"
+
+      # Warn about potential missing global filter
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*\\btask\\b.*(?!#task)"
+        message: "Task-like item found without global filter. Add #task if this should be tracked by Tasks plugin."
+
+examples:
+  - input: |
+      - [ ] #task/important Take out trash
+      - [ ] #task #task-important Clean room
+      - [ ] Middle #task of task #task
+      - [ ] #todo Important task #task
+      - [ ] This is a task without filter
+  - output: |
+      - [ ] #task Take out trash #important
+      - [ ] #task Clean room #important
+      - [ ] #task Middle of task
+      - [ ] #task Important task
+      - [ ] #task This is a task
+
+metadata:
+  priority: high
+  version: 1.0
+
+notes: |
+  Global Filter Rules:
+  1. Global filter (e.g. #task) must be configured in Tasks plugin settings
+  2. All tasks must include the global filter to be tracked
+  3. Global filter tags cannot have sub-tags
+  4. Global filter can be removed from task description in settings
+  5. Restart Tasks plugin after changing global filter settings
+</rule> 

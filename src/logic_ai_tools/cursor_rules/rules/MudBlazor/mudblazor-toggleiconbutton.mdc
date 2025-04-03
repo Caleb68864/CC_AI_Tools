@@ -1,0 +1,72 @@
+---
+description: API reference and guidelines for MudBlazor ToggleIconButton component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor ToggleIconButton API
+
+The MudBlazor ToggleIconButton component provides a toggleable icon button with two distinct states, each with its own icon and styling.
+
+<rule>
+name: mudblazor_toggleiconbutton
+description: Provides guidelines and API reference for using MudBlazor ToggleIconButton component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudToggleIconButton.*?>"
+        message: "Consider using @bind-Toggled for two-way binding of the toggle state."
+      - pattern: "<MudToggleIconButton.*?(?<!ToggledIcon=).*Icon=.*?>"
+        message: "Specify both Icon and ToggledIcon for clear visual states."
+      - pattern: "<MudToggleIconButton.*?(?<!ToggledColor=).*Color=.*?>"
+        message: "Consider using different colors for toggled and untoggled states using Color and ToggledColor."
+      - pattern: "<MudToggleIconButton.*?(?<!title=).*?>"
+        message: "Add title attribute for better accessibility and tooltip support."
+      - pattern: "<MudToggleIconButton.*?(?<!Size=).*?>"
+        message: "Consider specifying Size for consistent button dimensions."
+
+examples:
+  - input: |
+      <MudToggleIconButton Icon="@Icons.Material.Filled.Star"></MudToggleIconButton>
+    output: |
+      @* Basic Toggle Icon Button *@
+      <MudToggleIconButton 
+          @bind-Toggled="@isToggled"
+          Icon="@Icons.Material.Filled.StarBorder"
+          Color="@Color.Default"
+          Title="Add to favorites"
+          Size="Size.Medium"
+          ToggledIcon="@Icons.Material.Filled.Star"
+          ToggledColor="@Color.Primary"
+          ToggledTitle="Remove from favorites" />
+
+      @* Toggle Icon Button with Status Text *@
+      <MudToggleIconButton 
+          @bind-Toggled="@alarmEnabled"
+          Icon="@Icons.Material.Filled.AlarmOff"
+          Color="@Color.Error"
+          Title="Enable alarm"
+          ToggledIcon="@Icons.Material.Filled.AlarmOn"
+          ToggledColor="@Color.Success"
+          ToggledTitle="Disable alarm" />
+      <MudText>Alarm is @(alarmEnabled ? "On" : "Off")</MudText>
+
+      @code {
+          private bool isToggled;
+          private bool alarmEnabled;
+
+          private void OnToggledChanged(bool toggled)
+          {
+              // Handle toggle state change
+              isToggled = toggled;
+              StateHasChanged();
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

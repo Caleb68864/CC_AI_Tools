@@ -1,0 +1,114 @@
+---
+description: Rules for accessing the Scoro Users API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Users API Rules
+
+Documentation for interacting with the Scoro Users API endpoints.
+
+<rule>
+name: scoro_users_api
+description: Defines standards for Scoro Users API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*users.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/users"
+        message: "Base endpoint for users API is /api/v2/users"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/users/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/users/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/users/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/users/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+
+# Common Fields
+fields:
+  - name: user_id
+    type: Integer
+    description: User ID
+    
+  - name: first_name
+    type: String
+    description: User's first name
+    
+  - name: last_name
+    type: String
+    description: User's last name
+    
+  - name: email
+    type: String
+    description: User's email address
+    
+  - name: role_id
+    type: Integer
+    description: User's role ID
+    
+  - name: is_active
+    type: Boolean
+    description: Whether the user is active
+    
+  - name: hourly_rate
+    type: Decimal
+    description: User's hourly rate
+    
+  - name: department_id
+    type: Integer
+    description: User's department ID
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@example.com",
+          "role_id": 1,
+          "is_active": true
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "user_id": 1,
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@example.com",
+          "role_id": 1,
+          "is_active": true
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

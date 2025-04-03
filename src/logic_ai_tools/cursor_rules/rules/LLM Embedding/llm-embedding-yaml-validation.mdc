@@ -1,0 +1,61 @@
+---
+description: Rules for validating YAML front matter in LLM-optimized markdown files
+globs: "*.md"
+---
+
+# LLM-Optimized Markdown YAML Front Matter Standards
+
+Standards for YAML front matter in parent and child markdown files.
+
+<rule>
+name: llm_embedding_yaml_validation
+description: Enforces consistent YAML front matter structure and required fields
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "---[\\s\\S]*?---"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "^---\\s*(?!title:)"
+        message: "YAML front matter must start with the title field"
+      
+      - pattern: "Parent_.*\\.md.*(?!parent_id:.*\\nparent_name:.*\\ncategory:.*\\nstart_date:.*\\nend_date:.*\\ncontact_person:)"
+        message: "Parent files must include parent_id, parent_name, category, start_date, end_date, and contact_person fields"
+      
+      - pattern: "Child_.*\\.md.*(?!parent:.*\\nlink_url:.*\\ndescription:)"
+        message: "Child files must include parent, link_url, and description fields"
+      
+      - pattern: "start_date:.*(?!\\d{4}-\\d{2}-\\d{2})"
+        message: "Dates must be in YYYY-MM-DD format"
+      
+      - pattern: "tags:.*(?!\\[.*\\])"
+        message: "Tags must be specified as a YAML list"
+
+examples:
+  - input: |
+      ---
+      title: Example
+      date: 01/01/2023
+      ---
+  - output: |
+      ---
+      title: "Data Collection Initiative Overview"
+      parent_id: "C-5272"
+      parent_name: "Data Collection Initiative"
+      category: "Research"
+      start_date: "2023-01-01"
+      end_date: "2024-12-31"
+      contact_person: "John Doe"
+      tags: ["data", "research", "collection"]
+      children:
+        - "Child_C-5272_Details.md"
+      ---
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

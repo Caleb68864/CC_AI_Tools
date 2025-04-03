@@ -1,0 +1,136 @@
+---
+description: Guidelines for managing viewport and scrolling in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Viewport Management
+
+Best practices for managing viewport and scrolling behavior in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_viewport
+description: Enforces best practices for viewport management in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "scrollIntoView"
+        message: "Implement proper viewport scrolling with smooth behavior"
+      - pattern: "getScroll"
+        message: "Use proper viewport position tracking"
+      - pattern: "setScroll"
+        message: "Handle viewport updates efficiently"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          scrollToPosition(pos: number) {
+              const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+              if (view) {
+                  view.editor.scrollIntoView(pos);
+              }
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private scrollTimeout: number;
+          private lastScrollPosition: number;
+          
+          scrollToPosition(pos: number, options: ScrollOptions = {}) {
+              const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+              if (!view) return;
+              
+              // Debounce scroll updates
+              if (this.scrollTimeout) {
+                  window.clearTimeout(this.scrollTimeout);
+              }
+              
+              this.scrollTimeout = window.setTimeout(() => {
+                  try {
+                      const editor = view.editor;
+                      const currentPos = editor.getScroll();
+                      
+                      // Only scroll if position changed
+                      if (currentPos !== this.lastScrollPosition) {
+                          editor.scrollIntoView(pos, {
+                              behavior: options.behavior || 'smooth',
+                              block: options.block || 'center',
+                              inline: options.inline || 'nearest'
+                          });
+                          
+                          this.lastScrollPosition = pos;
+                      }
+                  } catch (error) {
+                      console.error('Scroll error:', error);
+                  }
+              }, 50);
+          }
+          
+          // Track viewport changes
+          onViewportChange(callback: (pos: number) => void) {
+              const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+              if (!view) return;
+              
+              const editor = view.editor;
+              let lastPos = editor.getScroll();
+              
+              const observer = new ResizeObserver(() => {
+                  const currentPos = editor.getScroll();
+                  if (currentPos !== lastPos) {
+                      lastPos = currentPos;
+                      callback(currentPos);
+                  }
+              });
+              
+              observer.observe(editor.containerEl);
+              
+              return () => observer.disconnect();
+          }
+          
+          destroy() {
+              if (this.scrollTimeout) {
+                  window.clearTimeout(this.scrollTimeout);
+              }
+          }
+      }
+
+documentation:
+  ## Viewport Management Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Viewport Structure
+  - Viewport Size
+  - Scroll Position
+  - Visible Range
+  - Selection Range
+  - Focus Position
+
+  ### 2. Viewport Management
+  - Scroll Management
+  - Position Tracking
+  - Range Updates
+  - Selection Updates
+  - Focus Management
+
+  ### 3. Viewport Integration
+  - Editor Integration
+  - View Integration
+  - Event Integration
+  - State Integration
+  - Theme Integration
+
+  ### 4. Viewport Features
+  - Smooth Scrolling
+  - Position Restoration
+  - Range Selection
+  - Focus Handling
+  - Mobile Support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

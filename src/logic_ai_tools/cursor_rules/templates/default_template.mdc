@@ -1,0 +1,35 @@
+---
+description: Project context and structure information
+globs: **/*.*
+---
+
+# Project Context
+
+This file contains the project structure and configuration information for a {project_type} project.
+
+<rule>
+name: project_context
+description: Provides project structure and configuration information
+
+metadata:
+  project_root: {project_root}
+  project_type: {project_type}
+  source_path: {source_path}
+  test_path: {test_path}
+  docs_path: {docs_path}
+
+file_extensions:
+{file_extensions}
+
+project_files:
+{project_files}
+
+config_files:
+{config_files}
+
+dependencies:
+{dependencies}
+
+important_files:
+{important_files}
+</rule> 

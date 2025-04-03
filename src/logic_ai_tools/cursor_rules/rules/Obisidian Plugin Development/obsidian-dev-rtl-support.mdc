@@ -1,0 +1,85 @@
+---
+description: Guidelines for implementing right-to-left support in Obsidian plugins
+globs: *.ts,*.js,*.css
+---
+
+# Obsidian Plugin Development - Right-to-Left Support
+
+Best practices for implementing right-to-left (RTL) support in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_rtl_support
+description: Enforces best practices for RTL support in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js|css)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "dir=\"ltr\""
+        message: "Use dynamic direction based on Obsidian's RTL setting"
+      - pattern: "margin-left"
+        message: "Use logical properties for RTL support"
+      - pattern: "text-align: left"
+        message: "Use logical text alignment for RTL support"
+
+examples:
+  - input: |
+      .my-component {
+          margin-left: 10px;
+          text-align: left;
+      }
+    output: |
+      .my-component {
+          margin-inline-start: 10px;
+          text-align: start;
+      }
+      
+      /* RTL-specific adjustments */
+      [dir="rtl"] .my-component {
+          /* Additional RTL-specific styles */
+      }
+
+documentation:
+  ## RTL Support Guidelines
+
+  ### 1. CSS Properties
+  - Use logical properties
+  - Handle margins and padding
+  - Manage text alignment
+  - Handle borders
+  - Manage positioning
+
+  ### 2. Layout Management
+  - Use flexbox/grid
+  - Handle direction changes
+  - Manage component order
+  - Handle nested layouts
+  - Test layout changes
+
+  ### 3. Text Handling
+  - Use logical text alignment
+  - Handle bidirectional text
+  - Manage text wrapping
+  - Handle text selection
+  - Test text rendering
+
+  ### 4. Component Behavior
+  - Handle input fields
+  - Manage dropdowns
+  - Handle modals
+  - Manage tooltips
+  - Test interactions
+
+  ### 5. Testing & Validation
+  - Test in both directions
+  - Validate text rendering
+  - Check layout integrity
+  - Test user interactions
+  - Handle edge cases
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

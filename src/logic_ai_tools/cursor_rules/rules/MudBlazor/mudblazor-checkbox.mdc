@@ -1,0 +1,47 @@
+---
+description: API reference and guidelines for MudBlazor Checkbox component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Checkbox API
+
+The MudBlazor Checkbox component provides a three-state checkbox input with customizable styling and behavior.
+
+<rule>
+name: mudblazor_checkbox
+description: Provides guidelines and API reference for using MudBlazor Checkbox component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudCheckbox.*?>"
+        message: "Consider using Color and Size properties for consistent styling with other form elements."
+      - pattern: "(?<!@bind-Checked=).*<MudCheckbox.*?>"
+        message: "Use @bind-Checked for two-way binding of checkbox state."
+      - pattern: "<MudCheckbox.*?ThreeState=\"true\".*?>"
+        message: "When using ThreeState, handle null state in your logic for indeterminate checkbox state."
+      - pattern: "(?<!Label=).*<MudCheckbox.*?>"
+        message: "Consider adding a Label for better accessibility and user experience."
+
+examples:
+  - input: |
+      <MudCheckbox></MudCheckbox>
+    output: |
+      <MudCheckbox @bind-Checked="@isChecked"
+          Color="Color.Primary"
+          Size="Size.Medium"
+          Label="Enable feature"
+          UnCheckedColor="Color.Default">
+      </MudCheckbox>
+
+      @code {
+          private bool isChecked;
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

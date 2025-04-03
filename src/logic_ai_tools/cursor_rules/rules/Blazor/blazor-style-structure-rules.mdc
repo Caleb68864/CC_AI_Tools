@@ -1,0 +1,56 @@
+---
+description: 
+globs: 
+---
+---
+description: Blazor .NET 8 Code Style and Structure Rules
+globs: *.{cs,razor,cshtml}
+---
+# Blazor Code Style and Structure Rules
+
+<rule>
+name: blazor_code_style
+description: Standards for Blazor .NET 8 code style and structure
+
+filters:
+  - type: file_extension
+    pattern: "\\.cs$|\\.razor$|\\.cshtml$"
+
+actions:
+  - type: suggest
+    message: |
+      Code Style Guidelines:
+
+      1. Component Structure:
+         - Use Razor Components for UI development
+         - Inline functions for small components only
+         - Separate complex logic into code-behind/service classes
+         - Use async/await for non-blocking operations
+
+      2. Naming Conventions:
+         - PascalCase: Components, methods, public members
+         - camelCase: Private fields, local variables
+         - Prefix interfaces with "I"
+         - Prefix private class variables with "_"
+         - Use "_db" for Database Context references
+
+      3. Code Organization:
+         - Follow .NET and Blazor conventions
+         - Write idiomatic and efficient code
+         - Maintain separation of concerns
+
+examples:
+  - input: |
+      // Bad
+      public string username;
+      private DatabaseContext dbContext;
+
+      // Good
+      public string Username;
+      private readonly DatabaseContext _db;
+    output: "Properly formatted Blazor code"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

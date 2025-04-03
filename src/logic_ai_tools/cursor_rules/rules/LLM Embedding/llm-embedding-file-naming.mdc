@@ -1,0 +1,40 @@
+---
+description: Rules for LLM-optimized markdown file naming conventions
+globs: "*.md"
+---
+
+# LLM-Optimized Markdown File Naming Standards
+
+Standards for naming markdown files in the LLM-optimized documentation system.
+
+<rule>
+name: llm_embedding_file_naming
+description: Enforces consistent file naming conventions for parent and child markdown files
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "^(?!Parent_[A-Z]-\\d+_.*\\.md$|Child_[A-Z]-\\d+_.*\\.md$)"
+        message: "File names must follow the pattern: Parent_<parent_id>_<parent_name>.md for parent files or Child_<parent_id>_<short_topic>.md for child files"
+      
+      - pattern: "_\\s+_"
+        message: "Use underscores instead of spaces in file names"
+        
+      - pattern: "[^a-zA-Z0-9_-]"
+        message: "File names should only contain alphanumeric characters, underscores, and hyphens"
+
+examples:
+  - input: |
+      My Parent File.md
+  - output: |
+      Parent_C-5272_Broadband_Bridge.md
+      Child_C-5272_Grant_Details.md
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

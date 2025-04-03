@@ -1,0 +1,48 @@
+---
+description: 
+globs: 
+---
+---
+description: Naming conventions for .NET development
+globs: "*.cs"
+---
+
+<rule>
+name: dotnet_naming_conventions
+description: Standards for naming in .NET applications
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these naming conventions:
+
+      1. Case Conventions:
+         - PascalCase: class names, method names, public members
+         - camelCase: local variables, private fields
+         - UPPERCASE: constants
+         
+      2. Prefixes:
+         - Interface names: "I" (e.g., 'IUserService')
+         - Private Class variables: "_" (e.g., _dataService)
+         - Database Context: always "_db"
+
+      3. General Guidelines:
+         - Use descriptive, meaningful names
+         - Avoid abbreviations unless widely known
+         - Keep names concise but clear
+
+examples:
+  - input: |
+      // Bad
+      private userSvc _UserService;
+      
+      // Good
+      private IUserService _userService;
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

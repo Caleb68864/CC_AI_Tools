@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces .NET Framework interface naming conventions
+globs: "*.cs"
+---
+# .NET Framework Interface Naming
+
+<rule>
+name: dotnet_interface_naming
+description: Ensures interfaces follow .NET Framework naming conventions and best practices
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "\\binterface\\s+[\\w]+"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "\\binterface\\s+(?!I)[A-Z]"
+        message: "Interface names must start with 'I'"
+      - pattern: "\\binterface\\s+[a-z]"
+        message: "Interface names must start with 'I' followed by an uppercase letter"
+      - pattern: "\\binterface\\s+I[a-z]"
+        message: "The character after 'I' must be uppercase"
+      - pattern: "\\binterface\\s+I(?:Interface|Impl)"
+        message: "Avoid using 'Interface' or 'Impl' in interface names"
+
+  - type: suggest
+    message: |
+      Interface naming guidelines:
+      1. Start with capital 'I' prefix
+      2. Use PascalCase after the 'I'
+      3. Use adjectives or noun phrases
+      4. Be descriptive of the behavior
+      5. Common patterns:
+         - IDisposable
+         - IComparable
+         - IEnumerable
+         - ICollection
+         - IList
+      6. Avoid redundant terms like 'Interface'
+
+examples:
+  - input: |
+      interface Service
+      interface iHandler
+      interface Interface1
+      interface IimplementationDetail
+    output: |
+      interface IService
+      interface IHandler
+      interface IProcessor
+      interface IImplementationDetail
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+---
+---
+description: Error handling and validation rules for .NET
+globs: "*.cs"
+---
+
+<rule>
+name: dotnet_error_handling
+description: Standards for error handling and validation in .NET
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+
+actions:
+  - type: suggest
+    message: |
+      For error handling and validation:
+
+      1. Exception Handling:
+         - Use exceptions for exceptional cases only
+         - Implement proper error logging
+         - Use built-in .NET logging or third-party logger
+         - Implement global exception handling middleware
+
+      2. Validation:
+         - Use Data Annotations or Fluent Validation
+         - Implement model validation
+         - Return appropriate HTTP status codes
+         - Provide consistent error responses
+
+      3. Best Practices:
+         - Don't use exceptions for control flow
+         - Log exceptions with appropriate detail
+         - Handle errors at appropriate levels
+
+examples:
+  - input: |
+      // Bad
+      try {
+          // Everything
+      } catch (Exception) { }
+
+      // Good
+      try {
+          await ProcessUserAsync(user);
+      } catch (ValidationException ex) {
+          _logger.LogWarning(ex, "User validation failed");
+          throw;
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

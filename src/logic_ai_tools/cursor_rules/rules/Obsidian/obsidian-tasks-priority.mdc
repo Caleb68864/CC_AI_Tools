@@ -1,0 +1,71 @@
+---
+description: Rules for Obsidian Tasks priority formatting and validation
+globs: "*.md"
+---
+
+# Obsidian Tasks Priority
+
+Rules for using priorities in Obsidian Tasks.
+
+<rule>
+name: obsidian_tasks_priority
+description: Enforces correct usage of priority signifiers in tasks
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Validate priority emoji format
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*[⏫⏬️🔼🔽🔺]\\s*[⏫⏬️🔼🔽🔺]"
+        message: "Tasks should only have one priority signifier"
+
+      # Check for invalid priority characters
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\].*(?:highest|high|medium|low|lowest)(?!\\s*[⏫⏬️🔼🔽🔺])"
+        message: "Use priority emojis (🔺⏫🔼🔽⏬️) instead of text for priorities"
+
+      # Suggest consistent priority placement
+      - pattern: "^[-\\*\\+]\\s*\\[\\s?\\]\\s*[⏫⏬️🔼🔽🔺]"
+        message: "Consider placing priority signifier at the end of the task for better readability"
+
+      # Validate priority order in sorting instructions
+      - pattern: "priority\\s+is\\s+(?!(?:above|below)\\s+(?:lowest|low|none|medium|high|highest))"
+        message: "Invalid priority comparison. Use 'priority is (above|below) (lowest|low|none|medium|high|highest)'"
+
+      # Validate group by priority syntax
+      - pattern: "group\\s+by\\s+priority\\s*[^\\n]"
+        message: "Use 'group by priority' without additional modifiers"
+
+examples:
+  - input: |
+      - [ ] ⏫ High priority task at start
+      - [ ] Multiple 🔼 🔽 priorities
+      - [ ] Task with high priority text
+      - [ ] Task with invalid priority placement⏫ here
+      priority is greater highest
+      group by priority reversed
+  - output: |
+      - [ ] High priority task ⏫
+      - [ ] Task 🔼
+      - [ ] Task ⏫
+      - [ ] Task ⏫
+      priority is above highest
+      group by priority
+
+metadata:
+  priority: high
+  version: 1.0
+
+notes: |
+  Priority Rules:
+  1. Priority order (highest to lowest): 🔺 > ⏫ > 🔼 > (no priority) > 🔽 > ⏬️
+  2. Tasks without priority are considered between low and medium priority
+  3. Only one priority signifier per task
+  4. Priority should be at the end of the task description
+  5. Use Tasks plugin commands or auto-suggest for adding priorities
+  6. Valid priority comparisons use 'above' or 'below' with priority levels
+  7. Priority levels: highest, high, none, medium, low, lowest
+  8. Properties available: priorityNumber, priorityName, priorityNameGroupText
+</rule> 

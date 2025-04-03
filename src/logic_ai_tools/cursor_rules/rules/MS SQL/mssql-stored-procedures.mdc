@@ -1,0 +1,78 @@
+---
+description: Best practices for SQL Server stored procedures
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_stored_procedures
+description: Standards for creating and maintaining stored procedures
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these stored procedure guidelines:
+
+      1. General Structure:
+         - Use SET NOCOUNT ON
+         - Implement proper parameter validation
+         - Return consistent status codes
+         - Use appropriate schema binding
+
+      2. Performance Considerations:
+         - Minimize the use of cursors
+         - Use table variables for small datasets
+         - Use temp tables for larger datasets
+         - Implement proper indexing strategy
+
+      3. Parameter Design:
+         - Use strongly typed parameters
+         - Implement parameter validation
+         - Use default values appropriately
+         - Consider OUTPUT parameters when needed
+
+examples:
+  - input: |
+      -- Bad: Poor procedure structure
+      CREATE PROCEDURE UpdateInventory
+      @ProductId int,
+      @Quantity int
+      AS
+      UPDATE Products 
+      SET StockQuantity = @Quantity 
+      WHERE ProductId = @ProductId
+      
+      -- Good: Well-structured procedure
+      CREATE PROCEDURE UpdateInventory
+          @ProductId INT,
+          @Quantity INT,
+          @UpdatedBy NVARCHAR(50)
+      AS
+      BEGIN
+          SET NOCOUNT ON;
+          
+          -- Parameter validation
+          IF @Quantity < 0
+              THROW 50000, 'Quantity cannot be negative.', 1;
+              
+          IF NOT EXISTS (SELECT 1 FROM Products WHERE ProductId = @ProductId)
+              THROW 50001, 'Product not found.', 1;
+          
+          -- Update with audit trail
+          UPDATE Products 
+          SET 
+              StockQuantity = @Quantity,
+              LastUpdated = GETUTCDATE(),
+              UpdatedBy = @UpdatedBy
+          WHERE ProductId = @ProductId;
+          
+          RETURN 0;
+      END
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

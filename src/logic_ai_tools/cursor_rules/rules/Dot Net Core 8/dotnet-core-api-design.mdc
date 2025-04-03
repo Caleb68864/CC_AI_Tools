@@ -1,0 +1,58 @@
+---
+description: 
+globs: 
+---
+---
+description: API design rules for .NET
+globs: "*.cs"
+---
+
+<rule>
+name: dotnet_api_design
+description: Standards for API design in .NET applications
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+
+actions:
+  - type: suggest
+    message: |
+      For API design:
+
+      1. REST Principles:
+         - Follow RESTful API design principles
+         - Use attribute routing in controllers
+         - Implement API versioning
+         - Use action filters for cross-cutting concerns
+
+      2. Performance:
+         - Use async/await for I/O-bound operations
+         - Implement appropriate caching strategies
+         - Use efficient LINQ queries
+         - Implement pagination for large datasets
+
+      3. Documentation:
+         - Use Swagger/OpenAPI for API documentation
+         - Provide XML comments for controllers and models
+         - Follow official Microsoft documentation
+         - Document API versioning clearly
+
+examples:
+  - input: |
+      // Bad
+      [HttpGet]
+      public List<User> GetAll() { }
+
+      // Good
+      /// <summary>
+      /// Retrieves a paged list of active users
+      /// </summary>
+      [HttpGet("api/v1/users")]
+      public async Task<ActionResult<PagedResult<UserDto>>> GetUsersAsync(
+          [FromQuery] PaginationParams params)
+      { }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

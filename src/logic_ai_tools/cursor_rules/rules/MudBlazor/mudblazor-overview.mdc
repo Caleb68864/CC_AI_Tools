@@ -1,0 +1,40 @@
+---
+description: Overview and general information about MudBlazor
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Overview
+
+MudBlazor is a Material Design component framework for Blazor, emphasizing ease of use, clear structure, and minimal JavaScript usage. It is designed for .NET developers to rapidly build web applications without extensive CSS or JavaScript knowledge.
+
+<rule>
+name: mudblazor_overview
+description: Provides general information and guidelines for using MudBlazor components.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "(?<!@using\\s)MudBlazor"
+        message: "Consider adding '@using MudBlazor' to your imports for easier component usage."
+      - pattern: "(?<!<MudThemeProvider>)<Mud.*?>"
+        message: "Ensure MudBlazor providers (MudThemeProvider, MudDialogProvider, etc.) are included in your layout."
+
+examples:
+  - input: |
+      <MudButton Variant="Variant.Filled" Color="Color.Primary">Click Me</MudButton>
+    output: |
+      @using MudBlazor
+
+      <MudThemeProvider/>
+      <MudDialogProvider/>
+      <MudSnackbarProvider/>
+
+      <MudButton Variant="Variant.Filled" Color="Color.Primary">Click Me</MudButton>
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

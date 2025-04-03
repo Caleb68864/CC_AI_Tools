@@ -1,0 +1,148 @@
+---
+description: Rules for accessing the Scoro Projects API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Projects API Rules
+
+Documentation for interacting with the Scoro Projects and Project Phases API endpoints.
+
+<rule>
+name: scoro_projects_api
+description: Defines standards for Scoro Projects API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*(projects|projectPhases).*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/projects"
+        message: "Base endpoint for projects API is /api/v2/projects"
+      
+      - pattern: "api/v2/projectPhases"
+        message: "Base endpoint for project phases API is /api/v2/projectPhases"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main Project API Endpoints
+endpoints:
+  projects:
+    list:
+      url: "https://{company}.scoro.com/api/v2/projects/list"
+      method: POST
+      auth: ["user_token", "apiKey"]
+      
+    modify:
+      url: "https://{company}.scoro.com/api/v2/projects/modify/{id}"
+      method: POST
+      auth: ["user_token", "apiKey"]
+      
+    view:
+      url: "https://{company}.scoro.com/api/v2/projects/view/{id}"
+      method: POST
+      auth: ["user_token", "apiKey"]
+      
+    delete:
+      url: "https://{company}.scoro.com/api/v2/projects/delete/{id}"
+      method: POST
+      auth: ["user_token", "apiKey"]
+
+  projectPhases:
+    list:
+      url: "https://{company}.scoro.com/api/v2/projectPhases/list"
+      method: POST
+      auth: ["user_token", "apiKey"]
+
+# Common Fields
+fields:
+  project:
+    - name: project_id
+      type: Integer
+      description: Project ID
+      
+    - name: project_name
+      type: String
+      description: Project name
+      
+    - name: status
+      type: String
+      description: "Values: pending, inprogress, cancelled, completed, future, additional1-4"
+      
+    - name: is_private
+      type: Boolean
+      description: If project is public or only for project members
+      
+    - name: manager_id
+      type: Integer
+      description: Project manager ID
+      
+    - name: deadline
+      type: Date (YYYY-mm-dd)
+      description: Project deadline
+      
+    - name: duration
+      type: Time (HH:ii:ss)
+      description: Project estimated duration
+
+  phases:
+    - name: id
+      type: Integer
+      description: Project phase's ID
+      
+    - name: type
+      type: String
+      description: "Values: phase, milestone"
+      
+    - name: title
+      type: String
+      description: Project phase's title
+      
+    - name: start_date
+      type: Date (YYYY-mm-dd)
+      description: Phase start date
+      
+    - name: end_date
+      type: Date (YYYY-mm-dd)
+      description: Phase end date
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "project_name": "New Project",
+          "status": "inprogress",
+          "manager_id": 10,
+          "deadline": "2024-12-01",
+          "phases": [
+            {
+              "type": "phase",
+              "title": "Phase 1",
+              "start_date": "2024-11-01",
+              "end_date": "2024-11-10"
+            }
+          ]
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "project_id": 1,
+          "project_name": "New Project",
+          "status": "inprogress",
+          "manager_id": 10,
+          "deadline": "2024-12-01"
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

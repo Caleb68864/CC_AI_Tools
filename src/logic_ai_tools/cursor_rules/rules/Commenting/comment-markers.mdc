@@ -1,0 +1,24 @@
+---
+description: Standard markers and formatting for comments
+globs: *
+---
+<rule>
+name: comment_markers
+description: Standardized markers and formatting conventions for comments
+
+markers:
+- TODO: Tasks yet to be completed
+- FIXME: Code requiring immediate fixes
+- NOTE: Additional context or explanations
+
+formatting:
+- Break long comments into multiple lines
+- Keep consistent formatting throughout project
+- Maintain manageable line lengths
+
+examples:
+  - input: |
+      // TODO: Implement error handling
+      // FIXME: Memory leak in cleanup routine
+      // NOTE: This approach improves performance by 30%
+</rule> 

@@ -1,0 +1,86 @@
+---
+description: Guidelines for integrating modern frameworks with Obsidian plugins
+globs: *.ts,*.js,*.tsx,*.svelte
+---
+
+# Obsidian Plugin Development - Framework Integration
+
+Best practices for integrating modern frameworks like React and Svelte with Obsidian plugins.
+
+<rule>
+name: obsidian_dev_framework_integration
+description: Enforces best practices for framework integration in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js|tsx|svelte)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "import.*from.*react"
+        message: "When using React, ensure proper setup of ReactRoot and cleanup"
+      - pattern: "import.*from.*svelte"
+        message: "When using Svelte, implement proper component lifecycle management"
+      - pattern: "new ReactRoot"
+        message: "ReactRoot should be properly initialized and cleaned up"
+
+examples:
+  - input: |
+      // React component without proper cleanup
+      class MyView extends ItemView {
+          onOpen() {
+              const root = createRoot(containerEl);
+              root.render(<MyComponent />);
+          }
+      }
+    output: |
+      class MyView extends ItemView {
+          private root: Root;
+          
+          onOpen() {
+              this.root = createRoot(containerEl);
+              this.root.render(<MyComponent />);
+          }
+          
+          onClose() {
+              this.root.unmount();
+          }
+      }
+
+documentation:
+  ## Framework Integration Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Framework Selection
+  - Framework Compatibility
+  - Performance Impact
+  - Bundle Size
+  - Development Experience
+  - Maintenance Considerations
+
+  ### 2. Integration Process
+  - Build Configuration
+  - Module Loading
+  - Asset Management
+  - State Management
+  - Event Handling
+
+  ### 3. Framework Features
+  - Component System
+  - State Management
+  - Routing System
+  - Styling System
+  - Build System
+
+  ### 4. Framework Optimization
+  - Bundle Optimization
+  - Performance Tuning
+  - Memory Management
+  - Load Time Optimization
+  - Runtime Optimization
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

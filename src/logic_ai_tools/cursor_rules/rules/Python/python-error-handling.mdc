@@ -1,0 +1,37 @@
+---
+description: Python error handling and exception management
+globs: "*.py"
+---
+
+# Python Error Handling Rules
+
+<rule>
+name: python_error_handling
+description: Standards for handling errors and exceptions in Python
+
+## Exception Handling
+- Use specific exception types
+- Avoid bare except clauses
+- Always handle or log exceptions
+- Avoid silent failures
+
+## Best Practices
+- Document expected exceptions in docstrings
+- Use context managers (with statements) when appropriate
+- Include cleanup code in finally blocks
+- Raise exceptions at appropriate abstraction levels
+
+examples:
+  - input: |
+      # Bad
+      try:
+          result = int(user_input)
+      except:
+          print("Error")
+      
+      # Good
+      try:
+          result = int(user_input)
+      except ValueError:
+          print("Invalid input! Please enter a number.")
+</rule> 

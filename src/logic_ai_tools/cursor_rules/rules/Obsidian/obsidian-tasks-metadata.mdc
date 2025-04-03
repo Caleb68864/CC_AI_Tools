@@ -1,0 +1,48 @@
+---
+description: Rules for Obsidian task metadata and emoji ordering
+globs: "*.md"
+---
+
+# Obsidian Tasks Metadata
+
+Rules for proper metadata and emoji ordering in Obsidian tasks.
+
+<rule>
+name: obsidian_tasks_metadata_order
+description: Enforces correct ordering of metadata and emojis in tasks
+
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+
+actions:
+  - type: suggest
+    conditions:
+      # Ensure metadata comes before tags and block links
+      - pattern: "(#[\\w-]+|\\^[\\w-]+).*[📅🔼⏫⏬]"
+        message: "Metadata emojis (dates, priorities) must come before tags and block links"
+
+      # Ensure no text between metadata and tags/links
+      - pattern: "[📅🔼⏫⏬].*[^#\\^\\s].*(?:#[\\w-]+|\\^[\\w-]+)"
+        message: "Do not place regular text between metadata emojis and tags/block links"
+
+      # Completion date format
+      - pattern: "✅\\s*(?!\\d{4}-\\d{2}-\\d{2})"
+        message: "Completion dates must be in YYYY-MM-DD format"
+
+examples:
+  - input: |
+      - [ ] Task with tag before date #tag 📅 2024-03-20
+      - [ ] Task with text between metadata and tag 📅 2024-03-20 some text #tag
+      - [ ] Task with block link before priority ^link 🔼
+      - [x] Task with invalid completion date ✅ 3/20/24
+  - output: |
+      - [ ] Task with properly ordered metadata 📅 2024-03-20 #tag
+      - [ ] Task with proper metadata order 📅 2024-03-20 #tag
+      - [ ] Task with proper order 🔼 ^link
+      - [x] Task with proper completion date ✅ 2024-03-20
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

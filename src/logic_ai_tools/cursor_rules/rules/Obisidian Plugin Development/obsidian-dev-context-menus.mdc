@@ -1,0 +1,180 @@
+---
+description: Guidelines for implementing context menus in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Context Menus
+
+Best practices for implementing and managing context menus in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_context_menus
+description: Enforces best practices for context menus in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "registerEvent\\(.*contextmenu"
+        message: "Implement proper context menu event handling"
+      - pattern: "Menu\\.addItem"
+        message: "Use proper menu item creation and management"
+      - pattern: "showContextMenu"
+        message: "Handle context menu display and positioning"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          onload() {
+              this.registerEvent(
+                  this.app.workspace.on('contextmenu', (event) => {
+                      const menu = new Menu();
+                      menu.addItem((item) => {
+                          item.setTitle('My Action')
+                              .setIcon('icon')
+                              .onClick(() => {
+                                  // Action implementation
+                              });
+                      });
+                      menu.showAtPosition(event);
+                  })
+              );
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          private contextMenu: Menu;
+          
+          onload() {
+              this.contextMenu = new Menu();
+              
+              // Create menu items once
+              this.createMenuItems();
+              
+              // Register context menu event
+              this.registerEvent(
+                  this.app.workspace.on('contextmenu', (event) => {
+                      try {
+                          // Check if menu should be shown
+                          if (!this.shouldShowMenu(event)) return;
+                          
+                          // Update menu items based on context
+                          this.updateMenuItems(event);
+                          
+                          // Show menu at position
+                          this.contextMenu.showAtPosition(event);
+                      } catch (error) {
+                          console.error('Context menu error:', error);
+                      }
+                  })
+              );
+          }
+          
+          private createMenuItems() {
+              // Add static menu items
+              this.contextMenu.addItem((item) => {
+                  item.setTitle('My Action')
+                      .setIcon('icon')
+                      .onClick(() => {
+                          this.handleAction();
+                      });
+              });
+              
+              // Add separator
+              this.contextMenu.addSeparator();
+              
+              // Add submenu
+              const submenu = new Menu();
+              submenu.addItem((item) => {
+                  item.setTitle('Submenu Action')
+                      .setIcon('sub-icon')
+                      .onClick(() => {
+                          this.handleSubmenuAction();
+                      });
+              });
+              
+              this.contextMenu.addItem((item) => {
+                  item.setTitle('Submenu')
+                      .setSubmenu(submenu);
+              });
+          }
+          
+          private shouldShowMenu(event: MouseEvent): boolean {
+              // Check if menu should be shown based on context
+              const target = event.target as HTMLElement;
+              return target.closest('.my-plugin-target') !== null;
+          }
+          
+          private updateMenuItems(event: MouseEvent) {
+              // Update menu items based on context
+              const target = event.target as HTMLElement;
+              const context = this.getContextFromTarget(target);
+              
+              // Enable/disable items based on context
+              this.contextMenu.items.forEach(item => {
+                  if (item.title === 'My Action') {
+                      item.setEnabled(context.canPerformAction);
+                  }
+              });
+          }
+          
+          private getContextFromTarget(target: HTMLElement) {
+              // Get context from target element
+              return {
+                  canPerformAction: true,
+                  // Add other context properties
+              };
+          }
+          
+          private handleAction() {
+              // Implement action
+          }
+          
+          private handleSubmenuAction() {
+              // Implement submenu action
+          }
+          
+          destroy() {
+              this.contextMenu = null;
+          }
+      }
+
+documentation:
+  ## Context Menu Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Menu Structure
+  - Menu Items
+  - Submenus
+  - Separators
+  - Dynamic Items
+  - Conditional Items
+
+  ### 2. Menu Management
+  - Creation Process
+  - Update Process
+  - Removal Process
+  - State Tracking
+  - Event Handling
+
+  ### 3. Menu Integration
+  - Editor Integration
+  - View Integration
+  - File Integration
+  - Selection Integration
+  - Theme Integration
+
+  ### 4. Menu Features
+  - Keyboard Shortcuts
+  - Icon Support
+  - Dynamic Content
+  - State Management
+  - Mobile Support
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

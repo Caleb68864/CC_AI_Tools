@@ -1,0 +1,99 @@
+---
+description: Rules for accessing the Scoro Tasks API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Tasks API Rules
+
+Documentation for interacting with the Scoro Tasks API endpoints.
+
+<rule>
+name: scoro_tasks_api
+description: Defines standards for Scoro Tasks API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*tasks.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/tasks"
+        message: "Base endpoint for tasks API is /api/v2/tasks"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/tasks/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/tasks/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/tasks/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/tasks/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+
+# Common Fields
+fields:
+  - name: is_completed
+    type: Boolean
+    description: Task completion status
+    
+  - name: datetime_completed
+    type: Datetime (Y-m-d\TH:i:sP)
+    description: Task completion timestamp
+    
+  - name: related_users
+    type: Array
+    description: Array of assigned user IDs
+    
+  - name: start_datetime
+    type: Datetime (Y-m-d\TH:i:sP) 
+    description: Task start date
+    
+  - name: datetime_due
+    type: Datetime (Y-m-d\TH:i:sP)
+    description: Task due date
+    
+  - name: status
+    type: String
+    description: "Values: task_status1, task_status2, task_status3, task_status4"
+
+examples:
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "user_token": "e238865f83e2b04c09c5c8b39696d37c",
+        "request": {
+          "event_name": "New Task"
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "task_id": "123",
+          "event_name": "New Task"
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

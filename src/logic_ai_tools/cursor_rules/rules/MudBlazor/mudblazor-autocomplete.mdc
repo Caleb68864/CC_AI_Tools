@@ -1,0 +1,58 @@
+---
+description: API reference and guidelines for MudBlazor Autocomplete component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Autocomplete API
+
+The MudBlazor Autocomplete component provides type-ahead functionality with flexible search capabilities and customizable presentation.
+
+<rule>
+name: mudblazor_autocomplete
+description: Provides guidelines and API reference for using MudBlazor Autocomplete component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudAutocomplete.*?>"
+        message: "Consider configuring ResetValueOnEmptyText, CoerceText, and CoerceValue for better user experience."
+      - pattern: "(?<!SearchFunc=).*<MudAutocomplete.*?>"
+        message: "Ensure SearchFunc is properly implemented for async search functionality."
+      - pattern: "(?<!ToStringFunc=).*<MudAutocomplete.*T\\s+where\\s+T\\s*:\\s*class.*?>"
+        message: "Consider implementing ToStringFunc for custom object string representation."
+      - pattern: "<MudAutocomplete.*?ShowProgressIndicator=\"false\".*?>"
+        message: "Consider enabling ShowProgressIndicator for better UX during async searches."
+
+examples:
+  - input: |
+      <MudAutocomplete T="string" SearchFunc="@Search"></MudAutocomplete>
+    output: |
+      <MudAutocomplete T="string" 
+          @ref="autocompleteRef"
+          SearchFunc="@Search"
+          ResetValueOnEmptyText="true"
+          CoerceText="true"
+          ShowProgressIndicator="true">
+          <ItemTemplate>
+              <MudText>@context</MudText>
+          </ItemTemplate>
+      </MudAutocomplete>
+
+      @code {
+          private MudAutocomplete<string> autocompleteRef;
+
+          private async Task<IEnumerable<string>> Search(string value)
+          {
+              // Implement search logic
+              await Task.Delay(100); // Simulate API call
+              return _items.Where(x => x.Contains(value));
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

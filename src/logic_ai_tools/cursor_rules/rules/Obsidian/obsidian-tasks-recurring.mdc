@@ -1,0 +1,76 @@
+---
+description: Rules for using recurring tasks in Obsidian Tasks plugin
+globs: "*.md"
+---
+
+# Obsidian Tasks Recurring Task Syntax
+
+Guidelines for creating and managing recurring tasks.
+
+<rule>
+name: obsidian_tasks_recurring
+description: Standards for recurring task syntax in Tasks plugin
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "🔁"
+
+actions:
+  - type: suggest
+    message: |
+      When working with recurring tasks:
+
+      1. Basic Syntax:
+         - Use 🔁 to mark a task as recurring
+         - Must start with "every"
+         - Must have at least one date (due 📅, scheduled ⏳, or start 🛫)
+         - Example: `- [ ] take out trash 🔁 every Sunday 📅 2024-02-25`
+
+      2. Common Recurrence Patterns:
+         - Days: `🔁 every 3 days`
+         - Weeks: `🔁 every week on Sunday`
+         - Weekdays: `🔁 every weekday` (Mon-Fri)
+         - Multiple days: `🔁 every week on Tuesday, Friday`
+         - Months: `🔁 every month on the 1st`
+         - Years: `🔁 every year`
+
+      3. Advanced Patterns:
+         - Last day of month: `🔁 every month on the last`
+         - Specific months: `🔁 every January on the 15th`
+         - Multiple months: `🔁 every April and December on the 1st and 24th`
+         - Nth weekday: `🔁 every month on the last Friday`
+         - Multiple intervals: `🔁 every 2 weeks`, `🔁 every 3 months`
+
+      4. Completion Behavior:
+         - Default: New task based on original dates
+         - When done: `🔁 every week when done` (bases next date on completion)
+         - New task appears above completed task by default
+         - All dates maintain relative distance to reference date
+
+      5. Important Limitations:
+         - Must have at least one date field
+         - Don't use in daily notes (creates duplicate tasks)
+         - Cannot recur for X times or until specific date
+         - Dependencies (id and dependsOn) are removed in next recurrence
+         - Monthly/yearly tasks adjust for invalid dates (e.g., Feb 30)
+
+examples:
+  - input: |
+      # Basic recurring task
+      - [ ] Water plants 🔁 every 3 days 📅 2024-02-25
+
+      # Task with relative scheduling
+      - [ ] Review notes 🔁 every week when done ⏳ 2024-02-26 📅 2024-02-28
+
+      # Monthly task on last day
+      - [ ] Pay rent 🔁 every month on the last 📅 2024-02-29
+
+      # Multiple weekdays
+      - [ ] Team meeting 🔁 every week on Monday, Wednesday 🛫 2024-02-26
+  - output: "Properly formatted recurring tasks with various patterns"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,52 @@
+---
+description: Cursor rules for Templater syntax in Obsidian
+globs: *.md
+---
+# Templater Cursor Rules
+
+<rule>
+name: obsidian_templater
+description: Rules for cursor positioning with Templater syntax
+filters:
+  - type: file_extension
+    pattern: "\\.md$"
+  - type: content
+    pattern: "<%.*?%>"
+
+actions:
+  - type: suggest
+    message: |
+      When working with Templater:
+
+      1. Template Tags:
+         - Position cursor after tag completion
+         - Group related template tags together
+         - Leave space for template expansion
+         - Position cursor at first required user input
+
+      2. Module Operations:
+         - Place cursor after module operation completion
+         - Group related operations together
+         - Position cursor for next likely operation
+
+      3. Error Prevention:
+         - Position cursor to prevent accidental tag modification
+         - Consider template nesting depth
+         - Maintain consistent spacing after tags
+
+examples:
+  - input: |
+      <% tp.file.title %>|  # Bad - cursor blocks tag editing
+      
+      <% tp.file.title %>
+      |  # Good - cursor ready for next content
+      
+      <%* await tp.file.move("/path/") %>|  # Bad
+      <%* await tp.file.move("/path/") %>
+      |  # Good - ready for next operation
+    output: "Proper cursor positioning for Templater operations"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

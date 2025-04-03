@@ -1,0 +1,62 @@
+---
+description: 
+globs: 
+---
+---
+description: Blazor .NET 8 API and Performance Rules
+globs: *.{cs,razor,cshtml}
+---
+# Blazor API and Performance Rules
+
+<rule>
+name: blazor_api_performance
+description: Standards for Blazor .NET 8 API integration and performance optimization
+
+filters:
+  - type: file_extension
+    pattern: "\\.cs$|\\.razor$|\\.cshtml$"
+
+actions:
+  - type: suggest
+    message: |
+      API and Performance Guidelines:
+
+      1. Performance Optimization:
+         - Use async/await for API calls and UI actions
+         - Optimize component renders
+         - Use StateHasChanged() efficiently
+         - Implement ShouldRender() where appropriate
+         - Use EventCallbacks for efficient event handling
+
+      2. Caching Strategies:
+         - Use IMemoryCache for server-side caching
+         - Implement localStorage/sessionStorage for WebAssembly
+         - Consider distributed caching for larger applications
+         - Cache API responses appropriately
+
+      3. State Management:
+         - Use Cascading Parameters for basic state sharing
+         - Implement advanced state management (Fluxor/BlazorState)
+         - Use appropriate storage solutions based on hosting model
+
+examples:
+  - input: |
+      // Bad
+      public void HandleClick()
+      {
+          _data = FetchData();
+          StateHasChanged();
+      }
+
+      // Good
+      public async Task HandleClickAsync()
+      {
+          _data = await FetchDataAsync();
+          StateHasChanged();
+      }
+    output: "Properly implemented async operation"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

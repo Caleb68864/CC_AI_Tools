@@ -1,0 +1,320 @@
+---
+description: Rules for accessing the Scoro Contacts API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+# Scoro Contacts API Rules
+
+Documentation for interacting with the Scoro Contacts API endpoints.
+
+<rule>
+name: scoro_contacts_api
+description: Defines standards for Scoro Contacts API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*contacts.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2/contacts"
+        message: "Base endpoint for contacts API is /api/v2/contacts"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Main API Endpoints
+endpoints:
+  list:
+    url: "https://{company}.scoro.com/api/v2/contacts/list"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Get list of contacts"
+    
+  modify:
+    url: "https://{company}.scoro.com/api/v2/contacts/modify/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Modify specific contact or add a new one"
+    
+  view:
+    url: "https://{company}.scoro.com/api/v2/contacts/view/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "View specific contact"
+    
+  delete:
+    url: "https://{company}.scoro.com/api/v2/contacts/delete/{id}"
+    method: POST
+    auth: ["user_token", "apiKey"]
+    description: "Delete specific contact"
+
+# Common Fields
+fields:
+  # Company Fields
+  - name: company_id
+    type: Integer
+    description: Company ID
+    
+  - name: company_name
+    type: String
+    description: Company name
+    
+  - name: company_type
+    type: String
+    description: Company type (e.g., customer, vendor, partner)
+    
+  - name: registration_code
+    type: String
+    description: Company registration number
+    
+  - name: vat_number
+    type: String
+    description: VAT registration number
+    
+  - name: website
+    type: String
+    description: Company website URL
+    
+  - name: email
+    type: String
+    description: Company email address
+    
+  - name: phone
+    type: String
+    description: Company phone number
+    
+  - name: fax
+    type: String
+    description: Company fax number
+    
+  - name: address
+    type: Object
+    description: Company address details
+    fields:
+      - name: street
+        type: String
+        description: Street address
+        
+      - name: city
+        type: String
+        description: City
+        
+      - name: state
+        type: String
+        description: State/Province
+        
+      - name: postal_code
+        type: String
+        description: Postal/ZIP code
+        
+      - name: country
+        type: String
+        description: Country code
+        
+  # Person Fields
+  - name: person_id
+    type: Integer
+    description: Person ID
+    
+  - name: first_name
+    type: String
+    description: Person's first name
+    
+  - name: last_name
+    type: String
+    description: Person's last name
+    
+  - name: email
+    type: String
+    description: Person's email address
+    
+  - name: phone
+    type: String
+    description: Person's phone number
+    
+  - name: mobile
+    type: String
+    description: Person's mobile number
+    
+  - name: position
+    type: String
+    description: Person's position/title
+    
+  - name: company_id
+    type: Integer
+    description: Associated company ID
+    
+  - name: is_default
+    type: Boolean
+    description: Whether this is the default contact for the company
+    
+  # Relation Fields
+  - name: relations
+    type: Object
+    description: Related contacts information
+    fields:
+      - name: person
+        type: Array
+        description: Array of related person contacts
+        fields:
+          - name: id
+            type: Integer
+            description: Person ID
+            
+          - name: relation
+            type: String
+            description: Relation type (e.g., company_person)
+            
+          - name: is_default
+            type: String
+            description: Whether this is the default contact
+            
+          - name: name
+            type: String
+            description: Person's full name
+            
+      - name: company
+        type: Array
+        description: Array of related company contacts
+        fields:
+          - name: id
+            type: Integer
+            description: Company ID
+            
+          - name: relation
+            type: String
+            description: Relation type (e.g., customer_sub-customer)
+            
+          - name: is_default
+            type: String
+            description: Whether this is the default contact
+            
+          - name: name
+            type: String
+            description: Company name
+
+examples:
+  # Company Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "company_name": "Acme Corporation",
+          "company_type": "customer",
+          "registration_code": "123456",
+          "vat_number": "VAT123456",
+          "website": "www.acme.com",
+          "email": "info@acme.com",
+          "phone": "+1234567890",
+          "address": {
+            "street": "123 Business St",
+            "city": "New York",
+            "state": "NY",
+            "postal_code": "10001",
+            "country": "US"
+          }
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "company_id": 1,
+          "company_name": "Acme Corporation",
+          "company_type": "customer",
+          "registration_code": "123456",
+          "vat_number": "VAT123456",
+          "website": "www.acme.com",
+          "email": "info@acme.com",
+          "phone": "+1234567890",
+          "address": {
+            "street": "123 Business St",
+            "city": "New York",
+            "state": "NY",
+            "postal_code": "10001",
+            "country": "US"
+          }
+        }
+      }
+      
+  # Person Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@acme.com",
+          "phone": "+1234567891",
+          "mobile": "+1234567892",
+          "position": "CEO",
+          "company_id": 1,
+          "is_default": true
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "person_id": 1,
+          "first_name": "John",
+          "last_name": "Doe",
+          "email": "john.doe@acme.com",
+          "phone": "+1234567891",
+          "mobile": "+1234567892",
+          "position": "CEO",
+          "company_id": 1,
+          "is_default": true
+        }
+      }
+      
+  # Relations Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "request": {
+          "object_id": 1,
+          "type": "contacts"
+        }
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "object_id": 1,
+          "related_objects": {
+            "person": [
+              {
+                "id": 1,
+                "relation": "company_person",
+                "is_default": "1",
+                "name": "John Doe"
+              }
+            ],
+            "company": [
+              {
+                "id": 2,
+                "relation": "customer_sub-customer",
+                "is_default": "0",
+                "name": "Acme Subsidiary"
+              }
+            ]
+          }
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

@@ -1,0 +1,915 @@
+---
+description: Rule for OpenWebUI tools development and implementation
+globs: "*.py"
+---
+
+# OpenWebUI Tools Rule
+
+This rule defines the standards and best practices for developing and using OpenWebUI tools. Tools are Python scripts that enable LLMs to perform actions and receive additional context during chat interactions.
+
+For detailed documentation, see the [OpenWebUI Tools Documentation](https://docs.openwebui.com/features/plugin/tools/).
+
+<rule>
+name: openwebui_tools_rule
+description: Enforces standards and best practices for OpenWebUI tools development
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "class Tools"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class Tools[^:]*:"
+        message: "Tools class should include proper initialization and optional Valves/UserValves subclasses."
+      
+      - pattern: "def \\w+\\(.*\\)\\s*->"
+        message: "All tool methods must have proper type hints for arguments and return values."
+      
+      - pattern: "def \\w+\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. All tool methods must have proper type hints for arguments and return values."
+      
+      - pattern: "def \\w+\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "All tool methods must have proper docstrings explaining their purpose and parameters."
+      
+      - pattern: "class Valves\\(BaseModel\\):"
+        message: "Valves class should be defined for admin-configurable dynamic configurations."
+      
+      - pattern: "class UserValves\\(BaseModel\\):"
+        message: "UserValves class should be defined for user-configurable dynamic configurations."
+      
+      - pattern: "await __event_emitter__\\(.*\\)"
+        message: "Use event emitters for real-time status updates and user feedback."
+      
+      - pattern: "def __init__\\(self\\):"
+        message: "Initialize necessary properties in the __init__ method, including valves and citation settings."
+
+examples:
+  - input: |
+      class Tools:
+          def reverse_string(self, string: str) -> str:
+              return string[::-1]
+    output: |
+      """
+      title: String Inverse
+      author: Your Name
+      author_url: https://website.com
+      git_url: https://github.com/username/string-reverse.git
+      description: This tool calculates the inverse of a string
+      required_open_webui_version: 0.4.0
+      requirements: langchain-openai, langgraph, ollama, langchain_ollama
+      version: 0.4.0
+      licence: MIT
+      """
+      
+      from pydantic import BaseModel, Field
+      from datetime import datetime
+      
+      class Tools:
+          class Valves(BaseModel):
+              api_key: str = Field("", description="Your API key here")
+          
+          class UserValves(BaseModel):
+              enable_feature: bool = Field(
+                  default=True, description="Enable additional features"
+              )
+          
+          def __init__(self):
+              """Initialize the Tool."""
+              self.valves = self.Valves()
+              self.citation = False
+      
+          def reverse_string(self, string: str) -> str:
+              """
+              Reverses the input string.
+              
+              :param string: The string to reverse
+              :return: The reversed string
+              """
+              return string[::-1]
+  
+  - input: |
+      class Tools:
+          async def search_web(self, query):
+              # Search implementation
+              return results
+    output: |
+      class Tools:
+          class Valves(BaseModel):
+              search_engine: str = Field(
+                  default="searxng", 
+                  description="Search engine to use (searxng, google, etc.)"
+              )
+              max_results: int = Field(
+                  default=5, 
+                  description="Maximum number of search results to return"
+              )
+          
+          def __init__(self):
+              """Initialize the Tool."""
+              self.valves = self.Valves()
+          
+          async def search_web(self, query: str, __event_emitter__=None) -> str:
+              """
+              Performs a web search using the configured search engine.
+              
+              :param query: The search query
+              :param __event_emitter__: Event emitter for real-time updates
+              :return: Formatted search results
+              """
+              if __event_emitter__:
+                  await __event_emitter__(
+                      {
+                          "type": "status",
+                          "data": {"description": "Searching the web...", "done": False}
+                      }
+                  )
+              
+              # Search implementation
+              
+              if __event_emitter__:
+                  await __event_emitter__(
+                      {
+                          "type": "status",
+                          "data": {"description": "Search completed", "done": True}
+                      }
+                  )
+              
+              return results
+  
+  - input: |
+      class Tools:
+          def generate_image(self, prompt, size="512x512"):
+              # Image generation code
+              return image_url
+    output: |
+      class Tools:
+          class Valves(BaseModel):
+              api_key: str = Field("", description="API key for image generation service")
+              default_size: str = Field(
+                  default="512x512", 
+                  description="Default image size (512x512, 1024x1024, etc.)"
+              )
+          
+          class UserValves(BaseModel):
+              high_quality: bool = Field(
+                  default=False, 
+                  description="Generate higher quality images (uses more tokens)"
+              )
+              style: str = Field(
+                  default="realistic", 
+                  description="Image generation style (realistic, cartoon, etc.)"
+              )
+          
+          def __init__(self):
+              """Initialize the Tool."""
+              self.valves = self.Valves()
+              self.user_valves = self.UserValves()
+          
+          def generate_image(self, prompt: str, size: str = None, __event_emitter__=None) -> str:
+              """
+              Generates an image based on the provided prompt.
+              
+              :param prompt: Text description of the image to generate
+              :param size: Image dimensions (default from valves if not specified)
+              :param __event_emitter__: Event emitter for real-time updates
+              :return: URL to the generated image
+              """
+              # Use valve configurations
+              actual_size = size or self.valves.default_size
+              
+              # Image generation code with event emitter updates
+              
+              return image_url
+
+  - input: |
+      class Tools:
+          def process_documents(self, docs):
+              # Process documents
+              return summary
+    output: |
+      class Tools:
+          def process_documents(self, docs: list[dict[str, str]]) -> str:
+              """
+              Processes a list of document dictionaries and returns a summary.
+              
+              :param docs: List of document dictionaries with keys like 'title' and 'content'
+              :return: A summary of the processed documents
+              """
+              # Process documents
+              return summary
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - openwebui
+    - tools
+    - function-calling
+
+## Type Hints Requirements
+
+As of OpenWebUI version 0.4.3, all tool methods must include proper type hints for arguments and return values. Type hints are essential as they are used to generate the JSON schema that is sent to the model, ensuring consistent and reliable tool execution.
+
+### Type Hints Guidelines:
+
+1. **Required for All Parameters**: Every parameter in a tool method must have a type hint.
+   ```python
+   def search_database(self, query: str, limit: int = 10) -> list[dict]:
+   ```
+
+2. **Support for Nested Types**: OpenWebUI 0.4.3+ supports nested type hints.
+   ```python
+   def process_query_results(self, queries_and_docs: list[tuple[str, int]]) -> dict[str, list[str]]:
+   ```
+
+3. **Common Type Hints**:
+   - Basic types: `str`, `int`, `float`, `bool`
+   - Container types: `list[T]`, `dict[K, V]`, `tuple[T1, T2]`
+   - Optional types: `Optional[T]` or `T | None`
+
+4. **Type Hints and JSON Schema**: Type hints directly influence the JSON schema sent to the model, affecting how the model understands and uses your tools.
+
+5. **Tools Without Type Hints**: Tools without proper type hints will work with significantly less consistency and may lead to unpredictable behavior.
+
+### Example with Nested Types:
+
+```python
+class Tools:
+    def analyze_search_results(self, 
+                              query: str, 
+                              results: list[dict[str, any]], 
+                              metadata: dict[str, list[str]] = None) -> dict[str, list[tuple[str, float]]]:
+        """
+        Analyzes search results and returns categorized relevance scores.
+        
+        :param query: The original search query
+        :param results: List of result dictionaries from search
+        :param metadata: Optional metadata for enhancing analysis
+        :return: Dictionary mapping categories to lists of (document_id, relevance_score) tuples
+        """
+        # Implementation
+        return analyzed_results
+```
+
+## Valves and UserValves Requirements
+
+Valves and UserValves are used to allow dynamic configuration of tools. While optional, they are **HIGHLY encouraged** as they significantly improve tool flexibility and usability.
+
+### Purpose and Benefits:
+
+1. **Dynamic Configuration**: Valves enable tools to be configured without code changes.
+2. **User Interface Integration**: Each valve creates a fillable field or toggle switch in the OpenWebUI interface.
+3. **Access Control**: 
+   - **Valves**: Configurable by administrators only
+   - **UserValves**: Configurable by any user
+
+### Implementation Guidelines:
+
+1. **Define as Nested Classes**: Both should be defined as nested classes within the Tools class.
+   ```python
+   class Tools:
+       class Valves(BaseModel):
+           # Valve definitions here
+           
+       class UserValves(BaseModel):
+           # UserValve definitions here
+   ```
+
+2. **Use Pydantic Fields**: Always use Pydantic's Field class with descriptive parameters.
+   ```python
+   api_key: str = Field(default="", description="API key for the service")
+   ```
+
+3. **Initialize in __init__**: Always initialize valves in the Tools class __init__ method.
+   ```python
+   def __init__(self):
+       self.valves = self.Valves()
+       self.user_valves = self.UserValves()
+   ```
+
+4. **Field Types**:
+   - String fields: For API keys, URLs, etc.
+   - Integer/Float fields: For numerical configurations
+   - Boolean fields: For toggles and switches
+   - Enum fields: For selection from predefined options
+
+### Example Implementation:
+
+```python
+from pydantic import BaseModel, Field
+from enum import Enum
+
+class Tools:
+    class SearchEngines(str, Enum):
+        GOOGLE = "google"
+        BING = "bing"
+        DUCKDUCKGO = "duckduckgo"
+    
+    class Valves(BaseModel):
+        api_key: str = Field(
+            default="", 
+            description="API key for the search service"
+        )
+        max_results: int = Field(
+            default=10, 
+            description="Maximum number of search results to return"
+        )
+        search_engine: SearchEngines = Field(
+            default=SearchEngines.GOOGLE,
+            description="Search engine to use for queries"
+        )
+    
+    class UserValves(BaseModel):
+        safe_search: bool = Field(
+            default=True, 
+            description="Enable safe search filtering"
+        )
+        region: str = Field(
+            default="us", 
+            description="Geographic region for search results"
+        )
+    
+    def __init__(self):
+        """Initialize the Tool with valves."""
+        self.valves = self.Valves()
+        self.user_valves = self.UserValves()
+        self.citation = True
+    
+    def search(self, query: str) -> list[dict[str, str]]:
+        """
+        Performs a web search using configured valves.
+        
+        :param query: The search query
+        :return: List of search results
+        """
+        # Access valve values
+        api_key = self.valves.api_key
+        max_results = self.valves.max_results
+        engine = self.valves.search_engine
+        
+        # Access user valve values
+        safe = self.user_valves.safe_search
+        region = self.user_valves.region
+        
+        # Implementation using valve values
+        # ...
+        
+        return results
+```
+
+### Best Practices:
+
+1. **Meaningful Defaults**: Provide sensible default values for all valves.
+2. **Clear Descriptions**: Write clear descriptions that will help users understand each valve's purpose.
+3. **Appropriate Access Level**: Consider whether a configuration should be admin-only (Valves) or user-accessible (UserValves).
+4. **Validation**: Use Pydantic validators when needed to ensure valid inputs.
+5. **Documentation**: Document how valves affect tool behavior in docstrings.
+
+### Common Valve Types:
+
+1. **API Configuration**:
+   ```python
+   api_key: str = Field(default="", description="API key for service")
+   api_url: str = Field(default="https://api.example.com", description="API endpoint URL")
+   ```
+
+2. **Performance Settings**:
+   ```python
+   timeout: int = Field(default=30, description="Request timeout in seconds")
+   cache_ttl: int = Field(default=3600, description="Cache time-to-live in seconds")
+   ```
+
+3. **Feature Toggles**:
+   ```python
+   enable_advanced_features: bool = Field(default=False, description="Enable advanced features")
+   debug_mode: bool = Field(default=False, description="Enable debug output")
+   ```
+
+## Optional Arguments
+
+OpenWebUI tools can accept several special optional arguments that provide additional context and functionality. These arguments are automatically injected by the OpenWebUI system when available.
+
+### Available Optional Arguments:
+
+1. **`__event_emitter__`**: Function for emitting real-time events to the user interface.
+   - Use for progress updates, status messages, and streaming results
+   - Particularly useful for long-running operations
+
+2. **`__event_call__`**: Similar to event emitter but specifically for user interactions.
+   - Use for requesting additional input or confirmation from users
+
+3. **`__user__`**: Dictionary containing information about the current user.
+   - Access user preferences, settings, and identity information
+
+4. **`__metadata__`**: Dictionary with metadata about the current chat session.
+   - Access conversation context, settings, and other session information
+
+5. **`__messages__`**: List of previous messages in the current conversation.
+   - Access conversation history for context-aware processing
+
+6. **`__files__`**: Access to files attached to the current conversation.
+   - Process user-uploaded files or access previously shared resources
+
+7. **`__model__`**: String containing the name of the current language model.
+   - Adapt behavior based on the capabilities of the active model
+
+### Implementation Guidelines:
+
+1. **Declare as Optional Parameters**: Always declare these as optional parameters with default value of None.
+   ```python
+   def my_tool(self, required_param: str, __event_emitter__=None, __user__=None):
+   ```
+
+2. **Check for Availability**: Always check if the optional argument is provided before using it.
+   ```python
+   if __event_emitter__ is not None:
+       await __event_emitter__({"type": "status", "data": {"message": "Processing..."}})
+   ```
+
+3. **Type Hints**: While these are injected dynamically, you can use type hints for better code clarity:
+   ```python
+   from typing import Any, Callable, Dict, List, Optional
+   
+   def my_tool(
+       self, 
+       query: str,
+       __event_emitter__: Optional[Callable] = None,
+       __user__: Optional[Dict[str, Any]] = None
+   ) -> str:
+   ```
+
+### Example with Event Emitter:
+
+```python
+async def search_documents(
+    self, 
+    query: str, 
+    max_results: int = 10,
+    __event_emitter__=None
+) -> list[dict[str, Any]]:
+    """
+    Searches documents based on the query.
+    
+    :param query: Search query
+    :param max_results: Maximum number of results to return
+    :param __event_emitter__: Event emitter for progress updates
+    :return: List of matching documents
+    """
+    # Notify start of search
+    if __event_emitter__:
+        await __event_emitter__({
+            "type": "status",
+            "data": {
+                "message": "Starting document search...",
+                "progress": 0,
+                "done": False
+            }
+        })
+    
+    # Perform search (example implementation)
+    results = []
+    total_docs = 100  # Example total
+    
+    for i in range(min(max_results, total_docs)):
+        # Simulate document processing
+        doc = {"id": f"doc_{i}", "title": f"Result {i}", "score": 0.9 - (i * 0.01)}
+        results.append(doc)
+        
+        # Update progress every few documents
+        if __event_emitter__ and i % 5 == 0:
+            progress = min(100, int((i / total_docs) * 100))
+            await __event_emitter__({
+                "type": "status",
+                "data": {
+                    "message": f"Processed {i} documents...",
+                    "progress": progress,
+                    "done": False
+                }
+            })
+    
+    # Notify completion
+    if __event_emitter__:
+        await __event_emitter__({
+            "type": "status",
+            "data": {
+                "message": f"Found {len(results)} matching documents",
+                "progress": 100,
+                "done": True
+            }
+        })
+    
+    return results
+```
+
+### Example with User Context:
+
+```python
+def get_personalized_recommendations(
+    self, 
+    category: str,
+    limit: int = 5,
+    __user__=None
+) -> list[dict[str, str]]:
+    """
+    Returns personalized recommendations based on user preferences.
+    
+    :param category: Category to get recommendations for
+    :param limit: Maximum number of recommendations
+    :param __user__: User information dictionary
+    :return: List of personalized recommendations
+    """
+    # Default recommendations if no user context
+    default_recommendations = [
+        {"id": "rec1", "title": "General recommendation 1"},
+        {"id": "rec2", "title": "General recommendation 2"},
+    ]
+    
+    # If user context is available, personalize recommendations
+    if __user__ is not None:
+        user_id = __user__.get("id")
+        preferences = __user__.get("preferences", {})
+        
+        # Use user preferences to customize recommendations
+        if user_id and preferences:
+            user_interests = preferences.get("interests", [])
+            preferred_topics = preferences.get("topics", [])
+            
+            # Example of using user context for personalization
+            personalized_recs = [
+                {"id": f"rec_{i}", "title": f"Personalized recommendation for {topic}"} 
+                for i, topic in enumerate(preferred_topics) 
+                if topic.lower() in category.lower()
+            ]
+            
+            if personalized_recs:
+                return personalized_recs[:limit]
+    
+    # Fall back to default recommendations
+    return default_recommendations[:limit]
+```
+
+### Example with Files:
+
+```python
+async def analyze_document(
+    self,
+    file_id: str,
+    __files__=None
+) -> dict[str, Any]:
+    """
+    Analyzes a document uploaded by the user.
+    
+    :param file_id: ID of the file to analyze
+    :param __files__: Access to files attached to the conversation
+    :return: Analysis results
+    """
+    if not __files__:
+        return {"error": "No files available"}
+    
+    # Find the requested file
+    file = None
+    for f in __files__:
+        if f.get("id") == file_id:
+            file = f
+            break
+    
+    if not file:
+        return {"error": f"File with ID {file_id} not found"}
+    
+    # Process the file
+    file_content = file.get("content")
+    file_name = file.get("name")
+    file_type = file.get("type")
+    
+    # Example analysis based on file type
+    if file_type == "text/plain":
+        word_count = len(file_content.split())
+        return {
+            "file_name": file_name,
+            "word_count": word_count,
+            "summary": "Example summary of text content"
+        }
+    elif file_type.startswith("image/"):
+        return {
+            "file_name": file_name,
+            "dimensions": "Example image dimensions",
+            "description": "Example image description"
+        }
+    else:
+        return {
+            "file_name": file_name,
+            "type": file_type,
+            "message": "Unsupported file type for analysis"
+        }
+```
+
+### Best Practices:
+
+1. **Graceful Degradation**: Tools should work even when optional arguments are not provided.
+2. **Clear Documentation**: Document which optional arguments your tool uses and why.
+3. **Efficient Use**: Only use these arguments when they provide meaningful value to your tool's functionality.
+4. **Error Handling**: Implement proper error handling when working with these optional contexts.
+5. **Privacy Considerations**: Be mindful of privacy when using user data and metadata.
+
+## Event Emitters
+
+Event Emitters are a powerful feature that allows tools to provide real-time feedback and additional content to the chat interface. They can be activated at any stage during tool execution and are particularly useful for long-running operations or tools that process large amounts of information.
+
+### Types of Event Emitters
+
+There are three main types of Event Emitters:
+
+#### 1. Status Emitters
+
+Status emitters add status messages above the chat content, providing real-time updates on tool progress.
+
+```python
+await __event_emitter__(
+    {
+        "type": "status",
+        "data": {
+            "description": "Processing your request...",
+            "done": False,
+            "hidden": False
+        }
+    }
+)
+```
+
+**Parameters:**
+- `description`: The status message to display
+- `done`: Boolean indicating if this is the final status update
+- `hidden`: Boolean indicating if the status should be hidden after completion
+
+#### 2. Message Emitters
+
+Message emitters append content directly to the chat, allowing tools to send messages before, during, or after the LLM response.
+
+```python
+await __event_emitter__(
+    {
+        "type": "message",
+        "data": {
+            "content": "This message will be appended to the chat."
+        }
+    }
+)
+```
+
+**Parameters:**
+- `content`: The message content to append to the chat
+
+#### 3. Citation Emitters
+
+Citation emitters provide reference information that users can access, enhancing the credibility of tool responses.
+
+```python
+await __event_emitter__(
+    {
+        "type": "citation",
+        "data": {
+            "document": ["Content of the citation"],
+            "metadata": [
+                {
+                    "date_accessed": datetime.now().isoformat(),
+                    "source": "Source Title"
+                }
+            ],
+            "source": {
+                "name": "Source Title",
+                "url": "https://example.com/source"
+            }
+        }
+    }
+)
+```
+
+**Parameters:**
+- `document`: List of content strings for the citation
+- `metadata`: List of metadata dictionaries with information about the source
+- `source`: Dictionary containing the source name and URL
+
+### Implementation Guidelines
+
+1. **Status Updates for Long Operations**:
+   - Use status emitters for operations that take more than a few seconds
+   - Update status regularly to show progress
+   - Set `done: true` for the final status update
+
+2. **Message Emitters for Additional Content**:
+   - Use message emitters to provide information that should appear in the chat
+   - Can be used to display results before the LLM processes them
+
+3. **Citation Management**:
+   - Set `self.citation = False` in `__init__` when using custom citations
+   - This prevents built-in citations from overriding your custom ones
+
+### Example: Status Emitter
+
+```python
+async def process_large_dataset(
+    self,
+    dataset_name: str,
+    __event_emitter__=None
+) -> str:
+    """
+    Processes a large dataset and returns a summary.
+    
+    :param dataset_name: Name of the dataset to process
+    :param __event_emitter__: Event emitter for status updates
+    :return: Summary of processing results
+    """
+    try:
+        # Initial status
+        if __event_emitter__:
+            await __event_emitter__({
+                "type": "status",
+                "data": {
+                    "description": f"Starting to process dataset: {dataset_name}",
+                    "done": False
+                }
+            })
+        
+        # Simulate processing steps
+        total_steps = 5
+        for step in range(1, total_steps + 1):
+            # Process logic here
+            
+            # Update status
+            if __event_emitter__:
+                await __event_emitter__({
+                    "type": "status",
+                    "data": {
+                        "description": f"Step {step}/{total_steps}: Processing data...",
+                        "done": False
+                    }
+                })
+        
+        # Final status
+        if __event_emitter__:
+            await __event_emitter__({
+                "type": "status",
+                "data": {
+                    "description": "Processing complete!",
+                    "done": True
+                }
+            })
+        
+        return "Dataset processing completed successfully. Found 1,234 records matching your criteria."
+    
+    except Exception as e:
+        # Error status
+        if __event_emitter__:
+            await __event_emitter__({
+                "type": "status",
+                "data": {
+                    "description": f"Error: {str(e)}",
+                    "done": True
+                }
+            })
+        
+        return f"An error occurred while processing the dataset: {str(e)}"
+```
+
+### Example: Message Emitter
+
+```python
+async def generate_report(
+    self,
+    topic: str,
+    __event_emitter__=None
+) -> str:
+    """
+    Generates a report on the specified topic.
+    
+    :param topic: Topic to generate a report on
+    :param __event_emitter__: Event emitter for additional messages
+    :return: Report summary
+    """
+    try:
+        # Send a preliminary message
+        if __event_emitter__:
+            await __event_emitter__({
+                "type": "message",
+                "data": {
+                    "content": f"📊 **Generating report on: {topic}**\n\nPlease wait while I gather the data..."
+                }
+            })
+        
+        # Generate report logic here
+        
+        # Send report sections as separate messages
+        if __event_emitter__:
+            await __event_emitter__({
+                "type": "message",
+                "data": {
+                    "content": "## Executive Summary\n\nThis report provides an overview of key findings related to the requested topic."
+                }
+            })
+            
+            await __event_emitter__({
+                "type": "message",
+                "data": {
+                    "content": "## Key Metrics\n\n- Metric 1: Value\n- Metric 2: Value\n- Metric 3: Value"
+                }
+            })
+        
+        return "Report generation complete. Please review the sections above for detailed information."
+    
+    except Exception as e:
+        return f"An error occurred while generating the report: {str(e)}"
+```
+
+### Example: Citation Emitter
+
+```python
+class Tools:
+    class Valves(BaseModel):
+        api_key: str = Field(
+            default="", 
+            description="API key for the research service"
+        )
+    
+    def __init__(self):
+        """Initialize with citation disabled to use custom citations."""
+        self.valves = self.Valves()
+        self.citation = False  # Important: disable built-in citations
+    
+    async def research_topic(
+        self,
+        topic: str,
+        __event_emitter__=None
+    ) -> str:
+        """
+        Researches a topic and provides information with citations.
+        
+        :param topic: Topic to research
+        :param __event_emitter__: Event emitter for citations
+        :return: Research summary
+        """
+        try:
+            # Research logic here
+            # ...
+            
+            # Example sources (in a real tool, these would come from actual research)
+            sources = [
+                {
+                    "title": "Introduction to the Topic",
+                    "content": "Detailed information about the topic...",
+                    "url": "https://example.com/topic-intro",
+                    "date_accessed": datetime.now().isoformat()
+                },
+                {
+                    "title": "Advanced Analysis",
+                    "content": "Further analysis of the topic...",
+                    "url": "https://example.com/topic-analysis",
+                    "date_accessed": datetime.now().isoformat()
+                }
+            ]
+            
+            # Emit citations for each source
+            if __event_emitter__:
+                for source in sources:
+                    await __event_emitter__({
+                        "type": "citation",
+                        "data": {
+                            "document": [source["content"]],
+                            "metadata": [
+                                {
+                                    "date_accessed": source["date_accessed"],
+                                    "source": source["title"]
+                                }
+                            ],
+                            "source": {
+                                "name": source["title"],
+                                "url": source["url"]
+                            }
+                        }
+                    })
+            
+            return f"Research on '{topic}' complete. The information provided is based on {len(sources)} credible sources."
+        
+        except Exception as e:
+            return f"An error occurred during research: {str(e)}"
+```
+
+### Best Practices
+
+1. **Progressive Updates**: For long-running tasks, provide regular status updates to keep users informed.
+
+2. **Error Handling**: Always include error handling with appropriate status updates when errors occur.
+
+3. **Meaningful Messages**: Make status and message content clear, concise, and informative.
+
+4. **Citation Management**: 
+   - Set `self.citation = False` in `__init__` when using custom citations
+   - Provide complete source information in citations
+   - Include access dates for academic or research purposes
+
+5. **User Experience**:
+   - Use status updates to manage user expectations for long-running operations
+   - Consider using `hidden: true` for intermediate status updates that shouldn't remain visible
+   - Structure message emitters to create a logical flow of information
+</rule> 

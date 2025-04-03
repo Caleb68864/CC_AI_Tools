@@ -1,0 +1,79 @@
+---
+description: Documentation standards for Microsoft SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_documentation
+description: Standards for documenting SQL Server objects and code
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these documentation guidelines:
+
+      1. Header Documentation:
+         - Include creation date and author
+         - Document modification history
+         - Describe object purpose
+         - List dependencies and prerequisites
+
+      2. Stored Procedure Documentation:
+         - Document all parameters
+         - Specify return values and result sets
+         - Include usage examples
+         - Document error conditions
+
+      3. Code Comments:
+         - Document complex logic
+         - Explain business rules
+         - Note performance considerations
+         - Include references to requirements
+
+examples:
+  - input: |
+      -- Bad: Poor documentation
+      CREATE PROCEDURE ProcessOrder
+      @OrderId int
+      AS
+      BEGIN
+          -- Process order
+      END
+      
+      -- Good: Well-documented
+      /*
+      * Procedure: ProcessOrder
+      * Created: 2024-01-20
+      * Author: Jane Smith
+      * 
+      * Description: Processes a customer order and updates inventory
+      * 
+      * Parameters:
+      *   @OrderId INT - The unique identifier of the order to process
+      * 
+      * Returns: 
+      *   0 - Success
+      *   1 - Order not found
+      *   2 - Insufficient inventory
+      * 
+      * Example: EXEC ProcessOrder @OrderId = 12345
+      */
+      CREATE PROCEDURE ProcessOrder
+          @OrderId INT
+      AS
+      BEGIN
+          -- Validate order exists
+          IF NOT EXISTS (SELECT 1 FROM Orders WHERE OrderId = @OrderId)
+              RETURN 1;
+          
+          -- Additional processing...
+      END
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

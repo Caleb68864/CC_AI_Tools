@@ -1,0 +1,72 @@
+---
+description: 
+globs: 
+---
+---
+description: Index management standards for SQL Server
+globs: "*.sql"
+---
+
+<rule>
+name: mssql_index_management
+description: Standards for creating and maintaining indexes in SQL Server
+
+filters:
+  - type: file_extension
+    pattern: "\\.sql$"
+
+actions:
+  - type: suggest
+    message: |
+      Follow these index management guidelines:
+
+      1. Index Design:
+         - Choose appropriate clustered indexes
+         - Design efficient covering indexes
+         - Consider included columns
+         - Balance between read and write performance
+
+      2. Index Maintenance:
+         - Monitor fragmentation levels
+         - Schedule regular maintenance
+         - Use appropriate fill factor
+         - Consider page splits impact
+
+      3. Best Practices:
+         - Avoid over-indexing
+         - Remove unused indexes
+         - Consider filtered indexes
+         - Monitor index usage statistics
+
+examples:
+  - input: |
+      -- Bad: Over-indexing
+      CREATE INDEX IX_Customer_All 
+      ON Customers (FirstName, LastName, Email, Phone, Address)
+      
+      -- Good: Targeted index design
+      -- Covering index for common query pattern
+      CREATE NONCLUSTERED INDEX IX_Customers_Search
+      ON Customers (LastName, FirstName)
+      INCLUDE (Email)
+      WHERE Status = 1;
+      
+      -- Good: Index maintenance
+      -- Check fragmentation
+      SELECT 
+          OBJECT_NAME(ips.object_id) AS TableName,
+          i.name AS IndexName,
+          ips.avg_fragmentation_in_percent
+      FROM 
+          sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'LIMITED') ips
+          JOIN sys.indexes i ON ips.object_id = i.object_id 
+          AND ips.index_id = i.index_id
+      WHERE 
+          ips.avg_fragmentation_in_percent > 30
+      ORDER BY 
+          ips.avg_fragmentation_in_percent DESC;
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

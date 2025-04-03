@@ -1,0 +1,285 @@
+---
+description: Rule for OpenWebUI Pipe functions development and implementation
+globs: "*.py"
+---
+
+# OpenWebUI Pipe Functions Rule
+
+This rule defines the standards and best practices for developing and using OpenWebUI Pipe functions. Pipe functions allow you to create custom agents/models that appear as standalone models in the Open WebUI interface.
+
+For detailed documentation, see the [OpenWebUI Pipe Functions Documentation](https://docs.openwebui.com/features/plugin/functions/pipe/).
+
+<rule>
+name: openwebui_pipe_functions_rule
+description: Enforces standards and best practices for OpenWebUI Pipe functions development
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "class Pipe"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class Pipe[^:]*:"
+        message: "Pipe functions should create custom agents/models that appear as standalone models in the interface."
+      
+      - pattern: "class Pipe[^:]*:(?!\\s*class Valves)"
+        message: "Pipe class should include a nested Valves class for configuration options."
+      
+      - pattern: "class Valves\\(BaseModel\\):"
+        message: "Valves should inherit from BaseModel and define configuration parameters with Field."
+      
+      - pattern: "def __init__\\(self\\):"
+        message: "Initialize necessary properties in the __init__ method, primarily self.valves."
+      
+      - pattern: "def pipe\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The pipe method must have proper type hints for arguments and return values."
+      
+      - pattern: "def pipes\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The pipes method should return a list of dictionaries with model definitions."
+      
+      - pattern: "def pipe\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The pipe method must have proper docstrings explaining its purpose and parameters."
+      
+      - pattern: "def pipes\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The pipes method should have proper docstrings explaining its purpose."
+      
+      - pattern: "try:(?!.*except)"
+        message: "Always handle exceptions in pipe and pipes methods to ensure graceful error handling."
+
+examples:
+  - input: |
+      class Pipe:
+          def pipe(self, body):
+              return "Hello, World!"
+    output: |
+      """
+      title: Basic Pipe Example
+      author: Your Name
+      author_url: https://website.com
+      description: A simple pipe function example
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List
+      
+      class Pipe:
+          class Valves(BaseModel):
+              """Configuration options for the pipe."""
+              MODEL_ID: str = Field(
+                  default="",
+                  description="Model identifier to use for processing."
+              )
+          
+          def __init__(self):
+              """Initialize the Pipe function."""
+              self.valves = self.Valves()
+          
+          def pipe(self, body: Dict[str, Any]) -> Dict[str, Any]:
+              """
+              Process the input data and return a response.
+              
+              :param body: Dictionary containing the input data
+              :return: Dictionary containing the response
+              """
+              try:
+                  # Process the input data
+                  return {
+                      "content": "Hello, World!",
+                      "role": "assistant"
+                  }
+              except Exception as e:
+                  return {
+                      "content": f"Error: {str(e)}",
+                      "role": "assistant"
+                  }
+  
+  - input: |
+      class Pipe:
+          class Valves(BaseModel):
+              API_KEY: str = Field(default="")
+          
+          def __init__(self):
+              self.valves = self.Valves()
+          
+          def pipes(self):
+              return [
+                  {"id": "model1", "name": "Model 1"},
+                  {"id": "model2", "name": "Model 2"}
+              ]
+          
+          def pipe(self, body):
+              model = body.get("model", "")
+              return f"{model}: Response"
+    output: |
+      """
+      title: Multi-Model Pipe
+      author: Your Name
+      author_url: https://website.com
+      description: A pipe function that provides multiple models
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List
+      
+      class Pipe:
+          class Valves(BaseModel):
+              """Configuration options for the pipe."""
+              API_KEY: str = Field(
+                  default="",
+                  description="API key for authentication."
+              )
+          
+          def __init__(self):
+              """Initialize the Pipe function."""
+              self.valves = self.Valves()
+          
+          def pipes(self) -> List[Dict[str, str]]:
+              """
+              Define multiple models that this pipe can represent.
+              
+              Each model will appear as a separate selectable model in the interface.
+              
+              :return: List of dictionaries with id and name for each model
+              """
+              try:
+                  return [
+                      {"id": "model1", "name": "Model 1"},
+                      {"id": "model2", "name": "Model 2"}
+                  ]
+              except Exception as e:
+                  return [
+                      {"id": "error", "name": f"Error: {str(e)}"}
+                  ]
+          
+          def pipe(self, body: Dict[str, Any]) -> Dict[str, Any]:
+              """
+              Process the input data based on the selected model.
+              
+              :param body: Dictionary containing the input data and model selection
+              :return: Dictionary containing the response
+              """
+              try:
+                  model = body.get("model", "")
+                  
+                  # Process based on the selected model
+                  if "model1" in model:
+                      response = "Response from Model 1"
+                  elif "model2" in model:
+                      response = "Response from Model 2"
+                  else:
+                      response = "Unknown model selected"
+                  
+                  return {
+                      "content": f"{response}",
+                      "role": "assistant"
+                  }
+              except Exception as e:
+                  return {
+                      "content": f"Error: {str(e)}",
+                      "role": "assistant"
+                  }
+  
+  - input: |
+      class Pipe:
+          class Valves(BaseModel):
+              API_KEY: str = Field(default="")
+              API_URL: str = Field(default="https://api.example.com")
+          
+          def __init__(self):
+              self.valves = self.Valves()
+          
+          async def pipe(self, body, __user__, __request__):
+              # Implementation
+              return response
+    output: |
+      """
+      title: External API Integration
+      author: Your Name
+      author_url: https://website.com
+      description: Integrates with an external API
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, List, Optional
+      from fastapi import Request
+      import aiohttp
+      
+      class Pipe:
+          class Valves(BaseModel):
+              """Configuration options for the API integration."""
+              API_KEY: str = Field(
+                  default="",
+                  description="API key for authentication with the external service."
+              )
+              API_URL: str = Field(
+                  default="https://api.example.com",
+                  description="Base URL for the external API."
+              )
+          
+          def __init__(self):
+              """Initialize the Pipe function."""
+              self.valves = self.Valves()
+          
+          async def pipe(
+              self, 
+              body: Dict[str, Any], 
+              __user__: Dict[str, Any], 
+              __request__: Request
+          ) -> Dict[str, Any]:
+              """
+              Process the input by making requests to an external API.
+              
+              :param body: Dictionary containing the input data
+              :param __user__: Dictionary containing user information
+              :param __request__: FastAPI request object
+              :return: Dictionary containing the API response
+              """
+              try:
+                  # Extract message content
+                  messages = body.get("messages", [])
+                  content = messages[-1]["content"] if messages else ""
+                  
+                  # Prepare API request
+                  headers = {
+                      "Authorization": f"Bearer {self.valves.API_KEY}",
+                      "Content-Type": "application/json"
+                  }
+                  
+                  # Make API request
+                  async with aiohttp.ClientSession() as session:
+                      async with session.post(
+                          f"{self.valves.API_URL}/process",
+                          json={"query": content},
+                          headers=headers
+                      ) as response:
+                          if response.status == 200:
+                              result = await response.json()
+                              return {
+                                  "content": result.get("response", "No response from API"),
+                                  "role": "assistant"
+                              }
+                          else:
+                              return {
+                                  "content": f"API Error: {response.status}",
+                                  "role": "assistant"
+                              }
+              except Exception as e:
+                  return {
+                      "content": f"Error: {str(e)}",
+                      "role": "assistant"
+                  }
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - openwebui
+    - functions
+    - pipe
+    - custom-models
+    - api-integration 

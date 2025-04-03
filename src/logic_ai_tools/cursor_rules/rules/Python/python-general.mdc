@@ -1,0 +1,50 @@
+---
+description: General Python coding standards and practices
+globs: "*.py"
+---
+
+# General Python Rules
+
+<rule>
+name: python_general_standards
+description: Basic Python coding standards and style guidelines
+
+## PEP 8 Compliance
+- Follow official Python style guide
+- Use tools like black, flake8 for formatting
+- Limit lines to 79 characters
+
+## Naming Conventions
+- Use snake_case for functions and variables
+- Use PascalCase for class names
+- Use meaningful, descriptive names
+
+## Code Organization
+- Write modular, reusable functions and classes
+- Avoid code duplication
+- Use constants instead of hardcoded values
+
+## Pythonic Practices
+- Utilize Python's built-in features
+- Prefer list comprehensions for simple loops
+- Follow Python idioms and conventions
+
+examples:
+  - input: |
+      # Bad
+      def func(x):
+          pass
+      
+      # Good
+      def calculate_total_price(items):
+          pass
+  - input: |
+      # Bad
+      filtered_items = []
+      for item in items:
+          if item.price > 10:
+              filtered_items.append(item)
+              
+      # Good
+      filtered_items = [item for item in items if item.price > 10]
+</rule> 

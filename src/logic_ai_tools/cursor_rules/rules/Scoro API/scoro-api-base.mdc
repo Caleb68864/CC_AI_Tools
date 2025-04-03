@@ -1,0 +1,219 @@
+---
+description: Base rules for accessing the Scoro API
+globs: *[sS][cC][oO][rR][oO]*
+---
+
+## Official Documentation
+Documentation for common patterns and requirements when accessing the Scoro API.
+The official Scoro API documentation can be found at [https://api.scoro.com/api/v2](https://api.scoro.com/api/v2).
+
+<rule>
+name: scoro_api_base
+description: Defines base standards for Scoro API requests and responses
+
+filters:
+  - type: content
+    pattern: "scoro.*api"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "api/v2"
+        message: "Base endpoint for Scoro API is /api/v2"
+      
+      - pattern: "(user_token|apiKey)"
+        message: "Authentication requires either user_token or apiKey"
+
+# Base URL Structure
+base_url:
+  pattern: "https://{company}.scoro.com/api/v2/{module}/{action}/{id}"
+  description: "Standard URL pattern for all Scoro API endpoints"
+  components:
+    - name: company
+      description: "Your Scoro subdomain"
+      example: "mycompany"
+      
+    - name: module
+      description: "API module (e.g., contacts, projects, tasks)"
+      example: "contacts"
+      
+    - name: action
+      description: "Action to perform (e.g., list, modify, view, delete)"
+      example: "list"
+      
+    - name: id
+      description: "Optional object ID for specific operations"
+      example: "123"
+
+# Authentication Methods
+auth_methods:
+  user_token:
+    description: "User-based authentication"
+    required_fields:
+      - name: user_token
+        type: String
+        description: "User's authentication token"
+        
+  api_key:
+    description: "API key-based authentication"
+    required_fields:
+      - name: apiKey
+        type: String
+        description: "API key hash"
+
+# Common Request Fields
+request_fields:
+  - name: lang
+    type: String
+    description: "Language code (e.g., eng)"
+    required: true
+    
+  - name: company_account_id
+    type: String
+    description: "Company account identifier"
+    required: true
+    
+  - name: request
+    type: Object
+    description: "Request-specific parameters"
+    required: true
+
+# Common Response Structure
+response_structure:
+  - name: status
+    type: String
+    description: "Response status (e.g., OK, ERROR)"
+    
+  - name: statusCode
+    type: Integer
+    description: "HTTP status code"
+    
+  - name: messages
+    type: Array
+    description: "Array of response messages"
+    
+  - name: data
+    type: Object
+    description: "Response data object"
+
+# Common HTTP Methods
+http_methods:
+  - name: POST
+    description: "Used for all API requests"
+    note: "All requests must use POST method"
+
+# Common Actions
+actions:
+  list:
+    description: "Get list of objects"
+    note: "Can be filtered using bookmark object"
+    
+  modify:
+    description: "Modify existing object or create new one"
+    note: "ID required for modification, omitted for creation"
+    
+  view:
+    description: "View specific object"
+    note: "ID required"
+    
+  delete:
+    description: "Delete specific object"
+    note: "ID required"
+    
+  filters:
+    description: "Get available filters for module"
+    note: "Empty request returns all filters"
+
+# Pagination
+pagination:
+  fields:
+    - name: page
+      type: String
+      description: "Page number"
+      
+    - name: per_page
+      type: String
+      description: "Items per page"
+      
+  note: "Used with list endpoints for paginated results"
+
+# Error Handling
+error_handling:
+  common_codes:
+    - code: 200
+      description: "Success"
+      
+    - code: 400
+      description: "Bad Request"
+      
+    - code: 401
+      description: "Unauthorized"
+      
+    - code: 403
+      description: "Forbidden"
+      
+    - code: 404
+      description: "Not Found"
+      
+    - code: 500
+      description: "Internal Server Error"
+
+examples:
+  # Base Request Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "user_token": "e238865f83e2b04c09c5c8b39696d37c",
+        "request": {}
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {}
+      }
+      
+  # API Key Request Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "apiKey": "API_hash",
+        "request": {}
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {}
+      }
+      
+  # Paginated List Example
+  - input: |
+      {
+        "lang": "eng",
+        "company_account_id": "tutorial",
+        "page": "1",
+        "per_page": "50",
+        "request": {}
+      }
+    output: |
+      {
+        "status": "OK",
+        "statusCode": 200,
+        "messages": null,
+        "data": {
+          "items": [],
+          "total": 0,
+          "page": 1,
+          "per_page": 50
+        }
+      }
+
+metadata:
+  version: "2.0"
+  priority: high
+</rule> 

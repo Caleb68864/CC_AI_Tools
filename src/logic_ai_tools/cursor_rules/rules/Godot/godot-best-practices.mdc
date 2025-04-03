@@ -1,0 +1,145 @@
+---
+description: 
+globs: 
+---
+---
+description: Godot Best Practices and Code Quality Guidelines
+globs: *.gd
+---
+# Godot Best Practices and Code Quality Guidelines
+
+<rule>
+name: godot_best_practices
+description: Standards for maintaining code quality and following best practices in Godot
+
+filters:
+  - type: file_extension
+    pattern: "\\.gd$"
+  - type: content
+    pattern: "extends .*|func .*|var .*|const .*"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: suggest
+    message: |
+      When writing Godot code, follow these best practices:
+
+      1. Code Organization:
+         ```gdscript
+         extends Node2D
+         
+         # Dependencies
+         @onready var sprite = $Sprite2D
+         @onready var animation_player = $AnimationPlayer
+         
+         # Properties
+         var current_state: String = "idle"
+         var _internal_counter: int = 0
+         
+         # Built-in functions
+         func _ready() -> void:
+             _initialize()
+         
+         # Public methods
+         func start_animation() -> void:
+             animation_player.play("run")
+         
+         # Private methods
+         func _initialize() -> void:
+             _setup_connections()
+         ```
+         - Group related functionality
+         - Use clear, descriptive names
+         - Maintain consistent spacing
+         - Follow Godot style guide
+
+      2. Performance Optimization:
+         ```gdscript
+         # Cache node references
+         @onready var player = $Player
+         
+         # Use physics process for physics
+         func _physics_process(delta: float) -> void:
+             _handle_movement(delta)
+         
+         # Optimize loops
+         func _handle_enemies() -> void:
+             for enemy in get_tree().get_nodes_in_group("enemies"):
+                 if enemy.global_position.distance_to(player.global_position) < 100.0:
+                     enemy.activate()
+         ```
+
+      3. Documentation:
+         ```gdscript
+         ## Handles damage calculation and application
+         ## Parameters:
+         ##   base_damage: Base damage value
+         ##   multiplier: Damage multiplier
+         ## Returns: Final damage value
+         func calculate_damage(base_damage: float, multiplier: float) -> float:
+             return base_damage * multiplier
+         ```
+
+      4. Error Handling:
+         ```gdscript
+         func load_game_data() -> Error:
+             if not FileAccess.file_exists("user://save.dat"):
+                 printerr("Save file not found")
+                 return ERR_FILE_NOT_FOUND
+                 
+             var file = FileAccess.open("user://save.dat", FileAccess.READ)
+             if file == null:
+                 push_error("Failed to open save file")
+                 return ERR_CANT_OPEN
+                 
+             return OK
+         ```
+         - Check for null/error conditions
+         - Use appropriate error reporting
+         - Handle errors gracefully
+         - Return error codes when appropriate
+
+examples:
+  - input: |
+      # Bad: Poor organization and naming
+      var v = 100
+      func p(): hp -= 10
+      func _ready(): s = $Sprite
+
+      # Good: Clear organization and naming
+      @onready var sprite = $Sprite2D
+      var health_points: int = 100
+      
+      func _ready() -> void:
+          _initialize_components()
+      
+      func take_damage(amount: int) -> void:
+          health_points -= amount
+    output: "Well-organized and clearly named code"
+
+  - input: |
+      # Bad: No error handling
+      func load_file():
+          var file = FileAccess.open("save.dat", FileAccess.READ)
+          var data = file.get_var()
+          return data
+
+      # Good: Proper error handling
+      func load_file() -> Variant:
+          if not FileAccess.file_exists("save.dat"):
+              push_error("Save file not found")
+              return null
+              
+          var file = FileAccess.open("save.dat", FileAccess.READ)
+          if file == null:
+              push_error("Failed to open save file")
+              return null
+              
+          return file.get_var()
+    output: "Code with proper error handling"
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

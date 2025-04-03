@@ -1,0 +1,44 @@
+---
+description: Rules for cursor positioning in JavaScript async operations and promises
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_async_cursor_rules
+
+## Async Operations Cursor Rules
+
+1. **Async/Await**
+   - Position cursor after await statements
+   - Leave space for error handling blocks
+   - Group related async operations
+   - Place cursor at promise chain end
+
+examples:
+  - input: |
+      async function getData() {
+          const response = await fetch(url);|  // Cursor here for next await
+          const data = await response.json();|  // Cursor here for data processing
+          return data;
+      }
+
+      promise
+          .then(result => {|})  // Cursor here for promise handling
+          .catch(error => {|})  // Cursor here for error handling
+    output: "Correctly positioned cursors in async operations"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - async
+    - promises
+    - cursor-positioning
+    - javascript
+</rule> 

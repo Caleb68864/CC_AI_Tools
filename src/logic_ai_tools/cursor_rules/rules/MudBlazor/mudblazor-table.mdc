@@ -1,0 +1,44 @@
+---
+description: API reference and guidelines for MudBlazor Table component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Table API
+
+The MudBlazor Table component provides structured data display with features like pagination, sorting, and grouping.
+
+<rule>
+name: mudblazor_table
+description: Provides guidelines and API reference for using MudBlazor Table component.
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudTable.*?>"
+        message: "Ensure proper usage of MudTable methods like ReloadServerData(), NavigateTo(), and SetRowsPerPage()."
+      - pattern: "(?<!CollapseAllGroups\\(\\)|ExpandAllGroups\\(\\))<MudTable.*?>"
+        message: "Consider using CollapseAllGroups() or ExpandAllGroups() for better group management."
+      - pattern: "(?<!ServerData=\\\")<MudTable.*?>"
+        message: "Consider using ServerData for server-side data loading and management."
+
+examples:
+  - input: |
+      <MudTable Items="@items"></MudTable>
+    output: |
+      <MudTable Items="@items" @ref="tableRef"></MudTable>
+
+      @code {
+          private MudTable<MyItemType> tableRef;
+
+          async Task<TableData<MyItemType>> LoadServerData(TableState state) {
+              // Load data from server
+          }
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

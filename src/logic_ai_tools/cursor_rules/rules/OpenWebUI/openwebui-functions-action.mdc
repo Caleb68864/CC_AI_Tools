@@ -1,0 +1,423 @@
+---
+description: Rule for OpenWebUI Action functions development and implementation
+globs: "*.py"
+---
+
+# OpenWebUI Action Functions Rule
+
+This rule defines the standards and best practices for developing and using OpenWebUI Action functions. Action functions allow you to create custom buttons in the message toolbar for end users to interact with, enabling more interactive messaging experiences.
+
+For detailed documentation, see the [OpenWebUI Action Functions Documentation](https://docs.openwebui.com/features/plugin/functions/action/).
+
+<rule>
+name: openwebui_action_functions_rule
+description: Enforces standards and best practices for OpenWebUI Action functions development
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "class Action"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class Action[^:]*:"
+        message: "Action functions should create custom buttons in the message toolbar for user interaction."
+      
+      - pattern: "class Action[^:]*:(?!\\s*class Valves)"
+        message: "Action class should include a nested Valves class for configurable options."
+      
+      - pattern: "class Valves\\(BaseModel\\):"
+        message: "Valves should inherit from BaseModel and define configuration parameters with Field."
+      
+      - pattern: "def __init__\\(self\\):"
+        message: "Initialize necessary properties in the __init__ method, including self.valves, self.name, and self.description."
+      
+      - pattern: "def action\\(.*\\)(?!\\s*->)"
+        message: "Missing return type hint. The action method must have proper type hints for arguments and return values."
+      
+      - pattern: "def action\\(.*\\).*:(?!\\s*(\"\"\"|'''))"
+        message: "The action method must have proper docstrings explaining its purpose and parameters."
+      
+      - pattern: "async def action\\(.*\\)"
+        message: "The action method should be asynchronous to support event calls and user interactions."
+      
+      - pattern: "__event_call__"
+        message: "Use __event_call__ to create interactive UI elements for user input."
+      
+      - pattern: "__event_emitter__"
+        message: "Use __event_emitter__ to provide real-time feedback during action processing."
+      
+      - pattern: "try:(?!.*except)"
+        message: "Always handle exceptions in action methods to ensure graceful error handling."
+
+examples:
+  - input: |
+      class Action:
+          def action(self, body):
+              return "Action result"
+    output: |
+      """
+      title: Basic Action Example
+      author: Your Name
+      author_url: https://website.com
+      description: A simple action function example
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, Optional
+      
+      class Action:
+          class Valves(BaseModel):
+              """Configuration options for the action."""
+              BUTTON_LABEL: str = Field(
+                  default="Summarize",
+                  description="Label to display on the action button."
+              )
+          
+          def __init__(self):
+              """Initialize the Action function."""
+              self.valves = self.Valves()
+              self.name = self.valves.BUTTON_LABEL  # Button label
+              self.description = "Summarize this message"  # Button tooltip
+          
+          async def action(
+              self, 
+              body: Dict[str, Any], 
+              __user__: Optional[Dict[str, Any]] = None,
+              __event_emitter__: Optional[Any] = None,
+              __event_call__: Optional[Any] = None
+          ) -> Optional[Dict[str, Any]]:
+              """
+              Process the message when the action button is clicked.
+              
+              :param body: Dictionary containing the message data
+              :param __user__: Optional dictionary containing user information
+              :param __event_emitter__: Function to emit events for real-time updates
+              :param __event_call__: Function to create interactive UI elements
+              :return: Dictionary containing the action result
+              """
+              try:
+                  # Extract the message content
+                  message_content = body.get("content", "")
+                  
+                  # Create a simple summary (in a real implementation, this would be more sophisticated)
+                  summary = f"Summary: {message_content[:100]}..." if len(message_content) > 100 else message_content
+                  
+                  # Return the summary as a new assistant message
+                  return {
+                      "content": summary,
+                      "role": "assistant"
+                  }
+              except Exception as e:
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": f"Error: {str(e)}", "done": True}
+                          }
+                      )
+                  return {
+                      "content": f"Error processing action: {str(e)}",
+                      "role": "assistant"
+                  }
+  
+  - input: |
+      class Action:
+          def __init__(self):
+              self.name = "User Input"
+          
+          def action(self, body, __event_call__):
+              # Get user input
+              return "Response"
+    output: |
+      """
+      title: Interactive User Input Action
+      author: Your Name
+      author_url: https://website.com
+      description: An action that prompts the user for additional input
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, Optional
+      
+      class Action:
+          class Valves(BaseModel):
+              """Configuration options for the user input action."""
+              BUTTON_LABEL: str = Field(
+                  default="Add Details",
+                  description="Label to display on the action button."
+              )
+              PROMPT_TITLE: str = Field(
+                  default="Additional Information",
+                  description="Title for the input prompt dialog."
+              )
+          
+          def __init__(self):
+              """Initialize the Action function."""
+              self.valves = self.Valves()
+              self.name = self.valves.BUTTON_LABEL  # Button label
+              self.description = "Provide additional details for this message"  # Button tooltip
+          
+          async def action(
+              self, 
+              body: Dict[str, Any], 
+              __user__: Optional[Dict[str, Any]] = None,
+              __event_emitter__: Optional[Any] = None,
+              __event_call__: Optional[Any] = None
+          ) -> Optional[Dict[str, Any]]:
+              """
+              Prompt the user for additional input and process the response.
+              
+              :param body: Dictionary containing the message data
+              :param __user__: Optional dictionary containing user information
+              :param __event_emitter__: Function to emit events for real-time updates
+              :param __event_call__: Function to create interactive UI elements
+              :return: Dictionary containing the action result
+              """
+              try:
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": "Waiting for user input...", "done": False}
+                          }
+                      )
+                  
+                  # Get the original message content
+                  original_content = body.get("content", "")
+                  
+                  # Prompt the user for additional details
+                  user_response = await __event_call__(
+                      {
+                          "type": "input",
+                          "data": {
+                              "title": self.valves.PROMPT_TITLE,
+                              "message": "Please provide additional details about your request:",
+                              "placeholder": "Enter additional information here...",
+                          },
+                      }
+                  )
+                  
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": "Processing input...", "done": False}
+                          }
+                      )
+                  
+                  # Check if the user provided a response
+                  if user_response and "text" in user_response:
+                      additional_info = user_response["text"]
+                      
+                      # Combine the original message with the additional information
+                      enhanced_message = f"{original_content}\n\nAdditional details: {additional_info}"
+                      
+                      if __event_emitter__:
+                          await __event_emitter__(
+                              {
+                                  "type": "status",
+                                  "data": {"description": "Input processed successfully", "done": True}
+                              }
+                          )
+                      
+                      # Return the enhanced message
+                      return {
+                          "content": enhanced_message,
+                          "role": "user"  # This replaces the user's message with the enhanced version
+                      }
+                  else:
+                      if __event_emitter__:
+                          await __event_emitter__(
+                              {
+                                  "type": "status",
+                                  "data": {"description": "No additional information provided", "done": True}
+                              }
+                          )
+                      
+                      # User canceled or didn't provide input
+                      return {
+                          "content": "No additional information was provided.",
+                          "role": "assistant"
+                      }
+              except Exception as e:
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": f"Error: {str(e)}", "done": True}
+                          }
+                      )
+                  return {
+                      "content": f"Error processing action: {str(e)}",
+                      "role": "assistant"
+                  }
+  
+  - input: |
+      class Action:
+          def __init__(self):
+              self.name = "Visualize"
+          
+          async def action(self, body, __event_emitter__):
+              # Generate visualization
+              return "Visualization result"
+    output: |
+      """
+      title: Data Visualization Action
+      author: Your Name
+      author_url: https://website.com
+      description: An action that generates visualizations from structured data
+      version: 1.0.0
+      """
+      
+      from pydantic import BaseModel, Field
+      from typing import Dict, Any, Optional, List
+      import json
+      import base64
+      
+      class Action:
+          class Valves(BaseModel):
+              """Configuration options for the visualization action."""
+              BUTTON_LABEL: str = Field(
+                  default="Visualize",
+                  description="Label to display on the action button."
+              )
+              VIZ_TYPE: str = Field(
+                  default="bar",
+                  description="Default visualization type (bar, line, pie, etc.)"
+              )
+          
+          def __init__(self):
+              """Initialize the Action function."""
+              self.valves = self.Valves()
+              self.name = self.valves.BUTTON_LABEL  # Button label
+              self.description = "Generate a visualization from this data"  # Button tooltip
+          
+          async def action(
+              self, 
+              body: Dict[str, Any], 
+              __user__: Optional[Dict[str, Any]] = None,
+              __event_emitter__: Optional[Any] = None,
+              __event_call__: Optional[Any] = None
+          ) -> Optional[Dict[str, Any]]:
+              """
+              Generate a visualization from structured data in the message.
+              
+              :param body: Dictionary containing the message data
+              :param __user__: Optional dictionary containing user information
+              :param __event_emitter__: Function to emit events for real-time updates
+              :param __event_call__: Function to create interactive UI elements
+              :return: Dictionary containing the visualization result
+              """
+              try:
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": "Generating visualization...", "done": False}
+                          }
+                      )
+                  
+                  # Extract the message content
+                  message_content = body.get("content", "")
+                  
+                  # Try to extract JSON data from the message
+                  # This is a simplified example - in a real implementation, you would use
+                  # more robust parsing and handle various data formats
+                  try:
+                      # Look for JSON-like content in the message
+                      import re
+                      json_match = re.search(r'\{.*\}', message_content, re.DOTALL)
+                      if json_match:
+                          data_str = json_match.group(0)
+                          data = json.loads(data_str)
+                      else:
+                          # If no JSON found, create a simple example data structure
+                          data = {"example": [1, 2, 3, 4, 5]}
+                      
+                      # In a real implementation, you would generate an actual visualization here
+                      # For this example, we'll just return a placeholder message with the data
+                      
+                      # Generate a simple ASCII visualization as an example
+                      visualization = self._generate_ascii_chart(data)
+                      
+                      if __event_emitter__:
+                          await __event_emitter__(
+                              {
+                                  "type": "status",
+                                  "data": {"description": "Visualization generated successfully", "done": True}
+                              }
+                          )
+                      
+                      # Return the visualization as a new assistant message
+                      return {
+                          "content": f"```\nVisualization ({self.valves.VIZ_TYPE} chart):\n{visualization}\n```\n\nIn a real implementation, this would be an actual chart or graph.",
+                          "role": "assistant"
+                      }
+                  except json.JSONDecodeError:
+                      if __event_emitter__:
+                          await __event_emitter__(
+                              {
+                                  "type": "status",
+                                  "data": {"description": "Could not parse data for visualization", "done": True}
+                              }
+                          )
+                      return {
+                          "content": "Could not extract structured data for visualization. Please provide data in a valid JSON format.",
+                          "role": "assistant"
+                      }
+              except Exception as e:
+                  if __event_emitter__:
+                      await __event_emitter__(
+                          {
+                              "type": "status",
+                              "data": {"description": f"Error: {str(e)}", "done": True}
+                          }
+                      )
+                  return {
+                      "content": f"Error generating visualization: {str(e)}",
+                      "role": "assistant"
+                  }
+          
+          def _generate_ascii_chart(self, data: Dict[str, Any]) -> str:
+              """
+              Generate a simple ASCII chart from the provided data.
+              
+              :param data: Dictionary containing the data to visualize
+              :return: ASCII representation of the data
+              """
+              # This is a very simplified example - in a real implementation,
+              # you would use a proper visualization library
+              
+              # Extract the first list of numbers we can find
+              values = []
+              for key, value in data.items():
+                  if isinstance(value, list) and all(isinstance(x, (int, float)) for x in value):
+                      values = value
+                      break
+              
+              if not values:
+                  return "No numeric data found for visualization"
+              
+              # Generate a simple ASCII bar chart
+              max_value = max(values)
+              chart = ""
+              for i, value in enumerate(values):
+                  bar_length = int((value / max_value) * 20)
+                  chart += f"Item {i+1}: {'#' * bar_length} ({value})\n"
+              
+              return chart
+
+metadata:
+  priority: high
+  version: 1.0
+  tags:
+    - openwebui
+    - functions
+    - action
+    - interactive
+    - ui-elements
+</rule> 

@@ -1,0 +1,106 @@
+---
+description: Guidelines for markdown post-processing in Obsidian plugins
+globs: *.ts,*.js
+---
+
+# Obsidian Plugin Development - Markdown Processing
+
+Best practices for processing and transforming markdown content in Obsidian plugins.
+
+<rule>
+name: obsidian_dev_markdown_processing
+description: Enforces best practices for markdown processing in Obsidian plugins
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "markdownPostProcessor"
+        message: "Implement proper markdown post-processing with error handling"
+      - pattern: "processMarkdown"
+        message: "Ensure markdown processing is efficient and handles edge cases"
+      - pattern: "markdownRender"
+        message: "Use proper markdown rendering hooks and cleanup"
+
+examples:
+  - input: |
+      class MyPlugin extends Plugin {
+          async onload() {
+              this.registerMarkdownPostProcessor((element) => {
+                  const codeBlocks = element.querySelectorAll('code');
+                  codeBlocks.forEach(block => {
+                      block.innerHTML = this.processCode(block.innerHTML);
+                  });
+              });
+          }
+      }
+    output: |
+      class MyPlugin extends Plugin {
+          async onload() {
+              this.registerMarkdownPostProcessor((element, context) => {
+                  try {
+                      // Process only if element is still in DOM
+                      if (!document.contains(element)) return;
+                      
+                      const codeBlocks = element.querySelectorAll('code');
+                      codeBlocks.forEach(block => {
+                          // Store original content
+                          const originalContent = block.innerHTML;
+                          
+                          // Process only if content changed
+                          const processedContent = this.processCode(originalContent);
+                          if (processedContent !== originalContent) {
+                              block.innerHTML = processedContent;
+                          }
+                      });
+                  } catch (error) {
+                      console.error('Markdown processing error:', error);
+                  }
+              });
+          }
+          
+          private processCode(content: string): string {
+              // Implement efficient code processing
+              return content.replace(/pattern/g, 'replacement');
+          }
+      }
+
+documentation:
+  ## Markdown Processing Guidelines
+
+  This rule builds upon the common patterns defined in `obsidian-dev-base.mdct`. Please refer to that rule for general development patterns.
+
+  ### 1. Processing Types
+  - Syntax Processing
+  - Content Processing
+  - Link Processing
+  - Image Processing
+  - Custom Processing
+
+  ### 2. Processing Management
+  - Processing Pipeline
+  - State Management
+  - Cache Management
+  - Update Process
+  - Error Handling
+
+  ### 3. Processing Integration
+  - Editor Integration
+  - View Integration
+  - File Integration
+  - Event Integration
+  - State Integration
+
+  ### 4. Processing Features
+  - Custom Syntax
+  - Content Transformations
+  - Link Handling
+  - Image Handling
+  - Performance Optimization
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

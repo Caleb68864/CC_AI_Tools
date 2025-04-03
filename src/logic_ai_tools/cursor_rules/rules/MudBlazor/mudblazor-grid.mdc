@@ -1,0 +1,62 @@
+---
+description: API reference and guidelines for MudBlazor Grid component
+globs: "*.razor, *.cs, *.html"
+---
+
+# MudBlazor Grid API
+
+The MudBlazor Grid component provides a 12-column fluid grid system for responsive layouts.
+
+<rule>
+name: mudblazor_grid
+description: Provides guidelines and API reference for using MudBlazor Grid components (MudGrid, MudItem).
+filters:
+  - type: file_extension
+    pattern: "\\.(razor|cs|html)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "<MudGrid.*?>"
+        message: "Consider using Spacing and Justify properties for better layout control."
+      - pattern: "<MudItem\\s+(?!xs=).*?>"
+        message: "Always specify xs breakpoint for base column size in MudItem."
+      - pattern: "<MudGrid.*?(?<!Spacing=).*?>"
+        message: "Consider setting Spacing for consistent gaps between grid items."
+      - pattern: "<MudItem.*?(xs|sm|md|lg|xl)=\"([13-9]|1[0-2])\".*?>"
+        message: "Grid items should use values between 1-12 for responsive breakpoints."
+      - pattern: "<MudGrid>\\s*<MudItem\\s+xs=\"12\"[^>]*>(?!\\s*<MudPaper).*?>"
+        message: "Consider wrapping grid items with MudPaper for better visual separation."
+
+examples:
+  - input: |
+      <MudGrid>
+          <MudItem xs="6">Content</MudItem>
+      </MudGrid>
+    output: |
+      <MudGrid Spacing="2" Justify="Justify.FlexStart">
+          <MudItem xs="12" sm="6" md="4">
+              <MudPaper Class="pa-4">
+                  Content
+              </MudPaper>
+          </MudItem>
+          <MudItem xs="12" sm="6" md="4">
+              <MudPaper Class="pa-4">
+                  Content
+              </MudPaper>
+          </MudItem>
+          <MudItem xs="12" sm="12" md="4">
+              <MudPaper Class="pa-4">
+                  Content
+              </MudPaper>
+          </MudItem>
+      </MudGrid>
+
+      @code {
+          // Grid is purely presentational, no code required
+      }
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

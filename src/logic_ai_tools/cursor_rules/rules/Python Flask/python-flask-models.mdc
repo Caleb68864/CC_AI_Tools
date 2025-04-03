@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Flask Model Standards
+globs: *.py, *.html
+---
+
+# Flask Model Standards
+
+Standards for Flask SQLAlchemy models.
+
+<rule>
+name: flask_model_standards
+description: Enforces best practices for Flask SQLAlchemy models
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "from flask_sqlalchemy import SQLAlchemy"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "class\\s+\\w+\\s*(?!\\(db\\.Model\\))"
+        message: "Model classes should inherit from db.Model"
+      
+      - pattern: "(?<!^)__tablename__\\s*="
+        message: "Define __tablename__ at the start of the model class"
+        
+      - pattern: "\\s{4}id\\s*=\\s*db\\.Column\\(db\\.Integer,\\s*primary_key=True\\)"
+        message: "Each model should have an 'id' primary key"
+
+examples:
+  - input: |
+      class User:  # Missing db.Model
+          name = db.Column(db.String(80))
+    output: |
+      class User(db.Model):
+          __tablename__ = 'users'
+          id = db.Column(db.Integer, primary_key=True)
+          name = db.Column(db.String(80))
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,42 @@
+---
+description: Rules for cursor positioning in JavaScript function declarations and definitions
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_function_cursor_rules
+
+## Function Declaration Cursor Rules
+
+1. **Function Signatures**
+   - Place cursor after function signature for quick parameter edits
+   - Position cursor at function body start for implementation
+   - Leave blank line before and after functions
+   - Maintain consistent function naming style
+
+examples:
+  - input: |
+      function processData(input) {|  // Cursor here for parameter edits
+          // Function implementation
+      }|  // Cursor here for next function
+
+      async function fetchData(url) {|  // Cursor here for URL parameter
+          const response = await fetch(url);
+          return response.json();
+      }
+    output: "Correctly positioned cursors in function declarations"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - functions
+    - cursor-positioning
+    - javascript
+</rule> 

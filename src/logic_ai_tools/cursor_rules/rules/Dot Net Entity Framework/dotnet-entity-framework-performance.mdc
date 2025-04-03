@@ -1,0 +1,109 @@
+---
+description: 
+globs: 
+---
+---
+description: Enforces Entity Framework performance optimization best practices
+globs: "*.cs"
+---
+# Entity Framework Performance Optimization
+
+<rule>
+name: ef_performance_optimization
+description: Ensures implementation of performance best practices in Entity Framework
+filters:
+  - type: file_extension
+    pattern: "\\.cs$"
+  - type: content
+    pattern: "(?:Include|ToList|FirstOrDefault|Count|Any|Select|Where|OrderBy)"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "\\.Include\\([^)]+\\)(?:\\.Include\\([^)]+\\)){3,}"
+        message: "Too many includes - consider using projection"
+      - pattern: "\\.ToList\\(\\)\\.Count\\(\\)"
+        message: "Use Count() directly instead of ToList().Count()"
+      - pattern: "\\.Where\\([^)]+\\)\\.FirstOrDefault\\(\\)"
+        message: "Combine Where and FirstOrDefault into single FirstOrDefault"
+      - pattern: "foreach\\s*\\([^)]+\\)\\s*{[^}]*context\\."
+        message: "Avoid database calls inside loops"
+      - pattern: "\\.Select\\(.*=>.*\\.ToList\\(\\)\\)"
+        message: "Avoid nested ToList() calls in Select - causes N+1 queries"
+
+  - type: suggest
+    message: |
+      Performance optimization guidelines:
+      1. Query Optimization:
+         - Use AsNoTracking for read-only queries
+         - Implement paging (Skip/Take)
+         - Select only needed columns
+         - Avoid N+1 queries
+      2. Loading Strategies:
+         - Choose appropriate Include strategy
+         - Use projection for complex queries
+         - Implement lazy loading carefully
+      3. Context Management:
+         - Keep context lifetime short
+         - Disable change tracking when unnecessary
+         - Use bulk operations for large datasets
+      4. Index Usage:
+         - Ensure queries use indexes
+         - Create indexes for common queries
+         - Monitor query performance
+
+examples:
+  - input: |
+      var users = context.Users
+          .Include(u => u.Profile)
+          .Include(u => u.Orders)
+          .Include(u => u.Comments)
+          .Include(u => u.Preferences)
+          .ToList();
+
+      foreach (var order in orders)
+      {
+          var customer = context.Customers
+              .FirstOrDefault(c => c.Id == order.CustomerId);
+      }
+    output: |
+      // Projection for better performance
+      var users = await context.Users
+          .Select(u => new UserDto
+          {
+              Id = u.Id,
+              Name = u.Name,
+              ProfileData = u.Profile.Data,
+              OrderCount = u.Orders.Count(),
+              RecentComments = u.Comments
+                  .OrderByDescending(c => c.Date)
+                  .Take(5)
+                  .Select(c => c.Text)
+          })
+          .ToListAsync();
+
+      // Efficient batch loading
+      var orderIds = orders.Select(o => o.CustomerId).Distinct().ToList();
+      var customers = await context.Customers
+          .Where(c => orderIds.Contains(c.Id))
+          .ToDictionaryAsync(c => c.Id);
+
+      // Implementing paging
+      var pagedResults = await context.Products
+          .AsNoTracking()
+          .Where(p => p.IsActive)
+          .OrderBy(p => p.Name)
+          .Skip((pageNumber - 1) * pageSize)
+          .Take(pageSize)
+          .Select(p => new ProductDto
+          {
+              Id = p.Id,
+              Name = p.Name,
+              Price = p.Price
+          })
+          .ToListAsync();
+
+metadata:
+  priority: high
+  version: 1.0
+</rule> 

@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Flask Security Standards
+globs: *.py, *.html
+---
+
+# Flask Security Standards
+
+Security best practices for Flask applications.
+
+<rule>
+name: flask_security_standards
+description: Enforces security best practices for Flask applications
+filters:
+  - type: file_extension
+    pattern: "\\.py$"
+  - type: content
+    pattern: "from flask import"
+
+actions:
+  - type: reject
+    conditions:
+      - pattern: "app\\.config\\['SECRET_KEY'\\]\\s*=\\s*['\"][\\w\\d]+['\"]"
+        message: "Do not hardcode SECRET_KEY in source code"
+      
+      - pattern: "debug\\s*=\\s*True"
+        message: "Do not enable debug mode in production code"
+
+  - type: suggest
+    conditions:
+      - pattern: "@app\\.route.*(?<!login_required)"
+        message: "Consider protecting routes with @login_required"
+        
+      - pattern: "session\\[.*\\]\\s*=\\s*.*"
+        message: "Use secure session configuration with SESSION_COOKIE_SECURE=True"
+
+examples:
+  - input: |
+      app.config['SECRET_KEY'] = 'mysecretkey123'
+      app.run(debug=True)
+    output: |
+      app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+      app.run(debug=False)
+
+metadata:
+  priority: critical
+  version: 1.0
+</rule> 

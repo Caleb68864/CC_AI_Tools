@@ -1,0 +1,76 @@
+---
+description: Documentation links for Obsidian plugin development
+globs: *.md,*.ts,*.js
+---
+
+# Obsidian Plugin Development Documentation
+
+Essential documentation links for developing Obsidian plugins.
+
+<rule>
+name: obsidian_dev_documentation
+description: Provides quick access to official Obsidian plugin development documentation
+filters:
+  - type: file_extension
+    pattern: "\\.(md|ts|js)$"
+
+actions:
+  - type: suggest
+    conditions:
+      - pattern: "obsidian"
+        message: "Check the official Obsidian plugin development documentation for best practices and guidelines"
+
+examples:
+  - input: |
+      // How do I create a new plugin?
+    output: |
+      Check the official documentation:
+      - Getting Started: https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin
+      - Plugin Anatomy: https://docs.obsidian.md/Plugins/Getting+started/Anatomy+of+a+plugin
+      - Development Workflow: https://docs.obsidian.md/Plugins/Getting+started/Development+workflow
+
+documentation:
+  ### Getting Started
+  - [Home](https://docs.obsidian.md/Home)
+  - [Build a plugin](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin)
+  - [Anatomy of a plugin](https://docs.obsidian.md/Plugins/Getting+started/Anatomy+of+a+plugin)
+  - [Development workflow](https://docs.obsidian.md/Plugins/Getting+started/Development+workflow)
+  - [Mobile development](https://docs.obsidian.md/Plugins/Getting+started/Mobile+development)
+
+  ### Framework Integration
+  - [Use React in your plugin](https://docs.obsidian.md/Plugins/Getting+started/Use+React+in+your+plugin)
+  - [Use Svelte in your plugin](https://docs.obsidian.md/Plugins/Getting+started/Use+Svelte+in+your+plugin)
+
+  ### Performance & Optimization
+  - [Optimizing plugin load time](https://docs.obsidian.md/Plugins/Guides/Optimizing+plugin+load+time)
+  - [Understanding deferred views](https://docs.obsidian.md/Plugins/Guides/Understanding+deferred+views)
+
+  ### User Interface Components
+  - [About user interface](https://docs.obsidian.md/Plugins/User+interface/About+user+interface)
+  - [Commands](https://docs.obsidian.md/Plugins/User+interface/Commands)
+  - [Context menus](https://docs.obsidian.md/Plugins/User+interface/Context+menus)
+  - [HTML elements](https://docs.obsidian.md/Plugins/User+interface/HTML+elements)
+  - [Icons](https://docs.obsidian.md/Plugins/User+interface/Icons)
+  - [Modals](https://docs.obsidian.md/Plugins/User+interface/Modals)
+  - [Ribbon actions](https://docs.obsidian.md/Plugins/User+interface/Ribbon+actions)
+  - [Right-to-left](https://docs.obsidian.md/Plugins/User+interface/Right-to-left)
+  - [Settings](https://docs.obsidian.md/Plugins/User+interface/Settings)
+  - [Status bar](https://docs.obsidian.md/Plugins/User+interface/Status+bar)
+  - [Views](https://docs.obsidian.md/Plugins/User+interface/Views)
+  - [Workspace](https://docs.obsidian.md/Plugins/User+interface/Workspace)
+
+  ### Editor Integration
+  - [Editor](https://docs.obsidian.md/Plugins/Editor/Editor)
+  - [Markdown post processing](https://docs.obsidian.md/Plugins/Editor/Markdown+post+processing)
+  - [Editor extensions](https://docs.obsidian.md/Plugins/Editor/Editor+extensions)
+  - [Decorations](https://docs.obsidian.md/Plugins/Editor/Decorations)
+  - [State fields](https://docs.obsidian.md/Plugins/Editor/State+fields)
+  - [State management](https://docs.obsidian.md/Plugins/Editor/State+management)
+  - [View plugins](https://docs.obsidian.md/Plugins/Editor/View+plugins)
+  - [Viewport](https://docs.obsidian.md/Plugins/Editor/Viewport)
+  - [Communicating with editor extensions](https://docs.obsidian.md/Plugins/Editor/Communicating+with+editor+extensions)
+
+metadata:
+  priority: high
+  version: 1.0
+</rule>

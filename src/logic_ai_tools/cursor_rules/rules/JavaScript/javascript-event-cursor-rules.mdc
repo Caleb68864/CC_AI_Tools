@@ -1,0 +1,42 @@
+---
+description: Rules for cursor positioning in JavaScript event handlers and listeners
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_event_cursor_rules
+
+## Event Handler Cursor Rules
+
+1. **Event Listeners**
+   - Position cursor inside handler functions
+   - Group related event listeners
+   - Maintain consistent handler naming
+   - Place cursor at handler logic start
+
+examples:
+  - input: |
+      element.addEventListener('click', () => {|  // Cursor here for handler logic
+          handleClick();
+      });
+
+      element.addEventListener('change', (event) => {|  // Cursor here for event handling
+          const value = event.target.value;
+      });
+    output: "Correctly positioned cursors in event handlers"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - events
+    - handlers
+    - cursor-positioning
+    - javascript
+</rule> 

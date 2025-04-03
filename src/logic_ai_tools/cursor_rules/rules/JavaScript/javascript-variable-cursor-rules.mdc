@@ -1,0 +1,38 @@
+---
+description: Rules for cursor positioning in JavaScript variable declarations and management
+globs:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/Scripts/*.md"
+  - "**/*.md"
+---
+
+<rule>
+name: javascript_variable_cursor_rules
+
+## Variable Management Cursor Rules
+
+1. **Variable Declarations**
+   - Position cursor after variable declarations
+   - Group related variables together
+   - Use consistent variable naming conventions
+   - Place cursor at next logical variable declaration point
+
+examples:
+  - input: |
+      const userName = "John";|  // Cursor here for next related variable
+      const userAge = 25;|  // Cursor here for next related variable
+      
+      let counter = 0;|  // Cursor here for next independent variable
+    output: "Correctly positioned cursors in variable declarations"
+
+metadata:
+  priority: medium
+  version: 1.0
+  tags:
+    - variables
+    - cursor-positioning
+    - javascript
+</rule> 
