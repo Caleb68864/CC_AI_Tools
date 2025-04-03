@@ -6,8 +6,8 @@ Productivity Tools Using AI
 First, clone the repository and navigate to the project directory:
 
 ```bash
-git clone https://github.com/CasperCBroeren/CC-AI-Tools.git
-cd CC-AI-Tools
+git clone https://github.com/Caleb68864/CC_AI_Tools
+cd CCAITools
 ```
 
 Install the package and its dependencies using pip:
@@ -26,14 +26,23 @@ pip install -e .
 
 Run the included PowerShell installation script to set up command-line aliases and environment files:
 
+**Note:** You may need to run this script with administrator privileges.
+
 ```powershell
+# Standard installation (pulls Production branch)
 .\install_Scripts.ps1
+
+# Development mode (skips Production branch)
+.\install_Scripts.ps1 -dev
+# or
+.\install_Scripts.ps1 -d
 ```
 
 This script will:
-- Create global PowerShell functions for all Python scripts, allowing them to run from any location.
-- Automatically set up `.env` files from `.env.example` templates if they don't exist.
-- Enable you to run scripts by their name without the `.py` extension (e.g., `CreateGitCommitMsg` instead of `python CreateGitCommitMsg.py`).
+- By default, checkout and pull the latest Production branch (skip with -dev flag)
+- Create global PowerShell functions for all Python scripts, allowing them to run from any location
+- Automatically set up `.env` files from `.env.example` templates if they don't exist
+- Enable you to run scripts by their name without the `.py` extension (e.g., `CreateGitCommitMsg` instead of `python CreateGitCommitMsg.py`)
 
 ### Setup
 
@@ -42,6 +51,7 @@ The PowerShell installation script (`install_Scripts.ps1`) will automatically cr
 **Required API Keys:**
 - `API_KEY=your_api_key_here` (deprecated)
 - `ANTHROPIC_API_KEY=your_claude_api_key_here`
+- `GIT_USERNAME=your_username` (for branch naming)
 
 **Optional AI Model Settings:**
 - `CLAUDE_SMALL_MODEL=claude-3-haiku-20240307`
@@ -50,6 +60,43 @@ The PowerShell installation script (`install_Scripts.ps1`) will automatically cr
 
 The AI model settings allow you to specify which Claude models to use for different tasks. If not set, the scripts will use default values.
 
+## Feature Requests
+
+## Changelog
+
+### v1.0.3 - Username Integration and Installation Improvements
+- Added GIT_USERNAME support in .env file for consistent branch naming
+- Implemented automatic username validation and formatting for branch names
+- Added fallback to AI-generated branch names when username is not set
+- Enhanced install_Scripts.ps1 to support Production branch deployment
+- Added -dev/-d flag to skip Production branch checkout during installation
+- Improved .env file handling with automatic username updates
+
+### v1.0.2 - Smart File Staging
+- Added intelligent handling of file staging to preserve already staged changes
+- Detects if files are already staged when running `CreateGitCommitMsg`
+- Asks users if they want to work with already staged files or stage additional ones
+- Displays numbered lists of unstaged files for easy selection
+- Supports selective staging through individual numbers or ranges (e.g., `1`, `1,3`, `2-4`)
+- Defaults to staging all files if no specific selection is provided
+- Generates commit messages based only on the final set of staged files
+- Provides a more streamlined and flexible git workflow
+
+### v1.0.1 - Customizable Branch Names
+- Added an option to choose between AI suggestions or custom branch creation
+- Presents users with a list of branch types to select from (feat, fix, refactor, docs, style, test, hotfix)
+- Ensures users select a type before entering their description
+- Formats input into a properly structured name (YYYY/MM/DD-HHMM-type-description)
+- Displays the complete branch name for confirmation
+- If the user doesn't confirm, provides options to try again, use AI suggestions instead, or quit
+- Defaults to AI suggestions when no option is selected (press Enter)
+- Provides a clean exit option at key decision points
+
+### v1.0.0 - Default Yes for Y/N Questions
+- Added a utility function `prompt_yes_no()` that displays prompts with "(Y/n)" format
+- When the user presses Enter without typing anything, the function returns `True` (equivalent to "yes")
+- All interactive prompts across Git tools have been updated to use this function
+- The prompt format clearly indicates that "Y" is the default option by using capital "Y"
 
 ## Git Tools
 
@@ -67,6 +114,8 @@ A Python script that leverages **Anthropic's Claude AI** to generate **professio
   Uses Claude AI to parse file diffs and create concise, action-oriented messages.
 - **Structured formatting**  
   Splits commit text into a short title, summary (the "why"), and details (the "what/how").
+- **Smart file staging**  
+  Preserves already staged changes and offers selective staging of additional files.
 - **Interactive commit + push**  
   Optionally push your changes immediately after reviewing the AI-generated message.
 - **Commit history logging**  
@@ -84,11 +133,16 @@ A Python script that leverages **Anthropic's Claude AI** to generate **professio
    - Uses bullet points for key technical changes or additional info.
 4. **Files Changed**  
    - Mentions changed files, grouped logically and explained briefly.
-5. **User Prompt**  
+5. **Smart File Staging**  
+   - Detects already staged changes and asks if you want to keep or add to them
+   - Displays numbered lists of unstaged files for easy selection
+   - Supports selective staging through individual numbers or ranges (e.g., `1`, `1,3`, `2-4`)
+   - Defaults to staging all files if no specific selection is provided
+6. **User Prompt**  
    - Allows you to add extra context for the AI to incorporate into the commit message.
-6. **Interactive Approval**  
+7. **Interactive Approval**  
    - Prompts you to "approve or reject" the AI-generated commit text before actually committing.
-7. **Optional Push**  
+8. **Optional Push**  
    - If you approve, you can also push to remote in the same workflow.
 
 ---
@@ -96,7 +150,7 @@ A Python script that leverages **Anthropic's Claude AI** to generate **professio
 
 #### Usage
 
-Stage your changes as usual:
+You can stage your changes before running the script, or let the script help you stage files:
 
 Run the script:
 
@@ -110,16 +164,46 @@ Or if you have a direct alias or console script set up:
 CreateGitCommitMsg
 ```
 
+- If you have already staged changes, the script will:
+  - Show you the list of staged files
+  - Ask if you want to work with these files or stage additional ones
+  - If you choose to stage more, it will display unstaged files with numbers for selection
+
+- If no files are staged yet, the script will:
+  - Show you a list of all unstaged files with numbers
+  - Let you select specific files by entering numbers or ranges (e.g., `1`, `1,3`, `2-4`)
+  - Stage all files if you just press Enter without selecting any
+
 - Enter your own commit context (e.g., "Refactor login logic for clarity").
 - The script:
-  - Gathers your staged diff,
-  - Sends it to Claude AI for analysis,
+  - Analyzes your staged changes,
+  - Sends the diff to Claude AI for analysis,
   - Returns a formatted commit message (with Title, Summary, and Details).
 - Review the message displayed in the console.
 - If you confirm "y", it commits with that message and optionally pushes.
 - If you decline "n", it aborts and lets you try again or exit.
 
 #### Example
+
+**File Staging**
+
+```plaintext
+📝 Analyzing changes...
+🔍 Found 2 already staged files:
+  1. src/auth.py
+  2. src/login_utils.py
+
+Do you want to work with these staged files? (Y/n): n
+
+📋 Unstaged files (3):
+  1. src/config.py
+  2. src/utils.py
+  3. README.md
+
+🔢 Enter file numbers to stage (e.g., '1,3,5-7', or press Enter for all): 1,3
+📌 Staging 2 additional files...
+✅ Files staged successfully.
+```
 
 **User Prompt**
 
@@ -159,17 +243,6 @@ Approve with "y" to commit, then it prompts:
 ```
 
 If you choose "y", it pushes your branch to remote.
-
-#### Implementation Details
-
-- **AI Prompting**: Claude AI is called twice:
-  - **Diff Parsing**: A system prompt instructs Claude to parse the git diff into a structured summary of changes (files, lines added/deleted, key changes).
-  - **Commit Message Generation**: Another system prompt instructs Claude to produce a high-quality commit message from that structured diff, plus any user-provided context.
-- **Commit History Logging**: The script writes out the full prompt text to a time-stamped file (in Commit_Logs) for reference, so you can review later what was sent to the AI. File names are sanitized for cross-platform compatibility and truncated to avoid Windows path length issues.
-- **Error Handling & Edge Cases**:
-  - Checks if the current directory is a valid Git repo.
-  - If Claude's response is invalid or parsing fails, it falls back to a basic structure.
-  - If the user aborts the commit, no changes are committed or pushed.
 
 ---
 
@@ -272,17 +345,20 @@ Dates/times are parsed in multiple common formats (e.g. YYYY-MM-DD, MM/DD/YYYY, 
 
 ### CreateGitBranchName.py
 
-A Python script that uses Claude AI (Anthropic) to generate **standardized** and **descriptive** Git branch names. It enforces best practices like consistent naming conventions, date prefixes, and concise descriptions.
+A Python script that uses Claude AI (Anthropic) to generate **standardized** and **descriptive** Git branch names. It enforces best practices like consistent naming conventions, date prefixes, and concise descriptions. The script now supports personalized branch naming with usernames and provides AI-powered fallback options.
 
 ---
 
 #### Overview
 
-- **Generates 5 branch name suggestions** based on a user-provided description.
-- **Ensures naming convention compliance** (kebab-case, type prefix, 50-char max length).
-- **Automatically adds a date prefix** (e.g. `YYYY/MM/DDHHMM-feat-branch-description`).
-- **Integrates with Claude AI** to produce clear, well-structured suggestions.
-- **Provides an interactive selection** to create a new Git branch directly.
+- **Generates 5 branch name suggestions** based on a user-provided description
+- **Allows custom branch creation** with user-selected type and description
+- **Ensures naming convention compliance** (kebab-case, type prefix, 50-char max length)
+- **Automatically adds a date prefix** (e.g. `YYYY/MM/DD-HHMM-username-feat-branch-description`)
+- **Integrates with Claude AI** to produce clear, well-structured suggestions
+- **Provides an interactive selection** to create a new Git branch directly
+- **Username Integration** for consistent branch ownership tracking
+- **Smart AI Fallback** when username is not configured
 
 ---
 
@@ -290,18 +366,28 @@ A Python script that uses Claude AI (Anthropic) to generate **standardized** and
 
 1. **Kebab-case format**  
    Lowercase letters and hyphens only.  
-2. **Prefixed by type**  
-   (`feat`, `fix`, `refactor`, `docs`, `style`, `test`, `hotfix`).  
-3. **Short branch descriptions**  
-   Under 50 characters (including the type).  
-4. **Date stamping**  
-   Adds `YYYY/MM/DD-` to the front of the final branch name.  
-5. **Clipboard copy** *(optional)*  
-   Although the current script clones and checks out the branch directly, it can be adapted to simply copy names to the clipboard if desired.  
-6. **Graceful error handling**  
-   - Detects non-Git folders.  
-   - Prevents creating a branch if it already exists.  
-   - Handles invalid input selections.
+2. **Username Integration**  
+   - Reads username from `.env` file (`GIT_USERNAME`)
+   - Automatically formats username for branch naming
+   - Prompts for username if not found or blank
+   - Updates `.env` file with provided username
+3. **AI Fallback System**  
+   - Provides AI-generated branch names if username is not set
+   - Maintains consistent naming structure even without username
+   - Can switch between personal and AI-generated formats
+4. **Prefixed by type**  
+   (`feat`, `fix`, `refactor`, `docs`, `style`, `test`, `hotfix`)  
+5. **Short branch descriptions**  
+   Under 50 characters (including the type)  
+6. **Date stamping**  
+   Adds `YYYY/MM/DD-HHMM-` to the front of the final branch name  
+7. **Custom branch creation**  
+   Choose your own branch type and description without using AI suggestions
+8. **Graceful error handling**  
+   - Detects non-Git folders
+   - Prevents creating a branch if it already exists
+   - Handles invalid input selections
+   - Provides options to try again, switch methods, or quit
 
 ---
 
@@ -321,68 +407,140 @@ Or if you have a direct alias/console script set up:
 CreateGitBranchName
 ```
 
-- Enter a short description of your changes or feature when prompted.
-- View suggestions (the script prints five possible branch names):
+**Username Configuration**
+- The script checks for `GIT_USERNAME` in your `.env` file
+- If not found or blank, you'll be prompted to enter your username
+- Usernames are automatically formatted for branch naming (lowercase, no spaces)
+- Your username is saved to `.env` for future use
+
+**Option 1: AI-Generated Suggestions**
+- Choose option 1 (default) when prompted
+- Enter a short description of your changes or feature
+- View suggestions (the script prints five possible branch names)
+- Select a branch by number (1–5) or choose option 6 to create a custom branch instead
+- Confirm the final branch name with date and username prefix
+- Optionally push to remote
+
+**Option 2: Custom Branch Creation**
+- Choose option 2 when prompted
+- Select a branch type from the list (feat, fix, refactor, docs, style, test, hotfix)
+- Enter a description for your branch
+- Confirm the final branch name with date and username prefix
+- Optionally push to remote
 
 ```plaintext
-1. feat/add-cool-feature - A branch to add cool feature
-2. fix/typo-error - ...
-...
+📝 Checking username configuration...
+❓ Username not found in .env file. Please enter your username: johndoe
+✅ Username saved to .env file
+
+🔄 Branch Creation Options:
+1. Generate AI suggestions based on description (default)
+2. Create custom branch name
+
+🔖 Select an option (1/2, default: 1): 2
+
+Available branch types:
+==================================================
+1. feat
+2. fix
+3. refactor
+4. docs
+5. style
+6. test
+7. hotfix
+==================================================
+
+🔖 Select a branch type (enter number): 1
+
+📝 Enter a description for your feat branch: user authentication system
+
+🤔 Create new branch '2024/03/20-1423-johndoe-feat-user-authentication-system' from 'main'? (Y/n):
 ```
 
-- Select a branch by number (1–5). The script will:
-  - Insert the date prefix to create a final name, e.g. `2025/01/30-feat-add-cool-feature`.
-  - Prompt for confirmation to create and switch to that new branch.
-  - Check out the new branch automatically if you confirm "y".
-
-#### Example
-
-Assume you want to add a new user authentication flow:
-
-- Run the tool:
-
-  ```bash
-  python CreateGitBranchName.py
-  ```
-
-- Provide a description:
-
-  ```plaintext
-  📝 Describe the changes you'll make in this branch: user authentication flow
-  ```
-
-- Receive suggestions like:
-
-  ```plaintext
-  1. feat/user-auth - Branch for user authentication flow
-  2. fix/auth-typo - ...
-  3. ...
-  ```
-
-- Choose "1":
-
-  ```plaintext
-  📋 Enter the number of the branch name you would like to create (or 'q' to quit): 1
-  ```
-
-- The script forms a new branch name with a date prefix, e.g. `2025/01/30-feat-user-auth`, and asks:
-
-  ```plaintext
-  🤔 Create new branch '2025/01/30-feat-user-auth'? (y/n):
-  ```
-
-- Confirm "y". The script creates and checks out the branch:
-
-  ```plaintext
-  ✅ Created and switched to new branch: 2025/01/30-feat-user-auth
-  ```
+If you don't confirm the branch name, you'll be presented with options to:
+- Try creating a custom branch again
+- Use AI suggestions instead
+- Quit the script
 
 #### Implementation Details
 
 - **AI Prompt**: Sends a system prompt to Claude specifying rules for the branch name format.
 - **YAML Parsing**: The AI response is expected in strict YAML, which is parsed using `pyyaml`.
 - **GitPython**: Used to check if the current directory is a valid Git repo and create the new branch if requested.
-- **Date Prefix**: The script automatically calculates `YYYY/MM/DD-` and prepends it to the AI-suggested branch name.
+- **Date Prefix**: The script automatically calculates `YYYY/MM/DD-HHMM-` and prepends it to the branch name.
 - **Error Handling**:
   - If a branch name already exists, the script notifies you and does not overwrite it.
   - If any issue arises in parsing the AI output, it logs the raw response for troubleshooting.
+
+## Cursor IDE
+
+### ApplyCursorRules.py
+
+A Python script that manages Cursor IDE rules for your project, allowing you to selectively apply coding standards, documentation requirements, and other development guidelines.
+
+#### Overview
+
+- **Interactive Rule Selection** via a searchable GUI interface
+- **Rule Version Control** with automatic archiving of removed rules
+- **Organized Rule Categories** for easy navigation
+- **Change Tracking** showing added and removed rules
+- **Automatic .cursor Directory Management**
+
+#### Features
+
+1. **Visual Rule Selection**
+   - Hierarchical view of available rules
+   - Group checkboxes to select/deselect categories
+   - Search functionality to filter rules
+   - Current project rules auto-selected
+
+2. **Rule Management**
+   - Automatically creates `.cursor/rules` directory
+   - Archives removed rules with timestamps
+   - Maintains rule history in `.cursor/.trash`
+   - Shows summary of changes after updates
+
+3. **Project Integration**
+   - Works with existing Cursor IDE configurations
+   - Preserves custom rule modifications
+   - Compatible with version control systems
+
+#### Usage
+
+Run the script from your project's root directory:
+
+```bash
+python ApplyCursorRules.py
+```
+
+Or if you have the alias set up:
+
+```bash
+ApplyCursorRules
+```
+
+⚠️ **Important**: Always run this script from your project's root directory (where your `.git` folder is located). This ensures that:
+- Rules are installed in the correct `.cursor` directory
+- All project files can access the rules
+- Version control properly tracks rule changes
+
+1. A window appears showing available rules grouped by category
+2. Use the search box to filter rules by name
+3. Select/deselect individual rules or entire categories
+4. Click "Confirm Selection" to apply changes
+5. Review the summary of added/removed rules
+
+#### Example Output
+
+```plaintext
+Rules copied successfully to: /your/project/.cursor/rules
+
+Added rules:
+  • comment-maintenance.mdc
+  • code-style.mdc
+
+Removed rules:
+  • old-standard.mdc
+```
+
+The script maintains a clean, organized rule structure while preserving history of removed rules in case you need to reference them later.
